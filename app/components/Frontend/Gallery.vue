@@ -1,154 +1,85 @@
 <template>
   <div class="destination-section pt-120 pb-120">
     <div class="container text-center">
-        <div class="nav d-inline-flex flex-row justify-content-center nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-            <button class="nav-link active nav-btn-style  mb-20" id="v-pills-information-tab" data-bs-toggle="pill" data-bs-target="#v-pills-information" type="button" role="tab" aria-controls="v-pills-information" aria-selected="true"><i class="bi bi-card-image"></i> Image Gallery</button>
-            <button class="nav-link nav-btn-style mb-20" id="v-pills-plan-tab" data-bs-toggle="pill" data-bs-target="#v-pills-plan" type="button" role="tab" aria-controls="v-pills-plan" aria-selected="true"><i class="bi bi-play-btn"></i> Video Gallery</button>
-        </div>
-        <div class="tab-content mt-40" id="v-pills-tabContent">
-            <div class="tab-pane fade show active" id="v-pills-information" role="tabpanel" aria-labelledby="v-pills-information-tab">
-                <div class="row justify-content-center">
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image1.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img1.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image4.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img4.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image7.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img7.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image10.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img10.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image2.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img2.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image5.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img5.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image8.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img8.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image11.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img11.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image3.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img3.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image6.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img6.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image9.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img9.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="image-gallery-single position-relative">
-                            <div class="image-view">
-                                <a href="/assets/images/gallery/big-gallery-image12.png" class="video-icon image-open"><i class="bi bi-binoculars"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/gallery-img12.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
+      <div class="nav d-inline-flex flex-row justify-content-center nav-pills mb-40">
+        <button class="nav-link active nav-btn-style me-3" id="img-tab" data-bs-toggle="pill" data-bs-target="#v-img" type="button">
+          <i class="bi bi-card-image"></i> Image Gallery
+        </button>
+        <button class="nav-link nav-btn-style" id="vid-tab" data-bs-toggle="pill" data-bs-target="#v-vid" type="button">
+          <i class="bi bi-play-btn"></i> Video Gallery
+        </button>
+      </div>
+
+      <div class="tab-content" id="v-pills-tabContent">
+        <div class="tab-pane fade show active" id="v-img" role="tabpanel">
+          <div class="row justify-content-center g-4">
+            <template v-if="galleryData?.images?.length">
+              <div v-for="img in galleryData.images" :key="img.id" class="col-lg-4 col-md-6">
+                <div class="image-gallery-single position-relative">
+                  <div class="image-view">
+                    <a :href="`${config.public.mediaBase}${img.file}`" target="_blank" class="video-icon"><i class="bi bi-binoculars"></i></a>
+                  </div>
+                  <img :src="`${config.public.mediaBase}${img.file}`" class="img-fluid rounded shadow-sm" :alt="img.title">
                 </div>
+              </div>
+            </template>
+            <div v-else class="py-5">
+              <p class="text-muted">Capturing moments... check back soon!</p>
             </div>
-            <div class="tab-pane fade" id="v-pills-plan" role="tabpanel" aria-labelledby="v-pills-plan-tab">
-                <div class="row justify-content-center g-4">
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery1.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery2.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery3.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery4.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery5.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-4 col-sm-4">
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery6.png" class="img-fluid" alt="image">
-                        </div>
-                        <div class="video-gallery-single position-relative">
-                            <div class="video-play sibling-4">
-                                <a href="https://www.youtube.com/watch?v=u31qwQUeGuM" class="popup-youtube video-icon"><i class="bx bx-play"></i></a>
-                            </div>
-                            <img src="/assets/images/gallery/video-gallery7.png" class="img-fluid" alt="image">
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
+
+        <div class="tab-pane fade" id="v-vid" role="tabpanel">
+          <div class="row justify-content-center g-4">
+            <template v-if="galleryData?.videos?.length">
+              <div v-for="video in galleryData.videos" :key="video.id" class="col-lg-4 col-md-6">
+                <div class="video-gallery-single position-relative">
+                  <div class="video-play sibling-4">
+                    <a :href="video.file" target="_blank" class="video-icon"><i class="bx bx-play"></i></a>
+                  </div>
+                  <img :src="getVideoThumbnail(video.file)" class="img-fluid rounded shadow-sm" alt="video thumbnail">
+                </div>
+              </div>
+            </template>
+            <div v-else class="py-5">
+              <p class="text-muted">Our flight videos are being edited!</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 </template>
 
 <script setup>
+const config = useRuntimeConfig()
 
+// Fetch grouped data from your API
+const { data: galleryData } = await useFetch(`${config.public.apiBase}/gallery`)
+
+// Helper to get YouTube thumbnails automatically
+const getVideoThumbnail = (url) => {
+  if (url && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop()
+    return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+  }
+  // Fallback if it's an uploaded file or unknown link
+  return '/assets/images/gallery/video-placeholder.png'
+}
 </script>
 
 <style scoped>
-
+.image-gallery-single img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.image-gallery-single:hover img {
+  transform: scale(1.02);
+}
+.nav-link.active {
+  background-color: #0d6efd !important;
+  color: white !important;
+}
 </style>

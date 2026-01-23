@@ -772,7 +772,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
   let offset = 50;
   let circleContainer = document.querySelector(".circle-container");
   let circlePath = document.querySelector('.circle-container path');
-  let pathLength = circlePath.getTotalLength();
   circlePath.style.transition = circlePath.style.WebkitTransition = 'none';
   circlePath.style.strokeDasharray = pathLength;
   circlePath.style.strokeDashoffset = pathLength;

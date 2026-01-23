@@ -1,17 +1,17 @@
 <template>
-<div class="trip-category-section overflow-hidden pt-120 pb-120">
+<div class="trip-category-section overflow-hidden pt-120 pb-120 mt-5">
         <img src="/assets/images/bg/trip-cat-bg.png" class="trip-bg" alt="image">
         <div class="container">
             <div class="row justify-content-center">
-                <div class="col-lg-10 col-md-12 text-center">
-                    <div class="section-title4 sibling2">
-                        <span>Our Activities</span>
-                        <h2>Enjoy The Adventure Trip</h2>
-                        <img src="/assets/images/icons/section-title-white.svg" class="img-fluid" alt="image">
+                <div class="col-lg-10 col-md-12 text-center pt-5">
+                    <div class="section-title4 sibling2 pt-5">
+                    
+                        <h2>Our Activities</h2>
+                   
                     </div>
                 </div>
             </div>
-            <div class="row ">
+            <div class="row pb-5 ">
                 <div class="col-12">
                     <div class="swiper trip-category-slider">
                         <div class="swiper-wrapper">
@@ -19,62 +19,29 @@
                                 <div class="trip-category-single">
                                     <div class="trip-image">
                                         <img src="/assets/images/bg/trip-img1.png" class="img-fluid" alt="image">
-                                        <span class="blog-date">Hiking</span>
+                            
                                     </div>
                                     <div class="trip-content">
-                                        <h4><a href="blog-details.html">Free Style Skiing</a></h4>
+                                        <h4><a href="">Loreum ipsum loreum ipsum</a></h4>
                                         <div class="trip-text">
-                                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
+                                            <p>Lorem ipsum loreum ipsu  loreum ipsum.</p>
                                         </div>
-                                        <div class="trip-bottom">
-                                            <ul class="trip-meta-list">
-                                                <li><i class='bx bx-user-circle'></i>Age 20+</li>
-                                                <li><i class='bx bx-time-five'></i>05 Hours</li>
-                                            </ul>
-                                            <a href="blog-details.html" class="explore-btn">Explorer Now<i class="bi bi-arrow-right"></i></a>
-                                        </div>
+                      
                                     </div>
                                 </div>
                             </div>
-                            <div class="swiper-slide">
+                       <div class="swiper-slide">
                                 <div class="trip-category-single">
                                     <div class="trip-image">
-                                        <img src="/assets/images/bg/trip-img2.png" class="img-fluid" alt="image">
-                                        <span class="blog-date">Hiking</span>
+                                        <img src="/assets/images/bg/trip-img1.png" class="img-fluid" alt="image">
+                                
                                     </div>
                                     <div class="trip-content">
-                                        <h4><a href="blog-details.html">Hikes In The Lake Louise</a></h4>
+                                        <h4><a href="">Loreum ipsum loreum ipsum</a></h4>
                                         <div class="trip-text">
-                                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
+                                            <p>Lorem ipsum loreum ipsu  loreum ipsum.</p>
                                         </div>
-                                        <div class="trip-bottom">
-                                            <ul class="trip-meta-list">
-                                                <li><i class='bx bx-user-circle'></i>Age 20+</li>
-                                                <li><i class='bx bx-time-five'></i>05 Hours</li>
-                                            </ul>
-                                            <a href="blog-details.html" class="explore-btn">Explorer Now<i class="bi bi-arrow-right"></i></a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="swiper-slide">
-                                <div class="trip-category-single">
-                                    <div class="trip-image">
-                                        <img src="/assets/images/bg/trip-img3.png" class="img-fluid" alt="image">
-                                        <span class="blog-date">Hiking</span>
-                                    </div>
-                                    <div class="trip-content">
-                                        <h4><a href="blog-details.html">Family Adventure</a></h4>
-                                        <div class="trip-text">
-                                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-                                        </div>
-                                        <div class="trip-bottom">
-                                            <ul class="trip-meta-list">
-                                                <li><i class='bx bx-user-circle'></i>Age 20+</li>
-                                                <li><i class='bx bx-time-five'></i>05 Hours</li>
-                                            </ul>
-                                            <a href="blog-details.html" class="explore-btn">Explorer Now<i class="bi bi-arrow-right"></i></a>
-                                        </div>
+                      
                                     </div>
                                 </div>
                             </div>
@@ -82,20 +49,29 @@
                                 <div class="trip-category-single">
                                     <div class="trip-image">
                                         <img src="/assets/images/bg/trip-img1.png" class="img-fluid" alt="image">
-                                        <span class="blog-date">Hiking</span>
+                                   
                                     </div>
                                     <div class="trip-content">
-                                        <h4><a href="blog-details.html">Free Style Skiing</a></h4>
+                                        <h4><a href="">Loreum ipsum loreum ipsum</a></h4>
                                         <div class="trip-text">
-                                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
+                                            <p>Lorem ipsum loreum ipsu  loreum ipsum.</p>
                                         </div>
-                                        <div class="trip-bottom">
-                                            <ul class="trip-meta-list">
-                                                <li><i class='bx bx-user-circle'></i>Age 20+</li>
-                                                <li><i class='bx bx-time-five'></i>05 Hours</li>
-                                            </ul>
-                                            <a href="blog-details.html" class="explore-btn">Explorer Now<i class="bi bi-arrow-right"></i></a>
+                      
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="swiper-slide">
+                                <div class="trip-category-single">
+                                    <div class="trip-image">
+                                        <img src="/assets/images/bg/trip-img1.png" class="img-fluid" alt="image">
+                                 
+                                    </div>
+                                    <div class="trip-content">
+                                        <h4><a href="">Loreum ipsum loreum ipsum</a></h4>
+                                        <div class="trip-text">
+                                            <p>Lorem ipsum loreum ipsu  loreum ipsum.</p>
                                         </div>
+                      
                                     </div>
                                 </div>
                             </div>

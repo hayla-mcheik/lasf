@@ -1,57 +1,54 @@
 <template>
     <div>
-    <div class="banner-section1 overflow-hidden"> 
-        <div class="cloud-icon1">
-            <img src="assets/images/icons/cloud1.svg" alt="image">
-        </div>
+    <div class=""> 
+   
         <div class="cloud-icon2">
             <img src="assets/images/icons/cloud2.svg" alt="image">
         </div>
-        <div class="cloud cloud1">
-          <img src="assets/images/icons/banner-plane.svg" alt="image">
-        </div>
-        <div class="banner-social-area d-xxl-flex d-none">
-            <ul class="banner-social-list">
-                <li><a href="https://www.facebook.com/"><i class='bx bxl-facebook'></i></a></li>
-                <li><a href="https://www.twitter.com/"><i class='bx bxl-twitter'></i></a></li>
-                <li><a href="https://www.instagram.com/"><i class='bx bxl-instagram'></i></a></li> 
-                <li><a href="https://www.pinterest.com/"><i class='bx bxl-pinterest'></i></a></li> 
-            </ul>
-        </div>
-        <div class="banner-image2">
-            <img src="assets/images/bg/banner-image2.png" class="img-fluid" alt="image">
+        <div class="row">
+            <div class="col-md-6">
+                    <div class="">
+      <WeatherCheck />
+    </div>
+   
+            </div>
+<div class="col-md-6">
+  <div class="clearance-news-section py-4 h-100 p-3">
+    <div class="section-header mb-4 d-flex justify-content-between align-items-end">
+      <div>
+        <h2 class="fight-news-title h4 fw-bold mb-1">Flight Notices</h2>
+        <p class="fight-news-p small text-muted mb-0">Official updates for pilots in Lebanon</p>
+      </div>
+      <NuxtLink to="/clearance-news" class="small fw-bold text-decoration-none">
+        VIEW ALL <i class="bi bi-arrow-right"></i>
+      </NuxtLink>
+    </div>
+
+    <div class="news-list-container shadow-sm border rounded-4 bg-white" style=" overflow-y: auto;">
+      <FlightClearanceNews />
+    </div>
+  </div>
+</div>
         </div>
 
-        <div class="container-fluid">
-            <div class="row align-items-center justify-content-center">
-                <div class="col-xl-2 offset-xl-1 col-lg-2 d-lg-flex d-none justify-content-end">
-                    <div class="banner-image1">
-                        <img src="assets/images/bg/banner-image1.png" class="img-fluid" alt="image">
-                    </div>
-                </div>
-                <div class="col-xl-6 col-lg-8 col-md-8">
-                    <div class="banner1-content">
-                        <span>Let's Feel a Yacht Trip</span>
-                        <h1>The Best Way to Plan Your Trip Around The World.</h1>
-                        <p>Treat yourself with a journey to your inner self.</p>
-                        <div class="discover-btn">
-                            <a href="destination.html" class="eg-btn btn--primary btn--lg">Discover More</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-lg-2 d-lg-flex d-none justify-content-lg-start justify-content-center">
-                </div>
-            </div>
-             
-        </div>
+
     </div>
     </div>
 </template>
 
 <script setup>
+import FlightClearanceNews from './FlightClearanceNews.vue';
+import WeatherCheck from './WeatherCheck.vue';
+
 
 </script>
 
 <style  scoped>
+    .fight-news-title{
+        font-size: 2rem;
+    }
+    .fight-news-p{
+        font-size: 1.6rem;
+    }
 
 </style>

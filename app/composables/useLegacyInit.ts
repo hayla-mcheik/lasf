@@ -1,10 +1,3 @@
-Nuxt 4 Legacy Script Implementation Guide
-
-To make your jQuery and Swiper code work in Nuxt 4, follow these steps to ensure the scripts initialize every time a page is loaded.
-
-1. The Composable (Logic Holder)
-
-Create a file at composables/useLegacyInit.ts. This replaces the need to edit main.js and allows Nuxt to re-run the code when navigating between pages.
 
 // composables/useLegacyInit.ts
 export const useLegacyInit = () => {

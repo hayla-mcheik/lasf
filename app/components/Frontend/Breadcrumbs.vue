@@ -14,7 +14,7 @@
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <NuxtLink to="/" class="breadcrumb-link">
-                                    <i class="bi bi-house-door"></i> Home
+                                  Home
                                 </NuxtLink>
                             </li>
                             <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
@@ -100,7 +100,7 @@ const props = defineProps({
   },
   contentWidth: {
     type: String,
-    default: 'col-xl-8 col-md-10 col-sm-12',
+    default: 'col-xl-12 col-md-12 col-sm-12',
     validator: (value) => {
       const validClasses = [
         'col-xl-6', 'col-xl-8', 'col-xl-10', 'col-lg-8', 
@@ -701,7 +701,7 @@ const handleCtaClick = (action) => {
   }
   
   .breadcrumb-item {
-    font-size: 0.85rem;
+    font-size: 1.2rem;
   }
   
   .inner-banner-vector {
@@ -770,7 +770,7 @@ const handleCtaClick = (action) => {
   }
   
   .breadcrumb-item {
-    font-size: 0.8rem;
+    font-size: 1.6rem;
   }
   
   .breadcrumb-item + .breadcrumb-item::before {

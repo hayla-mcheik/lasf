@@ -1,194 +1,42 @@
 <template>
-  <section class="trip-category-section overflow-hidden pt-120 pb-120">
-
-    
+  <section class="sports-section pb-120 pt-5 mt-5">
     <div class="container">
-      <!-- Section Header -->
-            <div class="row justify-content-center">
-                <div class="col-lg-10 col-md-12 text-center">
-                    <div class="section-title4 sibling3">
-                        <h2>Sports</h2>
-                    </div>
-                </div>
-            </div>
-
-      <!-- Activities Grid -->
-      <div class="row g-4 g-lg-5 mt-4">
-        <!-- Activity 1 - Full width on mobile, half on tablet, third on desktop -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img1.png" 
-                class="img-fluid" 
-                alt="Free Style Skiing activity"
-                loading="lazy"
-              >
-              <span class="category-badge">Hiking</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">Free Style Skiing</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>Age 20+</li>
-                  <li><i class='bx bx-time-five'></i>05 Hours</li>
-                </ul>
-
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Activity 2 -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img2.png" 
-                class="img-fluid" 
-                alt="Lake Louise Hikes"
-                loading="lazy"
-              >
-              <span class="category-badge">Hiking</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">Hikes In The Lake Louise</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>Age 18+</li>
-                  <li><i class='bx bx-time-five'></i>08 Hours</li>
-                </ul>
-             
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Activity 3 -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img3.png" 
-                class="img-fluid" 
-                alt="Family Adventure"
-                loading="lazy"
-              >
-              <span class="category-badge">Family</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">Family Adventure</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>All Ages</li>
-                  <li><i class='bx bx-time-five'></i>04 Hours</li>
-                </ul>
-    
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Activity 4 -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img1.png" 
-                class="img-fluid" 
-                alt="Mountain Biking"
-                loading="lazy"
-              >
-              <span class="category-badge">Cycling</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">Mountain Biking</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>Age 16+</li>
-                  <li><i class='bx bx-time-five'></i>06 Hours</li>
-                </ul>
- 
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Activity 5 -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img2.png" 
-                class="img-fluid" 
-                alt="Rock Climbing"
-                loading="lazy"
-              >
-              <span class="category-badge">Adventure</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">Rock Climbing</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>Age 14+</li>
-                  <li><i class='bx bx-time-five'></i>04 Hours</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Activity 6 -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="trip-category-single h-100">
-            <div class="trip-image">
-              <img 
-                src="/assets/images/bg/trip-img3.png" 
-                class="img-fluid" 
-                alt="White Water Rafting"
-                loading="lazy"
-              >
-              <span class="category-badge">Water Sports</span>
-            </div>
-            <div class="trip-content">
-              <h4><a href="blog-details.html">White Water Rafting</a></h4>
-              <div class="trip-text">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed.</p>
-              </div>
-              <div class="trip-bottom">
-                <ul class="trip-meta-list">
-                  <li><i class='bx bx-user-circle'></i>Age 12+</li>
-                  <li><i class='bx bx-time-five'></i>03 Hours</li>
-                </ul>
-           
-              </div>
-            </div>
+      <div class="row justify-content-center mb-5">
+        <div class="col-lg-10 col-md-12 text-center">
+          <div class="section-title4 sibling3">
+            <h2 class="fw-bold">Experience the Skies</h2>
+            <p class="text-muted">Discover the aerial sports governed by the LASF in Lebanon</p>
           </div>
         </div>
       </div>
 
-      <!-- Optional: View All Button -->
-      <div class="row mt-60">
-        <div class="col-12 text-center">
-          <a href="/activities" class="btn btn-primary btn-lg px-5 py-3">
-            View All Activities
-            <i class="bi bi-arrow-right ms-2"></i>
-          </a>
+      <div class="row g-4 g-lg-5">
+        <div v-for="sport in sports" :key="sport.id" class="col-12 col-md-6 col-lg-4">
+          <div class="sport-card h-100">
+            <div class="sport-image">
+              <span class="category-badge">LASF Official</span>
+              <img 
+                :src="`${config.public.mediaBase}${sport.image}`" 
+                class="img-fluid" 
+                :alt="sport.name"
+                loading="lazy"
+              >
+            </div>
+            
+            <div class="sport-content">
+              <h4 class="sport-name">{{ sport.name }}</h4>
+              <div class="sport-text">
+                <p>{{ sport.description || 'Join us for an unforgettable aerial adventure in the heart of Lebanon.' }}</p>
+              </div>
+              
+        
+            </div>
+          </div>
+        </div>
+
+        <div v-if="!sports?.length" class="col-12 text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-3 text-muted">Loading our flight categories...</p>
         </div>
       </div>
     </div>
@@ -196,263 +44,120 @@
 </template>
 
 <script setup>
-// Optional: You can add reactive data if needed
-import { ref } from 'vue'
-
-// Example of reactive data if you want to fetch from API
-const activities = ref([
-  // Your activities data here
-])
+const config = useRuntimeConfig()
+// Fetch dynamic data from your public API controller
+const { data: sports } = await useFetch(`${config.public.apiBase}/sports`)
 </script>
 
 <style scoped>
-.trip-category-section {
-  position: relative;
-  isolation: isolate;
-}
-.section-title4.sibling2 h2 {
-color: black;
+.sports-section {
+  background-color: #f9f9f9;
 }
 
-.trip-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* Card Container */
+.sport-card {
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s ease;
+}
+
+/* Image Styling */
+.sport-image {
+  height: 280px;
+  overflow: hidden;
+  border-radius: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sport-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -1;
-  opacity: 0.9;
+  transition: transform 0.6s ease;
 }
 
-/* Card Styles */
-.trip-category-single {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+/* Content Box (The Floating Part) */
+.sport-content {
+  background: #ffffff;
+  margin: -50px 20px 0; /* Creates the overlap */
+  padding: 25px;
   border-radius: 15px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  height: 100%;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
-.trip-category-single:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+/* Hover Effects */
+.sport-card:hover {
+  transform: translateY(-10px);
 }
 
-.trip-image {
-  height: 250px;
+.sport-card:hover .sport-image img {
+  transform: scale(1.1);
+}
+
+.sport-card:hover .sport-content {
+  box-shadow: 0 15px 35px rgba(15, 104, 71, 0.15); /* LASF Green shadow */
+}
+
+/* Text Styling */
+.sport-name {
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  text-transform: capitalize;
+}
+
+.sport-text p {
+  font-size: 1.4rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limit description to 3 lines */
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  position: relative;
 }
 
-.trip-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.trip-category-single:hover .trip-image img {
-  transform: scale(1.05);
-}
-
+/* Badge */
 .category-badge {
   position: absolute;
   top: 15px;
   left: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0f6847; /* Official Green */
   color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  z-index: 1;
+  z-index: 3;
 }
 
-.trip-content {
-  padding: 25px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.trip-content h4 a {
-  text-decoration: none;
-  font-size: 1.3rem;
-  font-weight: 600;
-  transition: color 0.3s ease;
-  margin-bottom: 15px;
-  display: block;
-}
-
-.trip-content h4 a:hover {
-  color: #667eea;
-}
-
-.trip-text p {
-  margin-bottom: 20px;
-  line-height: 1.6;
-  flex: 1;
-}
-
-.trip-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: auto;
-}
-
-.trip-meta-list {
-  display: flex;
-  gap: 20px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.trip-meta-list li {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Button */
 .explore-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 10px 22px;
-  border-radius: 25px;
+  color: #0f6847;
   text-decoration: none;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-weight: 700;
+  font-size: 0.95rem;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  white-space: nowrap;
+  margin-top: auto;
+  transition: all 0.3s ease;
 }
 
 .explore-btn:hover {
+  color: #083d2a;
   transform: translateX(5px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-  color: white;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  padding: 12px 40px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .trip-image {
-    height: 220px;
-  }
-  
-  .trip-content {
-    padding: 20px;
-  }
-}
-
+/* Responsive */
 @media (max-width: 992px) {
-  .trip-category-section {
-    padding-top: 80px !important;
-    padding-bottom: 80px !important;
-  }
-  
-  .trip-image {
-    height: 200px;
-  }
-  
-  .trip-content h4 a {
-    font-size: 1.2rem;
-  }
+  .sport-image { height: 230px; }
+  .sport-content { margin: -30px 15px 0; padding: 20px; }
 }
-
-@media (max-width: 768px) {
-  .trip-category-section {
-    padding-top: 60px !important;
-    padding-bottom: 60px !important;
-  }
-  
-  .trip-image {
-    height: 220px;
-  }
-  
-  .trip-bottom {
-    flex-direction: column;
-    gap: 15px;
-    align-items: stretch;
-  }
-  
-  .trip-meta-list {
-    justify-content: center;
-  }
-  
-  .explore-btn {
-    text-align: center;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 576px) {
-  .trip-image {
-    height: 200px;
-  }
-  
-  .trip-content {
-    padding: 20px;
-  }
-  
-  .trip-content h4 a {
-    font-size: 1.1rem;
-  }
-  
-  .btn-primary {
-    width: 100%;
-    max-width: 300px;
-  }
-}
-
-/* Animation for cards */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.trip-category-single {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-/* Stagger animation for multiple cards */
-.row .col-12:nth-child(1) .trip-category-single { animation-delay: 0.1s; }
-.row .col-12:nth-child(2) .trip-category-single { animation-delay: 0.2s; }
-.row .col-12:nth-child(3) .trip-category-single { animation-delay: 0.3s; }
-.row .col-12:nth-child(4) .trip-category-single { animation-delay: 0.4s; }
-.row .col-12:nth-child(5) .trip-category-single { animation-delay: 0.5s; }
-.row .col-12:nth-child(6) .trip-category-single { animation-delay: 0.6s; }
 </style>

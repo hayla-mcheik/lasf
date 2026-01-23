@@ -1,109 +1,52 @@
-// nuxt.config.ts
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
-
-  app: {
-    head: {
-      title: 'lasf',
-      htmlAttrs: {
-        lang: 'en',
-      },
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-
-      ],
-      script: [
-        // Load jQuery first (with defer to avoid blocking)
-        { 
-          src: '/assets/js/jquery-3.6.0.min.js', 
-          tagPosition: 'head',
-          defer: true 
-        },
-        
-        // Then jQuery UI
-        { 
-          src: '/assets/js/jquery-ui.js', 
-          tagPosition: 'head',
-          defer: true 
-        },
-        // Then Bootstrap
-        { 
-          src: '/assets/js/bootstrap.bundle.min.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        // Then Swiper
-        { 
-          src: '/assets/js/swiper-bundle.min.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        // Then other jQuery plugins
-        { 
-          src: '/assets/js/jquery.nice-select.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        { 
-          src: '/assets/js/odometer.min.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        { 
-          src: '/assets/js/viewport.jquery.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        { 
-          src: '/assets/js/jquery.magnific-popup.min.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        { 
-          src: '/assets/js/isotope.pkgd.min.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        // Leaflet - load after jQuery
-        {
-          src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-          integrity: 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=',
-          crossorigin: '',
-          tagPosition: 'bodyClose',
-          defer: true
-        },
-        // Your main.js last
-        { 
-          src: '/assets/js/main.js', 
-          tagPosition: 'bodyClose',
-          defer: true 
-        },
-        // Remove the Cloudflare script unless you need it
-        // { src: '/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js', tagPosition: 'bodyClose' },
-      ],
-    },
-  },
-  
-  runtimeConfig: {
-    public: {
-      apiBase: process.env.API_BASE_URL || '',
-      mediaBase: process.env.MEDIA_BASE_URL || ''
+  ssr: true,
+debug:true,
+  nitro: {
+    prerender: {
+      crawlLinks: false
     }
   },
 
-  // Add build configuration
-  build: {
-    transpile: [],
+  devtools: { enabled: true },
+
+  app: {
+    baseURL: '/',
+    // buildAssetsDir: '/lasf/_nuxt/',
+    head: {
+      title: 'lasf',
+      htmlAttrs: { lang: 'en' },
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap' },
+      ],
+  script: [
+        // Load jQuery FIRST (No leading slash if they are in /public/assets/js/)
+        { src: '/assets/js/jquery-3.6.0.min.js', defer: true },
+        { src: '/assets/js/jquery-ui.js', defer: true },
+        { src: '/assets/js/bootstrap.bundle.min.js', defer: true },
+        { src: '/assets/js/swiper-bundle.min.js', defer: true },
+        { src: '/assets/js/jquery.nice-select.js', defer: true },
+        { src: '/assets/js/odometer.min.js', defer: true },
+        { src: '/assets/js/viewport.jquery.js', defer: true },
+        { src: '/assets/js/jquery.magnific-popup.min.js', defer: true },
+        { src: '/assets/js/isotope.pkgd.min.js', defer: true },
+        { src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', defer: true },
+        // Main custom script LAST
+        { src: '/assets/js/main.js', defer: true }
+      ]
+    },
   },
 
-  // Add modules for better compatibility
-  modules: [],
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE_URL || 'http://127.0.0.1:8000/api',
+      mediaBase: process.env.MEDIA_BASE_URL || 'http://127.0.0.1:8000'
+    }
+  },
 
-  // Add plugins configuration
-  plugins: [],
-
-  // Add CSS configuration
   css: [
     '@/assets/css/animate.css',
     '@/assets/css/all.css',
@@ -117,5 +60,34 @@ export default defineNuxtConfig({
     '@/assets/css/magnific-popup.css',
     '@/assets/css/odometer.css',
     '@/assets/css/style.css',
+  ],
+
+  modules: [
+   '@pinia/nuxt',
+    '@pinia-plugin-persistedstate/nuxt',
+    'nuxt-auth-utils', // Move this to the bottom of the list
+  ],
+
+  // Pinia configuration
+  pinia: {
+    // The property 'autoImports' was removed. 
+    // If you want to specify directories for your stores:
+    storesDirs: ['./stores/**'],
+  },
+
+  // Nuxt native auto-imports for specific functions
+  imports: {
+    dirs: ['./stores'],
+    // If you explicitly need to ensure defineStore is available everywhere:
+    presets: [
+      {
+        from: 'pinia',
+        imports: ['defineStore', 'acceptHMRUpdate', 'storeToRefs']
+      }
+    ]
+  },
+
+  plugins: [
+    '~/plugins/jquery.client.ts',
   ]
 })

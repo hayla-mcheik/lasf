@@ -1,13 +1,12 @@
 <template>
     <!-- =============== info-section start  =============== -->
 
-    <div class="info-section pt-120 pb-120">
+    <div class="info-section pt-5 mt-5 pb-120">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-7 col-md-10 col-sm-12">
                     <div class="info-title-area">
                         <h3>lasf Travel Agency Inc.</h3>
-                        <p>But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness.</p>
                     </div>
                 </div>
             </div>

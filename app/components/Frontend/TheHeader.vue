@@ -13,11 +13,15 @@
                         <NuxtLink to="/" class="drop-down" :class="{ 'active': $route.path === '/' }">Home</NuxtLink>
                     </li>
                     
-                    <!-- Flying Locations -->
-                    <li>
-                        <NuxtLink to="/flyinglocations" class="drop-down" :class="{ 'active': $route.path === '/flyinglocations' }">Flying Locations</NuxtLink>
+                  <li class="menu-item-has-children">
+                        <NuxtLink to="#" class="drop-down" :class="{ 'active': $route.path.includes('/about') || $route.path.includes('/gallery') || $route.path.includes('/regulations') }">
+                             Flight Operations <i class="bi bi-chevron-down dropdown-icon"></i>
+                        </NuxtLink>
+                        <ul class="sub-menu">
+                            <li><NuxtLink to="/clearance-news" :class="{ 'active': $route.path === '/clearance-news' }">Flight Clearance News</NuxtLink></li>
+                            <li><NuxtLink to="/location" :class="{ 'active': $route.path === '/location' }">Flying Locations Status</NuxtLink></li>
+                        </ul>
                     </li>
-                    
                     <!-- About LASF Dropdown -->
                     <li class="menu-item-has-children">
                         <NuxtLink to="#" class="drop-down" :class="{ 'active': $route.path.includes('/about') || $route.path.includes('/gallery') || $route.path.includes('/regulations') }">
@@ -41,11 +45,7 @@
                         <NuxtLink to="/events" class="drop-down" :class="{ 'active': $route.path === '/events' }">Events</NuxtLink>
                     </li>
                     
-                    <!-- News -->
-                    <li>
-                        <NuxtLink to="/news" class="drop-down" :class="{ 'active': $route.path === '/news' }">News</NuxtLink>
-                    </li>
-                    
+             
                     <!-- Contact Us -->
                     <li>
                         <NuxtLink to="/contact" class="drop-down" :class="{ 'active': $route.path === '/contact' }">Contact Us</NuxtLink>
@@ -68,7 +68,7 @@
                 <div class="mobile-menu-content" :class="{ 'active': mobileMenuOpen }">
                     <div class="mobile-logo-area d-flex justify-content-between align-items-center mb-4">
                         <div class="mobile-logo-wrap">
-                            <NuxtLink to="/" @click="closeMobileMenu"><img alt="image" src="/assets/images/icons/header2-logo.svg"></NuxtLink>
+                            <NuxtLink to="/" @click="closeMobileMenu"><img alt="image" src="/assets/images/icons/logo.png" class="img-fluid"></NuxtLink>
                         </div>
                         <div class="menu-close-btn" @click="closeMobileMenu">
                             <i class="bi bi-x-lg text-dark"></i>
@@ -88,17 +88,42 @@
                             </NuxtLink>
                         </li>
                         
-                        <!-- Flying Locations -->
-                        <li>
-                            <NuxtLink 
-                                to="/flyinglocations" 
-                                class="mobile-nav-link" 
-                                :class="{ 'active': $route.path === '/flyinglocations' }"
-                                @click="closeMobileMenu"
+                 
+
+                         <li class="mobile-menu-item-has-children">
+                            <div 
+                                class="mobile-dropdown-header" 
+                                @click="toggleMobileDropdown('clearance-news')"
+                                :class="{ 'active': $route.path.includes('/clearance-news') || $route.path.includes('/location') }"
                             >
-                                Flying Locations
-                            </NuxtLink>
+                                <span>Flight Operations</span>
+                                <i class="bi bi-chevron-down" :class="{ 'rotate': activeMobileDropdown === 'clearance-news' }"></i>
+                            </div>
+                            <ul class="mobile-sub-menu" :class="{ 'active': activeMobileDropdown === 'clearance-news' }">
+                                <li>
+                                    <NuxtLink 
+                                        to="/clearance-news" 
+                                        class="mobile-sub-link" 
+                                        :class="{ 'active': $route.path === '/clearance-news' }"
+                                        @click="closeMobileMenu"
+                                    >
+                                         Flight Clearance News
+                                    </NuxtLink>
+                                </li>
+                                <li>
+                                    <NuxtLink 
+                                        to="/location" 
+                                        class="mobile-sub-link" 
+                                        :class="{ 'active': $route.path === '/location' }"
+                                        @click="closeMobileMenu"
+                                    >
+                                       Flying Locations Status
+                                    </NuxtLink>
+                                </li>
+                      
+                            </ul>
                         </li>
+                        
                         
                         <!-- About LASF - Mobile Accordion -->
                         <li class="mobile-menu-item-has-children">
@@ -177,19 +202,7 @@
                                 Events
                             </NuxtLink>
                         </li>
-                        
-                        <!-- News -->
-                        <li>
-                            <NuxtLink 
-                                to="/news" 
-                                class="mobile-nav-link" 
-                                :class="{ 'active': $route.path === '/news' }"
-                                @click="closeMobileMenu"
-                            >
-                                News
-                            </NuxtLink>
-                        </li>
-                        
+                                   
                         <!-- Contact Us -->
                         <li>
                             <NuxtLink 
@@ -326,7 +339,7 @@ onBeforeUnmount(() => {
 
 .menu-list > li > a:hover,
 .menu-list > li > a.active {
-    color: #007bff;
+    color: darkgreen;
 }
 
 .menu-list > li > a.active::after {
@@ -336,7 +349,7 @@ onBeforeUnmount(() => {
     left: 0;
     right: 0;
     height: 2px;
-    background: #007bff;
+    background: darkgreen;
     border-radius: 2px;
 }
 
@@ -389,21 +402,11 @@ onBeforeUnmount(() => {
 .sub-menu a:hover,
 .sub-menu a.active {
     background: #f8f9fa;
-    color: #007bff;
+    color: darkgreen;
     padding-left: 1.75rem;
 }
 
-.sub-menu a.active::before {
-    content: '';
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 5px;
-    height: 5px;
-    background: #007bff;
-    border-radius: 50%;
-}
+
 
 /* Mobile Navigation */
 .mobile-menu-btn {
@@ -481,6 +484,9 @@ onBeforeUnmount(() => {
 .mobile-menu-list > li {
     border-bottom: 1px solid #eee;
 }
+.mobile-logo-wrap{
+    width: 60%;
+}
 
 .mobile-nav-link {
     display: block;
@@ -494,7 +500,7 @@ onBeforeUnmount(() => {
 
 .mobile-nav-link:hover,
 .mobile-nav-link.active {
-    color: #007bff;
+    color: darkgreen;
     background: #f8f9fa;
     padding-left: 1rem;
 }
@@ -506,7 +512,7 @@ onBeforeUnmount(() => {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: #007bff;
+    background: darkgreen;
 }
 
 /* Mobile Dropdown Accordion */
@@ -527,14 +533,14 @@ onBeforeUnmount(() => {
 
 .mobile-dropdown-header:hover,
 .mobile-dropdown-header.active {
-    color: #007bff;
+    color: darkgreen;
     background: #f8f9fa;
     padding-left: 1rem;
 }
 
 .mobile-dropdown-header i {
     transition: transform 0.3s ease;
-    font-size: 0.875rem;
+    font-size: 1.2rem;
 }
 
 .mobile-dropdown-header i.rotate {
@@ -559,8 +565,8 @@ onBeforeUnmount(() => {
 
 .mobile-sub-link {
     display: block;
-    padding: 0.75rem 1rem 0.75rem 2rem;
-    color: #666;
+    padding: 1rem 1.2rem 1rem 2.2rem;
+    color: #000;
     text-decoration: none;
     transition: all 0.3s;
     border-bottom: 1px solid #eee;
@@ -573,7 +579,7 @@ onBeforeUnmount(() => {
 
 .mobile-sub-link:hover,
 .mobile-sub-link.active {
-    color: #007bff;
+    color: darkgreen;
     background: #edf2ff;
     padding-left: 2.5rem;
 }
@@ -586,7 +592,7 @@ onBeforeUnmount(() => {
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
-    background: #007bff;
+    background: darkgreen;
     border-radius: 50%;
 }
 
@@ -610,7 +616,7 @@ onBeforeUnmount(() => {
 }
 
 .phone-call .icon {
-    color: #007bff;
+    color: darkgreen;
     background: white;
     width: 50px;
     height: 50px;
@@ -679,13 +685,13 @@ onBeforeUnmount(() => {
     
     .mobile-nav-link,
     .mobile-dropdown-header {
-        padding: 0.875rem 0;
-        font-size: 0.95rem;
+        padding: 1.4rem 0;
+        font-size: 1.4rem;
     }
     
     .mobile-sub-link {
-        padding: 0.625rem 1rem 0.625rem 2rem;
-        font-size: 0.9rem;
+        padding: 1.2rem 1.2rem 1.2rem 2.2rem;
+        font-size: 1.4rem;
     }
 }
 

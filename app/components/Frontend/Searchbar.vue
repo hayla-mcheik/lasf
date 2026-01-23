@@ -74,7 +74,7 @@
                     </div>
                     <div class="col-lg-2 d-flex justify-content-end">
                         <div class="main-form-submit w-100">
-                            <button type="submit" class="eg-btn btn--primary btn--lg w-100">INQUIRE NOW</button>
+                            <button type="submit" class="eg-btn btn--primary btn--sm w-100">INQUIRE NOW</button>
                         </div>
                     </div>
                 </div>

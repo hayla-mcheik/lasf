@@ -2,7 +2,7 @@
  <Breadcrumbs />
  <AboutUs />
  <Pilot />
- <WhyChooseUse />
+
 </template>
 
 <script setup>

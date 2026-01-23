@@ -3,30 +3,41 @@
     <footer class="footer-section">
         <div class="footer-top">
          <div class="container-xl container-lg-fluid container">
-             <div class="row justify-content-center gy-5">
-                 <div class="col-lg-3 col-md-10 col-sm-6 col-11 order-sm-0 order-1">
-                     <div class="footer-about">
+             <div class="row justify-content-start gy-5">
+                 <div class="col-lg-4 col-md-10 col-sm-6 col-11 order-sm-0 order-1">
+                     <div class="footer-about d-none d-md-block">
                          <img src="/assets/images/icons/footer-plane.svg" class="footer-plane" alt="image">
                          <div class="footer1-logo">
-                             <img src="/assets/images/icons/footer1-logo.svg" alt="image">
+                             <img src="/assets/images/icons/logo.png" alt="image" class="img-fluid">
                  
                          </div>
                 
                      </div>
+                         <div class="row footer-meta">
+                 <div class="col-lg-12 d-flex justify-content-lg-start justify-content-center align-items-center mb-lg-0 mb-5 d-none d-md-block">
+                     <h4>Stay Connected:</h4>
+                     <ul class="footer-social">
+                         <li><a href="https://www.facebook.com/"><i class='bx bxl-facebook'></i></a></li>
+                         <li><a href="https://www.twitter.com/"><i class='bx bxl-twitter'></i></a></li>
+                         <li><a href="https://www.instagram.com/"><i class='bx bxl-instagram'></i></a></li> 
+                     </ul>
                  </div>
-                 <div class="col-lg-3 col-md-4 col-sm-6 d-flex justify-content-lg-center">
+      
+             </div>
+                 </div>
+                 <div class="col-lg-4 col-md-4 col-sm-6 d-flex justify-content-lg-center">
                      <div class="footer-item">
                          <h4>Information</h4>
                          <ul class="link-list">
-                             <li><a href="about.html">About Company</a></li>
-                             <li><a href="faq.html">Gallery</a></li>
-                             <li><a href="contact.html">Regulations</a></li>
-                             <li><a href="contact.html">Contact</a></li>
+                             <li><NuxtLink href="/about">About Company</NuxtLink></li>
+                             <li><NuxtLink href="/gallery">Gallery</NuxtLink></li>
+                             <li><NuxtLink href="/regulations">Regulations</NuxtLink></li>
+                             <li><NuxtLink href="/contact">Contact</NuxtLink></li>
                          </ul>
                      </div>
                  </div>
          
-                 <div class="col-lg-3 col-md-4 col-sm-6 d-flex justify-content-lg-center">
+                 <div class="col-lg-4 col-md-4 col-sm-6 d-flex justify-content-lg-center">
                      <div class="footer-item">
                          <h4>Reach Us</h4>
                          <ul class="contact-list">
@@ -59,24 +70,13 @@
                      </div>
                  </div>
              </div>
-             <div class="row footer-meta">
-                 <div class="col-lg-6 d-flex justify-content-lg-start justify-content-center align-items-center mb-lg-0 mb-5">
-                     <h4>Stay Connected:</h4>
-                     <ul class="footer-social">
-                         <li><a href="https://www.facebook.com/"><i class='bx bxl-facebook'></i></a></li>
-                         <li><a href="https://www.twitter.com/"><i class='bx bxl-twitter'></i></a></li>
-                         <li><a href="https://www.instagram.com/"><i class='bx bxl-instagram'></i></a></li> 
-                         <li><a href="https://www.pinterest.com/"><i class='bx bxl-pinterest'></i></a></li> 
-                     </ul>
-                 </div>
-      
-             </div>
+         
          </div>
         </div>
         <div class="container">
         <div class="footer-bottom">
-             <div class="row d-flex align-items-center g-3">
-                 <div class="col-lg-6 d-flex justify-content-lg-start justify-content-center text-lg-start text-center px-1">
+  <div class="row d-flex align-items-center g-3">
+                 <div class="col-lg-12 d-flex justify-content-lg-center justify-content-center text-lg-center text-center px-1">
                      <p>Copyright {{ currentYear }} <a href="#" class="egns-lab">LASF</a> | Design By <a href="https://www.promo-fix.com/" class="egns-lab">Promofix</a></p>
                  </div>
           
@@ -301,10 +301,7 @@ onBeforeUnmount(() => {
 .footer-bottom {
   border-top: 1px solid #444;
   padding-top: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+
 }
 
 .legal-links {

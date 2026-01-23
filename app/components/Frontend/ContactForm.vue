@@ -5,9 +5,7 @@
             <div class="row justify-content-center">
                 <div class="col-md-6 text-center">
                     <div class="section-title1">
-                        <span>Reservation Form</span>
                         <h2>Let’s Get in Touch</h2>
-                        <img src="assets/images/icons/section-title-vector.svg" alt="image">
                     </div>
                 </div>
             </div>
@@ -37,7 +35,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
-                                    <button type="submit" class="eg-btn btn--primary btn--lg submit-btn">Submit Now</button>
+                                    <button type="submit" class="eg-btn btn--primary btn--sm submit-btn">Submit Now</button>
                                 </div>
                             </div>
                         </form>
