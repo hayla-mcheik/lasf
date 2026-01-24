@@ -34,7 +34,7 @@ async login(credentials) {
     const route = useRoute() // Access the current route query
 
     try {
-      const response = await $fetch('http://127.0.0.1:8000/api/login', {
+      const response = await $fetch('https://lasf.info/api/login', {
         method: 'POST',
         body: credentials,
       })
