@@ -425,10 +425,9 @@ const formatTimeAgo = (dateString) => {
   return `${Math.floor(diffMins / 10080)}w ago`
 }
 
-// In your Admin component
 const generateQRURL = (token, locationId) => {
   const baseURL = window.location.origin 
-  // Point to: lasf.info/location/12?token=xyz
+  // This will create a link like: https://lasf.info/location/11?token=your-uuid-token
   return `${baseURL}/location/${locationId}?token=${token}`
 }
 
