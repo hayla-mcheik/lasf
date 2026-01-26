@@ -2,7 +2,7 @@
   <div class="pilot-professional-suite bg-light min-vh-100 p-3">
     <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
       <div :class="['p-3 px-4 d-flex justify-content-between align-items-center', safetyThemeClass]">
-        <div class="d-flex align-items-center"> 
+        <div class="d-flex align-items-center">
           <div class="live-pulse me-3"></div>
           <div v-if="weatherData">
             <span class="x-small fw-bold tracking-widest d-block opacity-75">STATION: {{ currentSiteName }}</span>
@@ -38,12 +38,12 @@
               <span class="text-muted x-small fw-bold text-uppercase">Direction</span>
             </div>
             <div class="d-flex align-items-center">
-              <div class="compass-needle me-2" :style="{ transform: `rotate(${weatherData?.wind?.deg || 0}deg)` }">
+              <div class="compass-needle me-2" :style="{ transform: `rotate(${weatherData?.wind.deg}deg)` }">
                 <i class="bi bi-arrow-up-circle-fill fs-3 text-dark"></i>
               </div>
-              <h2 class="h2 fw-black mb-0">{{ getWindDirection(weatherData?.wind?.deg) }}</h2>
+              <h2 class="h2 fw-black mb-0">{{ getWindDirection(weatherData?.wind.deg) }}</h2>
             </div>
-            <div class="x-small fw-bold text-muted mt-1">{{ weatherData?.wind?.deg || 0 }}° Magnetic</div>
+            <div class="x-small fw-bold text-muted mt-1">{{ weatherData?.wind.deg }}° Magnetic</div>
           </div>
 
           <div class="col-6 col-lg-3 border-end">
@@ -60,12 +60,9 @@
               <i class="bi bi-eye text-primary me-2"></i>
               <span class="text-muted x-small fw-bold text-uppercase">Visibility</span>
             </div>
-            <h2 class="h2 fw-black mb-0">
-              {{ weatherData?.visibility ? (weatherData.visibility / 1000).toFixed(1) : '0.0' }}
-              <small class="fs-6 text-muted ms-1">km</small>
-            </h2>
-            <div :class="['x-small fw-bold mt-1', (weatherData?.visibility || 0) > 5000 ? 'text-success' : 'text-danger']">
-              {{ (weatherData?.visibility || 0) > 5000 ? 'VFR CLEAR' : 'LOW VISIBILITY' }}
+            <h2 class="h2 fw-black mb-0">{{ (weatherData?.visibility / 1000).toFixed(1) }}<small class="fs-6 text-muted ms-1">km</small></h2>
+            <div :class="['x-small fw-bold mt-1', weatherData?.visibility > 5000 ? 'text-success' : 'text-danger']">
+              {{ weatherData?.visibility > 5000 ? 'VFR CLEAR' : 'LOW VISIBILITY' }}
             </div>
           </div>
         </div>
@@ -113,24 +110,25 @@ const weatherData = ref(null)
 const activeLayer = ref('wind')
 let refreshInterval = null
 
-// Calculations
-const currentWindKt = computed(() => weatherData.value ? Math.round((weatherData.value.wind?.speed || 0) * 1.94384) : 0)
+// Calculations (Knots, KMH, Cloud Base)
+const currentWindKt = computed(() => weatherData.value ? Math.round((weatherData.value.wind.speed || 0) * 1.94384) : 0)
 const currentGustKt = computed(() => {
   if (!weatherData.value?.wind) return 0
   return weatherData.value.wind.gust 
     ? Math.round(weatherData.value.wind.gust * 1.94384) 
     : Math.round(currentWindKt.value * 1.3)
 })
-const currentWindKmh = computed(() => weatherData.value ? Math.round((weatherData.value.wind?.speed || 0) * 3.6) : 0)
+const currentWindKmh = computed(() => weatherData.value ? Math.round((weatherData.value.wind.speed || 0) * 3.6) : 0)
 
 const cloudBaseFt = computed(() => {
-  if (!weatherData.value?.main) return 0
+  if (!weatherData.value) return 0
   const temp = weatherData.value.main.temp
   const humidity = weatherData.value.main.humidity
   const dewPoint = temp - ((100 - humidity) / 5)
   return Math.round((temp - dewPoint) * 400)
 })
 
+// Safety Status Logic
 const safetyStatusLabel = computed(() => {
   if (currentWindKt.value > 15 || currentGustKt.value > 22) return 'DANGEROUS: GROUNDED'
   if (currentWindKt.value > 12) return 'CAUTION: STRONG WIND'
@@ -144,36 +142,33 @@ const safetyThemeClass = computed(() => {
   return 'bg-success text-white'
 })
 
+// Navigation & URL Helpers
 const windyUrl = computed(() => {
   return `https://embed.windy.com/embed2.html?lat=${props.lat}&lon=${props.lon}&zoom=11&level=surface&overlay=${activeLayer.value}&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=true&metricWind=kt&metricTemp=%C2%B0C`
 })
 
 const getWindDirection = (deg) => {
-  if (deg === undefined) return 'N/A'
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
   return directions[Math.round(deg / 45) % 8]
 }
 
 const formatTime = (ts) => ts ? new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'
 
-// DATA FETCHING: Updated to use the Nginx proxy path
+// Data Fetching
 const fetchWeatherData = async () => {
   try {
-    // 1. We use a relative URL. This forces the browser to talk to YOUR server (lasf.info).
-    // 2. Nginx will see '/weather-api/' and forward it to OpenWeather.
-    const url = `/weather-api/?lat=${props.lat}&lon=${props.lon}&appid=${API_KEY}&units=metric`
-    
-    const res = await fetch(url)
-    if (!res.ok) throw new Error('Proxy or API response failed')
-    
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${props.lat}&lon=${props.lon}&appid=${API_KEY}&units=metric`)
+    if (!res.ok) throw new Error('Network response was not ok')
     weatherData.value = await res.json()
   } catch (err) { 
     console.error('Weather fetch error:', err)
   }
 }
 
+// Lifecycle Hooks
 onMounted(() => {
   fetchWeatherData()
+  // Refresh weather data every 10 minutes
   refreshInterval = setInterval(fetchWeatherData, 600000)
 })
 
@@ -183,20 +178,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Styles remain the same */
 .pilot-professional-suite { font-family: 'Inter', sans-serif; letter-spacing: -0.01em; }
 .fw-black { font-weight: 900; }
 .x-small { font-size: 0.65rem; }
 .tracking-widest { letter-spacing: 0.15em; }
+
 .live-pulse {
-  width: 10px; height: 10px; background: white; border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
   animation: pulse-white 2s infinite;
 }
+
 @keyframes pulse-white {
   0% { box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.7); }
   70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
   100% { box-shadow: 0 0 0 0px rgba(255, 255, 255, 0); }
 }
+
 .compass-needle { transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
 iframe { border-radius: 0 0 16px 16px; }
 </style>
