@@ -1,7 +1,7 @@
 <template>
   <div class="enhanced-locations-status">
     <div class="row g-4 mb-5" v-if="!pending">
-      <div v-for="stat in dashboardStats" :key="stat.id" class="col-md-3" data-aos="fade-up">
+      <div v-for="stat in dashboardStats" :key="stat.id" class="col-md-4 col-lg-3" data-aos="fade-up">
         <div class="stat-card" :style="{ background: stat.background }">
           <div class="stat-icon" :style="{ backgroundColor: stat.iconBg, color: stat.color }">
             <i class="bi" :class="stat.icon"></i>
@@ -15,11 +15,11 @@
     </div>
 
     <div class="map-preview mb-5" data-aos="fade-up">
-      <div class="map-header">
+      <div class="map-header d-flex justify-content-between align-items-center">
         <h4 class="mb-0 text-white"><i class="bi bi-globe-americas me-2"></i>Lebanon Flying Locations Map</h4>
         <button class="btn btn-outline-light btn-sm" @click="showMap = !showMap">
           <i class="bi" :class="showMap ? 'bi-list' : 'bi-map'"></i>
-          {{ showMap ? 'List View' : 'Full Map' }}
+          {{ showMap ? 'Hide Map' : 'Show Map' }}
         </button>
       </div>
       <div class="map-container" v-if="showMap">
@@ -50,7 +50,7 @@
                 </span>
               </div>
               <div class="tooltip-body">
-                <h6 class="fw-bold">{{ loc.name }}</h6>
+                <h6 class="fw-bold text-dark">{{ loc.name }}</h6>
                 <small class="text-muted">{{ loc.region }}</small>
               </div>
             </div>
@@ -61,8 +61,10 @@
 
     <div class="locations-grid">
       <div class="section-header mb-5">
-        <h3 class="section-title">All Flying Locations</h3>
-        <div class="section-controls">
+        <h3 class="section-title">
+          {{ limit > 0 ? 'Featured Locations' : 'All Flying Locations' }}
+        </h3>
+        <div class="section-controls" v-if="limit === 0">
           <div class="search-box">
             <i class="bi bi-search"></i>
             <input v-model="searchQuery" type="text" placeholder="Search locations..." class="search-input">
@@ -79,10 +81,22 @@
         </div>
       </div>
 
-      <div class="row g-4" v-if="filteredLocations.length > 0">
-        <div v-for="loc in filteredLocations" :key="loc.id" class="col-xl-4 col-lg-6">
+      <div class="row g-4" v-if="displayLocations.length > 0">
+        <div v-for="loc in displayLocations" :key="loc.id" class="col-xl-4 col-lg-6">
           <LocationCard :location="loc" />
         </div>
+      </div>
+
+      <div v-else-if="!pending" class="text-center py-5 bg-white rounded-4 shadow-sm">
+        <i class="bi bi-airplane-engines fs-1 text-muted"></i>
+        <h4 class="mt-3">No matching locations found</h4>
+        <button v-if="limit === 0" class="btn btn-link" @click="resetFilters">Reset filters</button>
+      </div>
+
+      <div v-if="limit > 0 && locations.length > limit" class="text-center mt-5">
+        <NuxtLink to="/location" class="btn btn-success btn-lg px-5 rounded-pill shadow-lg hover-up">
+          Explore All Locations <i class="bi bi-arrow-right ms-2"></i>
+        </NuxtLink>
       </div>
     </div>
   </div>
@@ -91,33 +105,56 @@
 <script setup>
 import LocationCard from './LocationCard.vue';
 
+const props = defineProps({
+  limit: {
+    type: Number,
+    default: 0 
+  }
+});
+
 const config = useRuntimeConfig();
 const searchQuery = ref('');
 const activeFilter = ref('all');
 const showMap = ref(true);
 const hoverLocation = ref(null);
 
-// 1. Fetch Live Data
+// 1. Fetch Data
 const { data: locationsData, pending } = await useFetch(`${config.public.apiBase}/flying-locations`, {
   transform: (res) => res.data || res
 });
+
 const locations = computed(() => locationsData.value || []);
 
-// 2. Map Helpers
+// 2. Logic for Display (Filtering + Limiting)
+const displayLocations = computed(() => {
+  let list = locations.value.filter(loc => {
+    const status = getStatusKey(loc);
+    const matchesSearch = loc.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchesFilter = activeFilter.value === 'all' || status === activeFilter.value;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Apply limit if passed (e.g., from homepage)
+  if (props.limit > 0) {
+    return list.slice(0, props.limit);
+  }
+  return list;
+});
+
+// 3. Helpers
 const getStatusKey = (loc) => {
   const s = loc?.clearance_statuses?.[0]?.status || 'green';
   return s === 'green' ? 'cleared' : 'closed';
 };
 
+const getStatusBootstrapColor = (key) => key === 'cleared' ? 'success' : 'danger';
+
 const calculateMapPos = (loc) => {
-  // Map logic to translate Latitude/Longitude to Percentage for Lebanon map
   if (!loc?.longitude || !loc?.latitude) return { x: 50, y: 50 };
   const x = ((loc.longitude - 35.0) / 1.6) * 100;
   const y = (1 - (loc.latitude - 33.0) / 1.8) * 100;
   return { x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)) };
 };
-
-const getStatusBootstrapColor = (key) => key === 'cleared' ? 'success' : 'danger';
 
 const dashboardStats = computed(() => {
   const list = locations.value;
@@ -157,15 +194,6 @@ const filterOptions = [
   { id: 'cleared', name: 'Cleared', icon: 'bi-check-circle' },
   { id: 'closed', name: 'Closed', icon: 'bi-x-circle' }
 ];
-
-const filteredLocations = computed(() => {
-  return locations.value.filter(loc => {
-    const status = getStatusKey(loc);
-    const matchesSearch = loc.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesFilter = activeFilter.value === 'all' || status === activeFilter.value;
-    return matchesSearch && matchesFilter;
-  });
-});
 
 const resetFilters = () => { searchQuery.value = ''; activeFilter.value = 'all'; };
 </script>

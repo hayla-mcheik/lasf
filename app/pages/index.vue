@@ -20,7 +20,7 @@
         </div>
 
         <!-- Enhanced Status Summary -->
-        <LocationsStatus />
+     <LocationsStatus :limit="3" />
       </div>
     </section>
 
