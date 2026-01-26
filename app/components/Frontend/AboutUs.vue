@@ -59,7 +59,7 @@ const { data: aboutData } = await useFetch(`${config.public.apiBase}/about-us`)
   white-space: pre-line; /* This is critical: it turns your Admin 'Enter' key breaks into real paragraphs */
   line-height: 1.8;
   color: #555;
-  font-size: 1.05rem;
+  font-size: 1.6rem;
 }
 
 .feature-image img {

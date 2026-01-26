@@ -111,63 +111,46 @@ const authStore = useAuthStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-// 1. Nuxt 4 Data Fetching with Transform
-// This ensures 'location' becomes the object immediately upon successful fetch
+// 1. Fetch Location Data
 const { data: location, pending } = await useFetch(`${config.public.apiBase}/flying-locations/${route.params.id}`, {
   key: `location-detail-${route.params.id}`,
-  transform: (res) => res.data || null,
-  lazy: false // Ensure server waits for data before rendering to avoid hydration jumps
+  transform: (res) => res.data || null
 })
 
 const activePilots = ref([])
 
-// 2. Client-Only QR URL Generation
-const qrUrl = computed(() => {
-  const token = location.value?.qr_code?.token
-  if (!token || !import.meta.client) return ''
-  // Builds absolute URL for the QR scanner
-  return `${window.location.origin}/qr/${token}`
-})
-
-// 3. Airspace Context Check
-const isFlyingHere = computed(() => {
-  if (!location.value?.id || !authStore.activeSession?.flying_location_id) return false
-  return authStore.activeSession.flying_location_id === location.value.id
-})
-
-// 4. Lifecycle & Data Loading
-onMounted(() => {
+// 2. AUTO-CHECKIN LOGIC
+onMounted(async () => {
   if (location.value) {
-    fetchActivePilots()
+    await fetchActivePilots()
+    
+    // Check if there is a token in the URL (from a QR scan)
+    const scanToken = route.query.token
+    
+    if (scanToken && authStore.isAuthenticated) {
+      // If logged in, perform automatic check-in
+      await handleAutoCheckIn(scanToken)
+    }
   }
 })
 
-async function fetchActivePilots() {
-  if (!location.value?.id) return
-  try {
-    activePilots.value = await $fetch(`${config.public.apiBase}/airspace-sessions/active`, {
-      params: { location_id: location.value.id }
-    })
-  } catch (e) {
-    console.error("Airspace update failed:", e)
-  }
-}
+async function handleAutoCheckIn(token) {
+  // If already flying here, don't do anything
+  if (isFlyingHere.value) return 
 
-async function handleCheckIn() {
-  if (!location.value?.qr_code?.token) return
   try {
     const res = await $fetch(`${config.public.apiBase}/airspace-sessions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${authStore.token}` },
-      body: { token: location.value.qr_code.token }
+      body: { token: token }
     })
     authStore.activeSession = res
     await fetchActivePilots()
+    alert(`Welcome to ${location.value.name}! Check-in successful.`)
   } catch (e) {
-    alert(e.data?.message || "Check-in failed")
+    console.error("Auto check-in failed", e.data?.message)
   }
 }
-
 async function handleCheckOut() {
   if (!authStore.activeSession || !confirm("Confirm landing?")) return
   try {
