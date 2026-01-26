@@ -23,27 +23,15 @@ debug:true,
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap' },
       ],
   script: [
-        // Load jQuery FIRST (No leading slash if they are in /public/assets/js/)
-        { src: '/assets/js/jquery-3.6.0.min.js', defer: true },
-        { src: '/assets/js/jquery-ui.js', defer: true },
-        { src: '/assets/js/bootstrap.bundle.min.js', defer: true },
-        { src: '/assets/js/swiper-bundle.min.js', defer: true },
-        { src: '/assets/js/jquery.nice-select.js', defer: true },
-        { src: '/assets/js/odometer.min.js', defer: true },
-        { src: '/assets/js/viewport.jquery.js', defer: true },
-        { src: '/assets/js/jquery.magnific-popup.min.js', defer: true },
-        { src: '/assets/js/isotope.pkgd.min.js', defer: true },
-        { src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', defer: true },
-        // Main custom script LAST
-        { src: '/assets/js/main.js', defer: true }
+  
       ]
     },
   },
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'https://lasf.info/api',
-      mediaBase: process.env.MEDIA_BASE_URL || 'https://lasf.info'
+      apiBase: process.env.API_BASE_URL || 'http://127.0.0.1:8000/api',
+      mediaBase: process.env.MEDIA_BASE_URL || 'http://127.0.0.1:8000'
     }
   },
 

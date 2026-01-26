@@ -4,19 +4,22 @@
       <div :class="['p-3 px-4 d-flex justify-content-between align-items-center', safetyThemeClass]">
         <div class="d-flex align-items-center">
           <div class="live-pulse me-3"></div>
-          <div>
+          <div v-if="weatherData">
             <span class="x-small fw-bold tracking-widest d-block opacity-75">STATION: {{ currentSiteName }}</span>
             <span class="fw-black h5 mb-0">{{ safetyStatusLabel }}</span>
           </div>
+          <div v-else class="placeholder-glow">
+            <span class="placeholder col-12 bg-light opacity-50" style="width: 150px;"></span>
+          </div>
         </div>
-        <div class="text-end">
+        <div class="text-end" v-if="weatherData">
           <div class="x-small fw-bold opacity-75">UPDATED</div>
           <div class="fw-bold">{{ formatTime(weatherData?.dt) }}</div>
         </div>
       </div>
 
       <div class="card-body bg-white py-4 px-4">
-        <div class="row g-4">
+        <div class="row g-4" v-if="weatherData">
           <div class="col-6 col-lg-3 border-end">
             <div class="d-flex align-items-center mb-2">
               <i class="bi bi-wind text-primary me-2"></i>
@@ -63,12 +66,21 @@
             </div>
           </div>
         </div>
+
+        <div v-else class="row g-4">
+          <div v-for="i in 4" :key="i" class="col-6 col-lg-3 placeholder-glow">
+            <span class="placeholder col-8 mb-2"></span>
+            <span class="placeholder col-12 h1"></span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
       <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span class="x-small fw-bold tracking-widest"><i class="bi bi-map-fill me-2 text-primary"></i>WINDY.COM INTERACTIVE MODEL</span>
+        <span class="x-small fw-bold tracking-widest">
+          <i class="bi bi-map-fill me-2 text-primary"></i>WINDY.COM INTERACTIVE RADAR
+        </span>
         <div class="d-flex gap-2">
           <button v-for="layer in ['wind', 'gust', 'clouds', 'temp']" :key="layer"
                   @click="activeLayer = layer"
@@ -77,19 +89,18 @@
           </button>
         </div>
       </div>
-      <div class="position-relative">
-        <iframe :src="windyUrl" class="w-100" height="500" frameborder="0"></iframe>
+      <div class="position-relative bg-secondary" style="height: 500px;">
+        <iframe :src="windyUrl" class="w-100 h-100" frameborder="0"></iframe>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 const props = defineProps({
-  lat: { type: Number, default: 33.985 }, // الموقع الافتراضي: حريصا/غوسطا
+  lat: { type: Number, default: 33.985 },
   lon: { type: Number, default: 35.658 },
   currentSiteName: { type: String, default: 'LASF Site Station' }
 })
@@ -97,13 +108,18 @@ const props = defineProps({
 const API_KEY = '5408a1b07f159206390e3ffcd506319e'
 const weatherData = ref(null)
 const activeLayer = ref('wind')
+let refreshInterval = null
 
-// حسابات السرعة (عقدة و كم/س)
-const currentWindKt = computed(() => Math.round((weatherData.value?.wind.speed || 0) * 1.94384))
-const currentGustKt = computed(() => weatherData.value?.wind.gust ? Math.round(weatherData.value.wind.gust * 1.94384) : Math.round(currentWindKt.value * 1.3))
-const currentWindKmh = computed(() => Math.round((weatherData.value?.wind.speed || 0) * 3.6))
+// Calculations (Knots, KMH, Cloud Base)
+const currentWindKt = computed(() => weatherData.value ? Math.round((weatherData.value.wind.speed || 0) * 1.94384) : 0)
+const currentGustKt = computed(() => {
+  if (!weatherData.value?.wind) return 0
+  return weatherData.value.wind.gust 
+    ? Math.round(weatherData.value.wind.gust * 1.94384) 
+    : Math.round(currentWindKt.value * 1.3)
+})
+const currentWindKmh = computed(() => weatherData.value ? Math.round((weatherData.value.wind.speed || 0) * 3.6) : 0)
 
-// حساب قاعدة الغيوم (Cloud Base) - Aviation Formula
 const cloudBaseFt = computed(() => {
   if (!weatherData.value) return 0
   const temp = weatherData.value.main.temp
@@ -112,7 +128,7 @@ const cloudBaseFt = computed(() => {
   return Math.round((temp - dewPoint) * 400)
 })
 
-// منطق الأمان والعناوين
+// Safety Status Logic
 const safetyStatusLabel = computed(() => {
   if (currentWindKt.value > 15 || currentGustKt.value > 22) return 'DANGEROUS: GROUNDED'
   if (currentWindKt.value > 12) return 'CAUTION: STRONG WIND'
@@ -120,29 +136,13 @@ const safetyStatusLabel = computed(() => {
 })
 
 const safetyThemeClass = computed(() => {
+  if (!weatherData.value) return 'bg-secondary text-white'
   if (currentWindKt.value > 15) return 'bg-danger text-white'
   if (currentWindKt.value > 12) return 'bg-warning text-dark'
   return 'bg-success text-white'
 })
 
-const riskWindLabel = computed(() => currentWindKt.value > 15 ? 'Critical' : currentWindKt.value > 10 ? 'High' : 'Moderate')
-const riskWindClass = computed(() => currentWindKt.value > 12 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success')
-
-const riskCloudLabel = computed(() => weatherData.value?.main.humidity > 80 ? 'Heavy' : 'Low')
-const riskCloudClass = computed(() => weatherData.value?.main.humidity > 80 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success')
-
-// الوقت المتبقي (VFR Window)
-const timeRemaining = computed(() => {
-  if (!weatherData.value) return '--:--'
-  const now = new Date()
-  const sunset = new Date(weatherData.value.sys.sunset * 1000)
-  const diff = sunset - now
-  if (diff <= 0) return 'SUNSET REACHED'
-  const hours = Math.floor(diff / 3600000)
-  const minutes = Math.floor((diff % 3600000) / 60000)
-  return `${hours}h ${minutes}m`
-})
-
+// Navigation & URL Helpers
 const windyUrl = computed(() => {
   return `https://embed.windy.com/embed2.html?lat=${props.lat}&lon=${props.lon}&zoom=11&level=surface&overlay=${activeLayer.value}&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=true&metricWind=kt&metricTemp=%C2%B0C`
 })
@@ -154,14 +154,27 @@ const getWindDirection = (deg) => {
 
 const formatTime = (ts) => ts ? new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'
 
+// Data Fetching
 const fetchWeatherData = async () => {
   try {
     const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${props.lat}&lon=${props.lon}&appid=${API_KEY}&units=metric`)
+    if (!res.ok) throw new Error('Network response was not ok')
     weatherData.value = await res.json()
-  } catch (err) { console.error('Weather fetch error:', err) }
+  } catch (err) { 
+    console.error('Weather fetch error:', err)
+  }
 }
 
-onMounted(() => fetchWeatherData())
+// Lifecycle Hooks
+onMounted(() => {
+  fetchWeatherData()
+  // Refresh weather data every 10 minutes
+  refreshInterval = setInterval(fetchWeatherData, 600000)
+})
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
+})
 </script>
 
 <style scoped>
@@ -170,13 +183,11 @@ onMounted(() => fetchWeatherData())
 .x-small { font-size: 0.65rem; }
 .tracking-widest { letter-spacing: 0.15em; }
 
-/* Pulse Animation */
 .live-pulse {
   width: 10px;
   height: 10px;
   background: white;
   border-radius: 50%;
-  box-shadow: 0 0 0 rgba(255, 255, 255, 0.4);
   animation: pulse-white 2s infinite;
 }
 
@@ -187,10 +198,5 @@ onMounted(() => fetchWeatherData())
 }
 
 .compass-needle { transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
-
-.bg-danger-subtle { background-color: #fee2e2; }
-.bg-success-subtle { background-color: #dcfce7; }
-
-/* Custom Scrollbar for better UX */
 iframe { border-radius: 0 0 16px 16px; }
 </style>

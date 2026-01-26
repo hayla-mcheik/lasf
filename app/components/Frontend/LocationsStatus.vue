@@ -292,6 +292,22 @@ const resetFilters = () => { searchQuery.value = ''; activeFilter.value = 'all';
   box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3);
 }
 
+/* 1. Ensure the active marker is above all other markers on the map */
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  /* Lower base z-index */
+  z-index: 5; 
+  transition: z-index 0.3s;
+}
+
+.map-marker:hover {
+  /* Higher z-index on hover so this dot's tooltip is never hidden by another dot */
+  z-index: 99; 
+}
+
+/* 2. The Pulse Animation */
 .marker-pulse {
   position: absolute;
   top: 50%;
@@ -301,35 +317,21 @@ const resetFilters = () => { searchQuery.value = ''; activeFilter.value = 'all';
   height: 40px;
   border-radius: 50%;
   opacity: 0;
-  z-index: 1;
+  /* Keep pulse at the back */
+  z-index: 1; 
 }
 
-.marker-cleared .marker-pulse {
-  background: #198754;
-  animation: pulseMarker 2s infinite;
+/* 3. The Dot itself */
+.marker-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  position: relative;
+  /* Dot sits above pulse */
+  z-index: 2; 
 }
 
-.marker-restricted .marker-pulse {
-  background: #ffc107;
-  animation: pulseMarker 2s infinite;
-}
-
-.marker-closed .marker-pulse {
-  background: #dc3545;
-  animation: pulseMarker 2s infinite;
-}
-
-@keyframes pulseMarker {
-  0% {
-    transform: translate(-50%, -50%) scale(0.5);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(2);
-    opacity: 0;
-  }
-}
-
+/* 4. The Tooltip (Popup) */
 .marker-tooltip {
   position: absolute;
   bottom: 100%;
@@ -343,7 +345,8 @@ const resetFilters = () => { searchQuery.value = ''; activeFilter.value = 'all';
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
-  z-index: 10;
+  /* High z-index to stay above pulse and dot */
+  z-index: 10; 
 }
 
 .marker-tooltip.show {
@@ -351,7 +354,6 @@ const resetFilters = () => { searchQuery.value = ''; activeFilter.value = 'all';
   visibility: visible;
   transform: translateX(-50%) translateY(-5px);
 }
-
 .tooltip-header {
   display: flex;
   gap: 6px;
