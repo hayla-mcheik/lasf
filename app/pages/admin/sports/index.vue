@@ -32,7 +32,7 @@
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status"></div>
         </div>
-        <div v-else class="table-responsive">
+        <div v-else class="">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>

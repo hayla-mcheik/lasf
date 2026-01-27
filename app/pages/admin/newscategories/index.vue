@@ -1,166 +1,133 @@
 <template>
-  <div class="news-categories-admin">
-    <!-- Header -->
-    <div class="dashboard-header mb-6">
+  <div class="news-categories-admin container-fluid">
+    <div class="dashboard-header mb-4">
       <div class="d-flex justify-content-between align-items-center">
         <div>
           <h1 class="display-6 fw-bold text-dark mb-2">
             <i class="bi bi-tags me-3 text-primary"></i>
             News Categories
           </h1>
-          <div class="d-flex align-items-center gap-3">
-            <p class="text-muted mb-0">
-              <i class="bi bi-diagram-3 me-1"></i>
-              Organize news articles by categories (Clearance, Weather, Events, etc.)
-            </p>
-            <span class="badge bg-primary-subtle text-primary">
-              {{ categories.length }} categories
-            </span>
+          <p class="text-muted mb-0">Organize news articles by categories (Clearance, Weather, Events, etc.)</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center" @click="showCreateModal = true">
+          <i class="bi bi-plus-circle me-2"></i>
+          Add Category
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">Total Categories</h6>
+            <h3 class="fw-bold mb-0">{{ categories.length }}</h3>
           </div>
         </div>
-        <div>
-          <button class="btn btn-primary d-flex align-items-center" @click="showCreateModal = true">
-            <i class="bi bi-plus-circle me-2"></i>
-            Add Category
-          </button>
-        </div>
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="text-center">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-          <span class="visually-hidden">Loading...</span>
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Loading categories...</p>
         </div>
-        <p class="mt-3 text-muted">Loading categories...</p>
-      </div>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <strong>Error:</strong> {{ error }}
-      <button type="button" class="btn-close" @click="error = null"></button>
-    </div>
-
-    <!-- Main Content -->
-    <div v-else>
-      <!-- Categories Grid -->
-      <div class="row g-4">
-        <div class="col-md-6 col-lg-4" v-for="category in categories" :key="category.id">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h5 class="card-title fw-semibold mb-1">{{ category.name }}</h5>
-                  <div class="text-muted small">
-                    <i class="bi bi-newspaper me-1"></i>
-                    {{ category.news_count || 0 }} articles
+        <div v-else class="table-responsive" style="overflow: visible !important;">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Category Name</th>
+                <th>Auto-Type</th>
+                <th>Articles Count</th>
+                <th>Created</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="category in categories" :key="category.id">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-sm bg-primary-subtle text-primary me-3">
+                      <i class="bi bi-tag"></i>
+                    </div>
+                    <div class="fw-bold text-dark">{{ category.name }}</div>
                   </div>
-                </div>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary" type="button" 
-                          data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-three-dots-vertical"></i>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li>
-                      <a class="dropdown-item" href="#" @click.prevent="editCategory(category)">
-                        <i class="bi bi-pencil me-2"></i> Edit
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="#" @click.prevent="confirmDelete(category)">
-                        <i class="bi bi-trash me-2 text-danger"></i> Delete
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div class="d-flex justify-content-between align-items-center mt-4">
-                <div>
-                  <span class="badge bg-primary-subtle text-primary">
+                </td>
+                <td>
+                  <span class="badge bg-info-subtle text-info rounded-pill px-3">
                     {{ getCategoryType(category.name) }}
                   </span>
-                </div>
-                <small class="text-muted">
-                  {{ formatTimeAgo(category.created_at) }}
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Add New Card -->
-        <div class="col-md-6 col-lg-4">
-          <div class="card border-2 border-dashed h-100" 
-               @click="showCreateModal = true"
-               style="cursor: pointer; border-style: dashed !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-              <div class="text-center py-5">
-                <i class="bi bi-plus-circle display-6 text-muted mb-3"></i>
-                <h5 class="text-muted">Add New Category</h5>
-                <p class="text-muted small mb-0">Create a new category for news articles</p>
-              </div>
-            </div>
-          </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-newspaper me-2 text-muted"></i>
+                    <span>{{ category.news_count || 0 }} articles</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="small text-muted">{{ formatTimeAgo(category.created_at) }}</div>
+                </td>
+                <td class="text-center">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-light border" type="button" @click.stop="toggleMenu(category.id)">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow-sm" :class="{ 'show': activeMenuId === category.id }" 
+                        style="right: 0; left: auto; top: 100%; z-index: 1060;">
+                      <li>
+                        <a class="dropdown-item" href="#" @click.prevent="editCategory(category)">
+                          <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(category)">
+                          <i class="bi bi-trash me-2"></i> Delete
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="categories.length === 0">
+                <td colspan="5" class="text-center py-5 text-muted">No categories found.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" 
-         :class="{ show: showCreateModal }" @click.self="closeModal">
-      <div class="modal-dialog modal-md modal-dialog-centered">
+    <div v-if="showCreateModal" class="modal-backdrop fade show"></div>
+    <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" @click.self="closeModal">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-          <div class="modal-header border-bottom" :class="editingCategory ? 'bg-primary text-white' : 'bg-success text-white'">
+          <div class="modal-header border-bottom text-white" :class="editingCategory ? 'bg-primary' : 'bg-success'">
             <h5 class="modal-title">
               <i class="bi me-2" :class="editingCategory ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
               {{ editingCategory ? 'Edit Category' : 'Create New Category' }}
             </h5>
-            <button type="button" class="btn-close" :class="editingCategory ? 'btn-close-white' : ''" 
-                    @click="closeModal"></button>
+            <button type="button" class="btn-close btn-close-white" @click="closeModal"></button>
           </div>
           <form @submit.prevent="saveCategory">
-            <div class="modal-body">
-              <div v-if="formErrors.length" class="alert alert-danger">
-                <ul class="mb-0">
-                  <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
-                </ul>
-              </div>
-              
+            <div class="modal-body p-4">
               <div class="mb-3">
-                <label class="form-label fw-semibold">Category Name <span class="text-danger">*</span></label>
-                <input v-model="form.name" type="text" class="form-control" :class="{ 'is-invalid': fieldErrors.name }" required
-                       placeholder="e.g., Clearance Updates, Weather Alerts, Events...">
-                <div v-if="fieldErrors.name" class="invalid-feedback">
-                  {{ fieldErrors.name[0] }}
-                </div>
-                <div class="form-text">
-                  Use clear, descriptive names for better organization
-                </div>
+                <label class="form-label fw-bold">Category Name <span class="text-danger">*</span></label>
+                <input v-model="form.name" type="text" class="form-control" required
+                       placeholder="e.g., Weather Alerts, Event Updates">
+                <div v-if="fieldErrors.name" class="text-danger small mt-1">{{ fieldErrors.name[0] }}</div>
               </div>
-              
-              <div v-if="editingCategory" class="mt-4">
-                <h6 class="text-muted mb-3">Category Usage</h6>
-                <div class="alert alert-info small">
-                  <i class="bi bi-info-circle me-2"></i>
-                  This category is used by {{ editingCategory.news_count || 0 }} news articles.
-                  Deleting it will remove the category from all associated articles.
-                </div>
+              <div v-if="editingCategory" class="alert alert-info small mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                This category is linked to {{ editingCategory.news_count || 0 }} articles.
               </div>
             </div>
-            <div class="modal-footer border-top">
-              <button type="button" class="btn btn-outline-secondary" @click="closeModal">
-                Cancel
-              </button>
-              <button type="submit" class="btn" :class="editingCategory ? 'btn-primary' : 'btn-success'" 
-                      :disabled="saving">
+            <div class="modal-footer bg-light">
+              <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+              <button type="submit" class="btn btn-primary" :disabled="saving">
                 <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-                <i v-else class="bi" :class="editingCategory ? 'bi-check-lg' : 'bi-plus-lg'"></i>
-                {{ editingCategory ? 'Update Category' : 'Create Category' }}
+                Save Category
               </button>
             </div>
           </form>
@@ -168,45 +135,26 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal fade show d-block" tabindex="-1" 
-         :class="{ show: showDeleteModal }">
+    <div v-if="showDeleteModal" class="modal-backdrop fade show"></div>
+    <div v-if="showDeleteModal" class="modal fade show d-block" @click.self="closeDeleteModal">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-          <div class="modal-header border-bottom bg-danger text-white">
-            <h5 class="modal-title">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              Delete Category
-            </h5>
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">Confirm Delete</h5>
             <button type="button" class="btn-close btn-close-white" @click="closeDeleteModal"></button>
           </div>
-          <div class="modal-body text-center">
-            <div class="warning-icon mb-4">
-              <i class="bi bi-trash fs-1 text-danger"></i>
-            </div>
-            <h5 class="fw-bold">Delete Category</h5>
-            <p class="text-muted">Are you sure you want to delete <strong class="text-danger">{{ categoryToDelete?.name }}</strong>?</p>
-            <div class="alert alert-warning small">
-              <i class="bi bi-info-circle me-2"></i>
-              This category is used by {{ categoryToDelete?.news_count || 0 }} articles.
-              Deleting it will remove the category from all associated articles.
-            </div>
+          <div class="modal-body text-center p-4">
+            <i class="bi bi-trash display-4 text-danger mb-3"></i>
+            <p class="mb-0">Delete category <strong>{{ categoryToDelete?.name }}</strong>?</p>
+            <p class="text-muted small">Articles using this category will lose their reference.</p>
           </div>
-          <div class="modal-footer border-top">
-            <button type="button" class="btn btn-outline-secondary" @click="closeDeleteModal">
-              Cancel
-            </button>
-            <!-- <button type="button" class="btn btn-danger" @click="deleteCategory" :disabled="deleting">
-              <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-              Delete Category
-            </button> -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
+            <button type="button" class="btn btn-danger" @click="deleteCategory" :disabled="deleting">Delete</button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Backdrop -->
-    <div v-if="showCreateModal || showDeleteModal" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
@@ -224,23 +172,17 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref(null)
-const formErrors = ref([])
 const fieldErrors = ref({})
 const categories = ref([])
-const activeMenuId = ref(null) // State for the 3-dot dropdown
+const activeMenuId = ref(null)
 
-// Modals
 const showCreateModal = ref(false)
 const showDeleteModal = ref(false)
-
-// Forms
 const editingCategory = ref(null)
 const categoryToDelete = ref(null)
 const form = reactive({ name: '' })
 
-// --- HELPER FUNCTIONS ---
-
-// 1. Logic for s.getCategoryType
+// HELPERS
 const getCategoryType = (name) => {
   if (!name) return 'General'
   const n = name.toLowerCase()
@@ -251,42 +193,32 @@ const getCategoryType = (name) => {
   return 'Information'
 }
 
-// 2. Logic for formatTimeAgo
 const formatTimeAgo = (date) => {
   if (!date) return 'Recently'
-  const now = new Date()
-  const diff = Math.floor((now - new Date(date)) / 1000)
-  
+  const diff = Math.floor((new Date() - new Date(date)) / 1000)
   if (diff < 60) return 'Just now'
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-// 3. Dropdown Toggler
-const toggleMenu = (id) => {
-  activeMenuId.value = activeMenuId.value === id ? null : id
-}
+const toggleMenu = (id) => { activeMenuId.value = activeMenuId.value === id ? null : id }
+const handleGlobalClick = () => { activeMenuId.value = null }
 
-// --- API METHODS ---
-
+// API METHODS
 const fetchCategories = async () => {
+  loading.value = true
   try {
-    loading.value = true
     const data = await $fetch(`${config.public.apiBase}/admin/news-categories`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     categories.value = data.data || data
-  } catch (err) {
-    error.value = err.message || 'Failed to load categories.'
-  } finally {
-    loading.value = false
-  }
+  } catch (err) { error.value = "Load failed" } finally { loading.value = false }
 }
 
 const saveCategory = async () => {
+  saving.value = true
   try {
-    saving.value = true
     const isEditing = !!editingCategory.value
     const url = isEditing 
       ? `${config.public.apiBase}/admin/news-categories/${editingCategory.value.id}`
@@ -297,135 +229,35 @@ const saveCategory = async () => {
       headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: form,
     })
-    
     closeModal()
-    await fetchCategories()
-  } catch (err) {
-    fieldErrors.value = err.data?.errors || {}
-  } finally {
-    saving.value = false
-  }
+    fetchCategories()
+  } catch (err) { fieldErrors.value = err.data?.errors || {} } finally { saving.value = false }
 }
 
 const deleteCategory = async () => {
+  deleting.value = true
   try {
-    deleting.value = true
     await $fetch(`${config.public.apiBase}/admin/news-categories/${categoryToDelete.value.id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     closeDeleteModal()
-    await fetchCategories()
-  } catch (err) {
-    console.error(err)
-  } finally {
-    deleting.value = false
-  }
+    fetchCategories()
+  } finally { deleting.value = false }
 }
 
-const editCategory = (category) => {
-  activeMenuId.value = null
-  editingCategory.value = category
-  form.name = category.name
-  showCreateModal.value = true
-}
+const editCategory = (c) => { activeMenuId.value = null; editingCategory.value = c; form.name = c.name; showCreateModal.value = true }
+const confirmDelete = (c) => { activeMenuId.value = null; categoryToDelete.value = c; showDeleteModal.value = true }
+const closeModal = () => { showCreateModal.value = false; editingCategory.value = null; form.name = ''; fieldErrors.value = {} }
+const closeDeleteModal = () => { showDeleteModal.value = false }
 
-const confirmDelete = (category) => {
-  activeMenuId.value = null
-  categoryToDelete.value = category
-  showDeleteModal.value = true
-}
-
-const closeModal = () => {
-  showCreateModal.value = false
-  editingCategory.value = null
-  form.name = ''
-}
-
-const closeDeleteModal = () => {
-  showDeleteModal.value = false
-  categoryToDelete.value = null
-}
-
-const handleGlobalClick = () => { activeMenuId.value = null }
-
-onMounted(() => {
-  fetchCategories()
-  window.addEventListener('click', handleGlobalClick)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('click', handleGlobalClick)
-})
+onMounted(() => { fetchCategories(); window.addEventListener('click', handleGlobalClick) })
+onUnmounted(() => window.removeEventListener('click', handleGlobalClick))
 </script>
 
 <style scoped>
-.news-categories-admin {
-  padding: 1.5rem 0;
-  background: #f8f9fa;
-  min-height: 100vh;
-}
-
-.dashboard-header {
-  padding: 1.5rem 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.loading-overlay {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-}
-
-/* Card Styles */
-.card {
-  transition: transform 0.2s, box-shadow 0.2s;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
-}
-
-.border-dashed {
-  border-color: #dee2e6 !important;
-}
-
-.border-dashed:hover {
-  background-color: #f8f9fa;
-}
-
-/* Modal Styles */
-.modal-content {
-  border-radius: 12px;
-}
-
-.modal-header {
-  border-radius: 12px 12px 0 0;
-}
-
-.modal-backdrop {
-  opacity: 0.5;
-}
-
-/* Form Styles */
-.form-control.is-invalid {
-  border-color: #dc3545;
-}
-
-.form-control.is-invalid:focus {
-  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 1rem;
-  }
-}
+.avatar-sm { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.dropdown-menu { display: none; position: absolute; min-width: 140px; }
+.dropdown-menu.show { display: block; }
+.table-responsive { overflow: visible !important; }
 </style>

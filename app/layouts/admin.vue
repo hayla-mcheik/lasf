@@ -102,6 +102,14 @@
             label="Regulations"
             to="/admin/regulations"
           />
+
+                 <NavItem 
+            :active="$route.path.startsWith('/admin/settings')"
+            :collapsed="sidebarCollapsed"
+            icon="bi-shield-check"
+            label="Settings"
+            to="/admin/settings"
+          />
         </div>
 
    
@@ -138,17 +146,7 @@
           </button>
           <h1 class="page-title">{{ pageTitle }}</h1>
         </div>
-        <div class="topbar-right">
-          <div class="quick-actions">
-            <button class="btn btn-sm btn-outline-primary me-2">
-              <i class="bi bi-bell"></i>
-              <span class="badge bg-danger">3</span>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-question-circle"></i>
-            </button>
-          </div>
-        </div>
+
       </header>
 
       <!-- Page Content -->
