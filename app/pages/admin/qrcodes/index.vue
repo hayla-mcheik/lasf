@@ -425,10 +425,10 @@ const formatTimeAgo = (dateString) => {
   return `${Math.floor(diffMins / 10080)}w ago`
 }
 
-const generateQRURL = (token, locationId) => {
+const generateQRURL = (location) => {
   const baseURL = window.location.origin 
-  // This will create a link like: https://lasf.info/location/11?token=your-uuid-token
-  return `${baseURL}/location/${locationId}?token=${token}`
+  // Redirects to the specific location page with the security token
+  return `${baseURL}/location/${location.slug || location.id}?token=${location.qr_code.token}`
 }
 
 const generateQRImage = (token) => {
