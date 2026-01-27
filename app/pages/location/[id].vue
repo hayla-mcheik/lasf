@@ -2,560 +2,197 @@
 import { useAuthStore } from '~/stores/auth'
 
 const authStore = useAuthStore()
-const config = useRuntimeConfig()
 const route = useRoute()
-console.log('Full Route Params:', route.params)
-console.log('Slug Value:', route.params.slug)
-console.log('ID Value:', route.params.id)
-// Use production API
 const API_BASE = 'https://lasf.info/api'
-console.log('🌐 Using API Base:', API_BASE)
 
+// --- 1. Fetch Location Data ---
+// Works for both /location/11 and /location/albarok
 const { data: location, pending, error: locationError } = await useFetch(
   () => `${API_BASE}/flying-locations/${route.params.slug || route.params.id}`, 
   {
-    // The arrow function () => above makes the URL reactive
     key: `location-${route.params.slug || route.params.id}`,
-    immediate: true,
     transform: (res) => res.data || res,
   }
 )
-
-console.log('📍 Location data:', location.value)
-console.log('📍 Location ID:', location.value?.id)
 
 const activePilots = ref([])
 const checkingIn = ref(false)
 const fetchError = ref(null)
 const loadingActivePilots = ref(false)
+let pollInterval = null
 
-// Fix: Proper fetch function
-// pages/location/[id].vue
+// --- 2. Lifecycle Hooks (Register first!) ---
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
+})
 
+// --- 3. Logic Functions ---
 async function fetchActivePilots() {
   if (!location.value?.id) return
-  
   loadingActivePilots.value = true
-  fetchError.value = null
-  
   try {
-    // 1. Ensure NO trailing slash unless Laravel requires it
-    // 2. Use simple 'query' object
     const response = await $fetch(`${API_BASE}/airspace-sessions/active`, {
-      method: 'GET',
-      params: { location_id: location.value.id }, // $fetch uses 'params' for query strings
-      // Remove custom headers for the GET request to avoid CORS preflight issues
-      headers: {
-        'Accept': 'application/json'
-      },
-      // Important for Nuxt: ignore the base URL if API_BASE is absolute
-      baseURL: undefined 
+      params: { location_id: location.value.id }
     })
-    
-    // ... handle response ...
-    if (response) {
-       activePilots.value = Array.isArray(response) ? response : (response.data || [])
-    }
+    activePilots.value = response
   } catch (error) {
-    console.error('❌ Fetch error:', error)
     fetchError.value = error
   } finally {
     loadingActivePilots.value = false
   }
 }
 
-// Fix: Use onMounted properly
-onMounted(async () => {
-  console.log('🚀 Component mounted')
-  console.log('🔗 Current URL:', window.location.href)
-  console.log('🔗 Route query:', route.query)
-  
-  if (location.value) {
-    console.log('📍 Location loaded:', location.value.name, '(ID:', location.value.id, ')')
-    
-    // Fetch active pilots
-    await fetchActivePilots()
-    
-    // Set up polling with error handling
-    let retryCount = 0
-    const maxRetries = 3
-    
-    const pollInterval = setInterval(async () => {
-      if (retryCount < maxRetries) {
-        await fetchActivePilots()
-        if (fetchError.value) {
-          retryCount++
-          console.log(`🔄 Retry ${retryCount}/${maxRetries}`)
-        } else {
-          retryCount = 0 // Reset on success
-        }
-      }
-    }, 30000) // Poll every 30 seconds
-    
-    // Clean up interval
-    onUnmounted(() => {
-      clearInterval(pollInterval)
-    })
-    
-    // Handle auto check-in if token exists
-    const scanToken = route.query.token
-    
-    if (scanToken) {
-      console.log('🔑 QR Token found:', scanToken)
-      
-      if (authStore.isAuthenticated) {
-        console.log('👤 User authenticated, attempting auto check-in...')
-        await handleAutoCheckIn(scanToken)
-      } else {
-        console.log('🔒 User not authenticated, redirecting to login...')
-        const redirectUrl = `/login?redirect=${encodeURIComponent(route.fullPath)}`
-        navigateTo(redirectUrl)
-      }
-    } else {
-      console.log('❌ No QR token in URL')
-    }
-  } else {
-    console.log('⚠️ Location data not available')
-  }
-})
-
-// Fix: Auto check-in function
-async function handleAutoCheckIn(token) {
-  if (isFlyingHere.value) {
-    console.log('✈️ User already flying here')
-    return
-  }
-  
-  if (!token) {
-    console.log('⚠️ No token provided for check-in')
-    return
-  }
-  
+async function handleCheckIn(token) {
+  if (isFlyingHere.value || !token) return
   checkingIn.value = true
-  
   try {
-    console.log('🔄 Sending check-in request...')
-    
     const response = await $fetch(`${API_BASE}/airspace-sessions`, {
       method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token: token }),
-      timeout: 15000,
-      onRequest({ request, options }) {
-        console.log('📤 Check-in request:', { token })
-      }
+      headers: { 'Authorization': `Bearer ${authStore.token}` },
+      body: { token: token }
     })
-    
-    console.log('✅ Check-in response:', response)
-    
-    // Update session in auth store
-    if (response.data) {
-      authStore.activeSession = response.data
-    } else if (response) {
-      authStore.activeSession = response
-    }
-    
-    // Refresh active pilots list
+    authStore.activeSession = response
     await fetchActivePilots()
-    
-    // Clean URL without token
+    // Clean URL
     window.history.replaceState({}, '', route.path)
-    
-    // Show success message
-    alert(`✅ Successfully checked in at ${location.value.name}!`)
-    
+    alert(`✅ Check-in successful! Fly safe.`)
   } catch (error) {
-    console.error('❌ Check-in failed:', {
-      message: error.message,
-      status: error.status,
-      data: error.data
-    })
-    
-    let errorMessage = 'Check-in failed'
-    
-    if (error.status === 403) {
-      errorMessage = error.data?.message || 'You are not authorized to check in'
-    } else if (error.status === 401) {
-      errorMessage = 'Please login again'
-      authStore.logout()
-      navigateTo('/login')
-    } else if (error.message?.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please try again.'
-    }
-    
-    alert(`❌ ${errorMessage}`)
-    
+    alert(`❌ ${error.data?.message || 'Check-in failed'}`)
   } finally {
     checkingIn.value = false
   }
 }
 
-// Fix: Compute if user is flying here
+async function handleCheckOut() {
+  if (!authStore.activeSession || !confirm("Confirm your landing?")) return
+  try {
+    await $fetch(`${API_BASE}/airspace-sessions/${authStore.activeSession.id}/checkout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    authStore.activeSession = null
+    await fetchActivePilots()
+  } catch (error) {
+    alert('Check-out failed.')
+  }
+}
+
 const isFlyingHere = computed(() => {
-  const sessionLocationId = authStore.activeSession?.flying_location_id || 
-                          authStore.activeSession?.location?.id
-  const currentLocationId = location.value?.id
-  
-  const isHere = sessionLocationId === currentLocationId
-  
-  console.log('🛩️ Flying here check:', {
-    sessionLocationId,
-    currentLocationId,
-    isHere,
-    activeSession: authStore.activeSession
-  })
-  
-  return isHere
+  if (!authStore.activeSession || !location.value) return false
+  const sessionLocId = authStore.activeSession.flying_location_id || authStore.activeSession.location?.id
+  return Number(sessionLocId) === Number(location.value.id)
 })
 
-// Fix: Checkout function
-async function handleCheckOut() {
-  if (!authStore.activeSession || !confirm("Are you sure you want to check out?")) {
-    return
-  }
-  
-  try {
-    const sessionId = authStore.activeSession.id
-    
-    console.log('🛬 Checking out session:', sessionId)
-    
-    await $fetch(`${API_BASE}/airspace-sessions/${sessionId}/checkout`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    
-    console.log('✅ Check-out successful')
-    
-    // Clear session from auth store
-    authStore.activeSession = null
-    
-    // Refresh active pilots
-    await fetchActivePilots()
-    
-    alert('✅ Successfully checked out!')
-    
-  } catch (error) {
-    console.error('❌ Check-out error:', error)
-    alert('Failed to check out. Please try again.')
-  }
-}
-
-// Fix: Format time function
 function formatTime(dateString) {
   if (!dateString) return 'N/A'
-  
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    })
-  } catch (error) {
-    console.error('Date formatting error:', error)
-    return 'Invalid time'
-  }
+  return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-// Refresh function for manual refresh
-async function refreshData() {
-  await Promise.all([
-    refreshLocation(),
-    fetchActivePilots()
-  ])
-}
+// --- 4. Initialization ---
+onMounted(async () => {
+  if (location.value) {
+    await fetchActivePilots()
+    pollInterval = setInterval(fetchActivePilots, 30000)
+
+    // Auto Check-in logic if token is in URL
+    const token = route.query.token
+    if (token) {
+      if (!authStore.isAuthenticated) {
+        navigateTo(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+      } else if (authStore.user?.pilot_profile || authStore.user?.pilotProfile) {
+         await handleCheckIn(token)
+      }
+    }
+  }
+})
 </script>
 
 <template>
   <div class="location-page">
-
-
-    <!-- Loading state -->
-    <div v-if="pending" class="container py-5 text-center">
-      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="mt-3">Loading location information...</p>
+    <div v-if="pending" class="text-center py-10">
+      <div class="spinner-border text-primary"></div>
     </div>
 
-    <!-- Error state -->
-    <div v-else-if="locationError" class="container py-5">
-      <div class="alert alert-danger">
-        <h4><i class="bi bi-exclamation-triangle"></i> Error Loading Location</h4>
-        <p>{{ locationError.message || 'Failed to load location data' }}</p>
-        <button @click="refreshLocation" class="btn btn-outline-danger mt-2">
-          Try Again
-        </button>
-      </div>
-    </div>
-
-    <!-- Main content -->
-    <div v-else-if="location" class="location-content">
-      <!-- Header -->
-      <div class="location-header py-5 bg-dark text-white">
-        <div class="container">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h1 class="display-5 fw-bold mb-2">{{ location.name }}</h1>
-              <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-light text-dark">{{ location.type }}</span>
-                <span class="text-muted">
-                  <i class="bi bi-geo-alt me-1"></i>
-                  ID: {{ location.id }}
-                </span>
-              </div>
+    <div v-else-if="location" class="container py-5">
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card shadow rounded-4 mb-4 overflow-hidden">
+            <div class="bg-dark text-white p-4">
+               <h1 class="h3 mb-1">{{ location.name }}</h1>
+               <span class="badge bg-primary">{{ location.type }}</span>
             </div>
-            <div class="col-md-4 text-md-end">
-              <div class="location-stats">
-                <div class="fw-bold fs-4">{{ activePilots.length }}</div>
-                <div class="text-muted">Active Pilots</div>
+            
+            <div class="card-body p-4 text-center">
+              <div v-if="checkingIn">
+                 <div class="spinner-grow text-success mb-3"></div>
+                 <h4>Processing your entry...</h4>
+              </div>
+
+              <div v-else-if="isFlyingHere" class="py-4">
+                 <div class="alert alert-success d-inline-block px-5">
+                    <i class="bi bi-airplane-engines fs-1"></i>
+                    <h3 class="mt-3">You are Active!</h3>
+                    <p>Checked in at {{ formatTime(authStore.activeSession.checked_in_at) }}</p>
+                    <button @click="handleCheckOut" class="btn btn-danger btn-lg rounded-pill px-5">
+                        Confirm Landing (Check-out)
+                    </button>
+                 </div>
+              </div>
+
+              <div v-else-if="authStore.isAuthenticated && authStore.activeSession" class="py-4">
+                 <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle fs-2"></i>
+                    <p class="mb-0">You are currently checked in at <b>{{ authStore.activeSession.location?.name }}</b>.</p>
+                    <p class="small">Please check out from there before flying here.</p>
+                 </div>
+              </div>
+
+              <div v-else-if="authStore.isAuthenticated" class="py-4 text-center">
+                 <div v-if="route.query.token">
+                    <i class="bi bi-qr-code-scan display-1 text-primary"></i>
+                    <h2 class="mt-3">Ready to Fly?</h2>
+                    <button @click="handleCheckIn(route.query.token)" class="btn btn-success btn-xl px-5 rounded-pill shadow">
+                        Start Flight Session
+                    </button>
+                 </div>
+                 <div v-else class="text-muted">
+                    <i class="bi bi-upc-scan fs-1"></i>
+                    <p>Scan the QR code at the takeoff to start your session.</p>
+                 </div>
+              </div>
+
+              <div v-else class="py-4">
+                 <i class="bi bi-person-lock display-3 text-muted"></i>
+                 <h4 class="mt-3">Pilot Login Required</h4>
+                 <p>Log in to register your flight session in this airspace.</p>
+                 <button @click="navigateTo(`/login?redirect=${route.fullPath}`)" class="btn btn-primary rounded-pill px-5">
+                    Login / Register
+                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Main content -->
-      <div class="container py-5">
-        <div class="row g-4">
-          <!-- Left column - Check-in/Check-out -->
-          <div class="col-lg-8">
-            <div class="card shadow border-0 rounded-4">
-              <div class="card-body p-5">
-                <!-- Loading check-in state -->
-                <div v-if="checkingIn" class="text-center py-4">
-                  <div class="spinner-border text-success" style="width: 4rem; height: 4rem;" role="status">
-                    <span class="visually-hidden">Checking in...</span>
-                  </div>
-                  <h3 class="mt-4">Processing Check-in...</h3>
-                  <p class="text-muted">Please wait while we verify your session</p>
-                </div>
-
-                <!-- Not authenticated -->
-                <div v-else-if="!authStore.isAuthenticated" class="text-center py-4">
-                  <div class="icon-placeholder mb-4">
-                    <i class="bi bi-person-lock display-1 text-muted"></i>
-                  </div>
-                  <h3 class="mb-3">Login Required</h3>
-                  <p class="text-muted mb-4">You need to be logged in to check into this airspace</p>
-                  <button 
-                    @click="navigateTo(`/login?redirect=${route.fullPath}`)" 
-                    class="btn btn-primary btn-lg px-5 rounded-pill"
-                  >
-                    <i class="bi bi-box-arrow-in-right me-2"></i>
-                    Login Now
-                  </button>
-                </div>
-
-                <!-- Already flying here -->
-                <div v-else-if="isFlyingHere" class="text-center py-4">
-                  <div class="alert alert-success border-0 rounded-3">
-                    <div class="d-flex align-items-center justify-content-center mb-3">
-                      <i class="bi bi-airplane-fill display-4 me-3"></i>
-                      <div class="text-start">
-                        <h3 class="fw-bold mb-1">You're Flying!</h3>
-                        <p class="mb-0">Active at {{ location.name }}</p>
-                      </div>
-                    </div>
-                    
-                    <div class="session-info bg-white bg-opacity-25 rounded-2 p-3 mb-4">
-                      <div class="row text-center">
-                        <div class="col">
-                          <div class="fw-bold">Checked In</div>
-                          <div class="text-muted small">
-                            {{ formatTime(authStore.activeSession?.checked_in_at) }}
-                          </div>
-                        </div>
-                        <div class="col">
-                          <div class="fw-bold">Expires</div>
-                          <div class="text-muted small">
-                            {{ formatTime(authStore.activeSession?.expires_at) }}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <button 
-                      @click="handleCheckOut" 
-                      class="btn btn-danger btn-lg px-5 rounded-pill"
-                    >
-                      <i class="bi bi-box-arrow-right me-2"></i>
-                      Confirm Landing
-                    </button>
-                    
-                    <p class="mt-3 text-muted small">
-                      Click when you've landed to free up the airspace
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Flying elsewhere -->
-                <div v-else-if="authStore.activeSession" class="text-center py-4">
-                  <div class="alert alert-warning border-0 rounded-3">
-                    <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
-                    <h3 class="fw-bold mb-3">Already Active Elsewhere</h3>
-                    <p class="mb-3">
-                      You're currently checked in at 
-                      <strong>{{ authStore.activeSession.location?.name || 'another location' }}</strong>
-                    </p>
-                    <p class="text-muted small mb-0">
-                      You must check out from your current location before checking in here
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Ready to check in -->
-                <div v-else class="text-center py-4">
-                  <div class="checkin-ready">
-                    <div class="icon-placeholder mb-4">
-                      <i class="bi bi-airplane-takeoff display-1 text-primary"></i>
-                    </div>
-                    
-                    <h2 class="mb-3">Ready to Fly?</h2>
-                    <p class="text-muted mb-4">
-                      Start your flight session at {{ location.name }}
-                    </p>
-                    
-                    <!-- QR token available -->
-                    <div v-if="route.query.token" class="mb-4">
-                      <div class="alert alert-info border-0 rounded-3 mb-4">
-                        <i class="bi bi-qr-code-scan me-2"></i>
-                        QR Code detected - Ready for check-in
-                      </div>
-                      
-                      <button 
-                        @click="handleAutoCheckIn(route.query.token)" 
-                        class="btn btn-success btn-lg px-5 rounded-pill shadow"
-                      >
-                        <i class="bi bi-check-circle me-2"></i>
-                        Start Flight Session
-                      </button>
-                    </div>
-                    
-                    <!-- No QR token -->
-                    <div v-else class="mb-4">
-                      <div class="alert alert-secondary border-0 rounded-3 mb-4">
-                        <i class="bi bi-qr-code me-2"></i>
-                        Scan a QR code at the location to get started
-                      </div>
-                      
-                      <button 
-                        disabled 
-                        class="btn btn-secondary btn-lg px-5 rounded-pill"
-                      >
-                        <i class="bi bi-qr-code me-2"></i>
-                        Scan QR Code to Begin
-                      </button>
-                    </div>
-                    
-                    <p class="text-muted small mt-3">
-                      Session will expire automatically after 2 hours
-                    </p>
-                  </div>
-                </div>
-              </div>
+        <div class="col-lg-4">
+          <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+               <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Live Airspace</h5>
             </div>
-          </div>
-
-          <!-- Right column - Live airspace -->
-          <div class="col-lg-4">
-            <div class="card shadow border-0 rounded-4 h-100">
-              <div class="card-header bg-white border-0 pt-4 pb-3">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h4 class="fw-bold mb-0">
-                    <i class="bi bi-people-fill text-primary me-2"></i>
-                    Live Airspace
-                  </h4>
-                  
-                  <div class="d-flex align-items-center">
-                    <span class="badge bg-primary rounded-pill px-3 py-2 me-2">
-                      {{ activePilots.length }}
-                    </span>
-                    
-                    <button 
-                      @click="fetchActivePilots" 
-                      :disabled="loadingActivePilots"
-                      class="btn btn-sm btn-outline-primary"
-                      title="Refresh"
-                    >
-                      <i v-if="loadingActivePilots" class="bi bi-arrow-clockwise spin"></i>
-                      <i v-else class="bi bi-arrow-clockwise"></i>
-                    </button>
-                  </div>
-                </div>
+            <div class="list-group list-group-flush">
+              <div v-if="activePilots.length === 0" class="p-5 text-center text-muted">
+                 <p>Airspace is currently empty.</p>
               </div>
-              
-              <div class="card-body p-0">
-                <!-- Loading state -->
-                <div v-if="loadingActivePilots" class="text-center py-5">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                  <p class="mt-2 text-muted">Updating airspace...</p>
-                </div>
-                
-                <!-- Error state -->
-                <div v-else-if="fetchError" class="text-center py-5">
-                  <i class="bi bi-wifi-off display-4 text-muted mb-3"></i>
-                  <p class="text-muted">Unable to load airspace data</p>
-                  <button @click="fetchActivePilots" class="btn btn-sm btn-outline-primary">
-                    Try Again
-                  </button>
-                </div>
-                
-                <!-- Empty state -->
-                <div v-else-if="activePilots.length === 0" class="text-center py-5">
-                  <i class="bi bi-people display-4 text-muted mb-3"></i>
-                  <h5 class="fw-bold">Airspace is Clear</h5>
-                  <p class="text-muted small">No pilots currently active</p>
-                </div>
-                
-                <!-- Active pilots list -->
-                <div v-else class="active-pilots-list">
-                  <div class="list-group list-group-flush">
-                    <div 
-                      v-for="session in activePilots" 
-                      :key="session.id" 
-                      class="list-group-item border-0 py-3 px-4"
-                    >
-                      <div class="d-flex align-items-center">
-                        <div class="pilot-avatar me-3">
-                          <i class="bi bi-person-circle fs-2 text-primary"></i>
-                        </div>
-                        
-                        <div class="flex-grow-1">
-                          <div class="fw-bold mb-1">
-                            {{ session.pilot?.name || 'Unknown Pilot' }}
-                          </div>
-                          
-                          <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                              <i class="bi bi-clock me-1"></i>
-                              {{ formatTime(session.checked_in_at) }}
-                            </small>
-                            
-                            <span class="badge bg-success bg-opacity-10 text-success small">
-                              Active
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="card-footer bg-white border-0 py-3">
-                <div class="text-center small text-muted">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Updates automatically every 30 seconds
-                </div>
+              <div v-for="pilotSession in activePilots" :key="pilotSession.id" class="list-group-item d-flex align-items-center py-3">
+                 <div class="rounded-circle bg-primary-subtle p-2 me-3">
+                    <i class="bi bi-person text-primary"></i>
+                 </div>
+                 <div>
+                    <div class="fw-bold">{{ pilotSession.pilot?.name }}</div>
+                    <small class="text-muted">In: {{ formatTime(pilotSession.checked_in_at) }}</small>
+                 </div>
+                 <div class="ms-auto">
+                    <span class="badge rounded-pill bg-success-subtle text-success">Flying</span>
+                 </div>
               </div>
             </div>
           </div>
