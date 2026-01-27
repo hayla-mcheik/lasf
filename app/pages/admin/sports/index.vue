@@ -1,184 +1,133 @@
 <template>
-  <div class="sports-admin">
-    <div class="dashboard-header mb-6">
+  <div class="sports-admin container-fluid">
+    <div class="dashboard-header mb-4">
       <div class="d-flex justify-content-between align-items-center">
         <div>
           <h1 class="display-6 fw-bold text-dark mb-2">
             <i class="bi bi-trophy me-3 text-primary"></i>
             Sports & Disciplines
           </h1>
-          <div class="d-flex align-items-center gap-3">
-            <p class="text-muted mb-0">
-              <i class="bi bi-activity me-1"></i>
-              Manage all aerial sports supported by the federation
-            </p>
-            <span class="badge bg-primary-subtle text-primary">
-              {{ sports.length }} sports
-            </span>
+          <p class="text-muted mb-0">Manage all aerial sports supported by the federation</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center" @click="showCreateModal = true">
+          <i class="bi bi-plus-circle me-2"></i>
+          Add Sport
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">Total Sports</h6>
+            <h3 class="fw-bold mb-0">{{ sports.length }}</h3>
           </div>
         </div>
-        <div>
-          <button class="btn btn-primary d-flex align-items-center" @click="showCreateModal = true">
-            <i class="bi bi-plus-circle me-2"></i>
-            Add Sport
-          </button>
-        </div>
       </div>
     </div>
 
-    <div v-if="loading" class="loading-overlay">
-      <div class="text-center">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-          <span class="visually-hidden">Loading...</span>
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
         </div>
-        <p class="mt-3 text-muted">Loading sports...</p>
-      </div>
-    </div>
-
-    <div v-else-if="error" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <strong>Error:</strong> {{ error }}
-      <button type="button" class="btn-close" @click="error = null"></button>
-    </div>
-
-    <div v-else>
-      <div class="row g-4">
-        <div class="col-md-6 col-lg-4" v-for="sport in sports" :key="sport.id">
-          <div class="card border-0 shadow-sm h-100" style="overflow: visible !important;">
-            <div class="card-img-top" style="height: 180px; overflow: hidden;">
-              <div v-if="sport.image" class="h-100 bg-cover" 
-                   :style="{ backgroundImage: `url(${sport.image})` }"></div>
-              <div v-else class="h-100 bg-primary-subtle d-flex align-items-center justify-content-center">
-                <i class="bi bi-trophy display-4 text-primary"></i>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h5 class="card-title fw-semibold mb-1">{{ sport.name }}</h5>
-                  <div class="text-muted small">
-                    <i class="bi bi-geo-alt me-1"></i>
-                    {{ sport.flying_locations_count || 0 }} locations
+        <div v-else class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Sport Name</th>
+                <th>Description</th>
+                <th>Locations</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="sport in sports" :key="sport.id">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="sport-img-wrapper me-3">
+                      <img v-if="sport.image" :src="sport.image" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                      <div v-else class="avatar-sm bg-primary-subtle text-primary">
+                        <i class="bi bi-trophy"></i>
+                      </div>
+                    </div>
+                    <div class="fw-bold">{{ sport.name }}</div>
                   </div>
-                </div>
-                
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary" type="button" 
-                          @click.stop="toggleMenu(sport.id)">
-                    <i class="bi bi-three-dots-vertical"></i>
-                  </button>
-                  <ul class="dropdown-menu shadow-sm" :class="{ 'show': activeMenuId === sport.id }" 
-                      style="right: 0; left: auto;">
-                    <li>
-                      <a class="dropdown-item" href="#" @click.prevent="editSport(sport)">
-                        <i class="bi bi-pencil me-2"></i> Edit
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="#" @click.prevent="confirmDelete(sport)">
-                        <i class="bi bi-trash me-2 text-danger"></i> Delete
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <p class="card-text text-muted small mb-3" v-if="sport.description">
-                {{ truncateText(sport.description, 100) }}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-4">
-          <div class="card border-2 border-dashed h-100" 
-               @click="showCreateModal = true"
-               style="cursor: pointer; border-style: dashed !important;">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-              <div class="text-center py-5">
-                <i class="bi bi-plus-circle display-6 text-muted mb-3"></i>
-                <h5 class="text-muted">Add New Sport</h5>
-                <p class="text-muted small mb-0">Add a new aerial sport to the federation</p>
-              </div>
-            </div>
-          </div>
+                </td>
+                <td class="text-muted small">
+                  {{ truncateText(sport.description, 80) || 'No description provided' }}
+                </td>
+                <td>
+                  <span class="badge bg-info-subtle text-info rounded-pill px-3">
+                    {{ sport.flying_locations_count || 0 }} Locations
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-light border" type="button" @click.stop="toggleMenu(sport.id)">
+                      <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow-sm" :class="{ 'show': activeMenuId === sport.id }" 
+                        style="right: 0; left: auto; top: 100%; z-index: 1060;">
+                      <li>
+                        <a class="dropdown-item" href="#" @click.prevent="editSport(sport)">
+                          <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(sport)">
+                          <i class="bi bi-trash me-2"></i> Delete
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="!loading && sports.length === 0">
+                <td colspan="4" class="text-center py-5 text-muted">No sports found. Add your first sport!</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" 
-         :class="{ show: showCreateModal }" @click.self="closeModal">
+    <div v-if="showCreateModal" class="modal-backdrop fade show"></div>
+    <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" @click.self="closeModal">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
           <div class="modal-header border-bottom" :class="editingSport ? 'bg-primary text-white' : 'bg-success text-white'">
-            <h5 class="modal-title">
-              <i class="bi me-2" :class="editingSport ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
-              {{ editingSport ? 'Edit Sport' : 'Create New Sport' }}
-            </h5>
-            <button type="button" class="btn-close" :class="editingSport ? 'btn-close-white' : ''" 
-                    @click="closeModal"></button>
+            <h5 class="modal-title">{{ editingSport ? 'Edit Sport' : 'Add New Sport' }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="closeModal"></button>
           </div>
           <form @submit.prevent="saveSport" enctype="multipart/form-data">
             <div class="modal-body">
-              <div v-if="formErrors.length" class="alert alert-danger">
-                <ul class="mb-0">
-                  <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
-                </ul>
-              </div>
-              
-              <div class="row g-4">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Sport Name <span class="text-danger">*</span></label>
-                  <input v-model="form.name" type="text" class="form-control" :class="{ 'is-invalid': fieldErrors.name }" required
-                         placeholder="e.g., Paragliding, Paramotor, Skydiving...">
-                  <div v-if="fieldErrors.name" class="invalid-feedback">
-                    {{ fieldErrors.name[0] }}
-                  </div>
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">Sport Name</label>
+                  <input v-model="form.name" type="text" class="form-control" placeholder="e.g. Paragliding" required>
                 </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Sport Image</label>
-                  <div class="image-upload-container">
-                    <div v-if="imagePreview" class="image-preview mb-3">
-                      <img :src="imagePreview" alt="Preview" class="img-fluid rounded" style="max-height: 150px;">
-                      <button type="button" class="btn btn-sm btn-danger mt-2" @click="removeImage">
-                        <i class="bi bi-trash"></i> Remove Image
-                      </button>
-                    </div>
-                    <div v-else-if="editingSport?.image" class="image-preview mb-3">
-                      <img :src="editingSport.image" alt="Current" class="img-fluid rounded" style="max-height: 150px;">
-                      <button type="button" class="btn btn-sm btn-danger mt-2" @click="removeImage">
-                        <i class="bi bi-trash"></i> Remove Image
-                      </button>
-                    </div>
-                    <div v-else>
-                      <input type="file" class="form-control" :class="{ 'is-invalid': fieldErrors.image }" 
-                             accept="image/*" @change="handleImageUpload" ref="fileInput">
-                      <div class="form-text">
-                        Upload a representative image (max 2MB)
-                      </div>
-                      <div v-if="fieldErrors.image" class="invalid-feedback">
-                        {{ fieldErrors.image[0] }}
-                      </div>
-                    </div>
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">Sport Image</label>
+                  <div v-if="imagePreview || (editingSport && editingSport.image && !form.remove_image)" class="mb-2">
+                     <img :src="imagePreview || editingSport.image" class="rounded border" style="max-height: 100px;">
+                     <button type="button" class="btn btn-sm btn-link text-danger" @click="removeImage">Remove</button>
                   </div>
+                  <input type="file" @change="handleImageUpload" class="form-control" accept="image/*">
                 </div>
-                
                 <div class="col-12">
-                  <label class="form-label fw-semibold">Description</label>
-                  <textarea v-model="form.description" class="form-control" :class="{ 'is-invalid': fieldErrors.description }" rows="3"
-                            placeholder="Brief description of the sport..."></textarea>
-                  <div v-if="fieldErrors.description" class="invalid-feedback">
-                    {{ fieldErrors.description[0] }}
-                  </div>
+                  <label class="form-label fw-bold">Description</label>
+                  <textarea v-model="form.description" class="form-control" rows="4" placeholder="Describe the sport..."></textarea>
                 </div>
               </div>
             </div>
-            <div class="modal-footer border-top">
-              <button type="button" class="btn btn-outline-secondary" @click="closeModal">Cancel</button>
-              <button type="submit" class="btn" :class="editingSport ? 'btn-primary' : 'btn-success'" :disabled="saving">
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+              <button type="submit" class="btn btn-primary" :disabled="saving">
                 <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-                <i v-else class="bi" :class="editingSport ? 'bi-check-lg' : 'bi-plus-lg'"></i>
-                {{ editingSport ? 'Update Sport' : 'Create Sport' }}
+                Save Sport
               </button>
             </div>
           </form>
@@ -186,29 +135,25 @@
       </div>
     </div>
 
-    <div v-if="showDeleteModal" class="modal fade show d-block" tabindex="-1">
+    <div v-if="showDeleteModal" class="modal-backdrop fade show"></div>
+    <div v-if="showDeleteModal" class="modal fade show d-block" @click.self="closeDeleteModal">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-          <div class="modal-header border-bottom bg-danger text-white">
-            <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Sport</h5>
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">Confirm Delete</h5>
             <button type="button" class="btn-close btn-close-white" @click="closeDeleteModal"></button>
           </div>
-          <div class="modal-body text-center">
-            <h5 class="fw-bold">Delete Sport</h5>
-            <p class="text-muted">Are you sure you want to delete <strong class="text-danger">{{ sportToDelete?.name }}</strong>?</p>
+          <div class="modal-body text-center p-4">
+            <i class="bi bi-exclamation-triangle display-4 text-danger mb-3"></i>
+            <p class="mb-0">Are you sure you want to delete sport <strong>{{ sportToDelete?.name }}</strong>?</p>
           </div>
-          <div class="modal-footer border-top">
-            <button type="button" class="btn btn-outline-secondary" @click="closeDeleteModal">Cancel</button>
-            <button type="button" class="btn btn-danger" @click="deleteSport" :disabled="deleting">
-              <span v-if="deleting" class="spinner-border spinner-border-sm me-2"></span>
-              Delete Sport
-            </button>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
+            <button type="button" class="btn btn-danger" @click="deleteSport" :disabled="deleting">Delete</button>
           </div>
         </div>
       </div>
     </div>
-
-    <div v-if="showCreateModal || showDeleteModal" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
@@ -227,7 +172,7 @@ const saving = ref(false)
 const deleting = ref(false)
 const error = ref(null)
 const sports = ref([])
-const activeMenuId = ref(null) // TRACKS OPEN DROPDOWN
+const activeMenuId = ref(null) 
 
 const showCreateModal = ref(false)
 const showDeleteModal = ref(false)
@@ -240,7 +185,6 @@ const fileInput = ref(null)
 const form = reactive({
   name: '',
   description: '',
-  image: null,
   remove_image: false
 })
 
@@ -249,7 +193,6 @@ const toggleMenu = (id) => {
   activeMenuId.value = activeMenuId.value === id ? null : id
 }
 
-// Close menu when clicking outside
 const closeMenus = () => { activeMenuId.value = null }
 
 const truncateText = (text, length) => {
@@ -284,8 +227,7 @@ const handleImageUpload = (event) => {
 const removeImage = () => {
   imagePreview.value = null
   imageFile.value = null
-  if (fileInput.value) fileInput.value.value = ''
-  if (editingSport.value?.image) form.remove_image = true
+  form.remove_image = true
 }
 
 const editSport = (sport) => {
@@ -351,6 +293,7 @@ const closeModal = () => {
   showCreateModal.value = false
   editingSport.value = null
   imagePreview.value = null
+  imageFile.value = null
   Object.assign(form, { name: '', description: '', remove_image: false })
 }
 
@@ -370,19 +313,58 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Added overflow visible to card to ensure dropdown isn't clipped */
-.card { overflow: visible !important; }
-.dropdown-menu { 
-  display: none; 
-  position: absolute; 
-  z-index: 1000; 
-  top: 100%; 
-  right: 0; 
+.pilots-admin {
+  padding: 1.5rem 0;
+  background: #f8f9fa;
+  min-height: 100vh;
 }
-.dropdown-menu.show { display: block; }
 
-.sports-admin { padding: 1.5rem 0; background: #f8f9fa; min-height: 100vh; }
-.bg-cover { background-size: cover; background-position: center; }
-.modal-backdrop { opacity: 0.5; z-index: 1040; }
-.modal { z-index: 1050; }
+.dashboard-header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Avatar Sm matching Pilot style */
+.avatar-sm {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+/* Table Management */
+.table thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Dropdown fix */
+.dropdown {
+  position: relative;
+}
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  min-width: 150px;
+}
+.dropdown-menu.show {
+  display: block;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+.modal {
+  z-index: 1050;
+}
 </style>

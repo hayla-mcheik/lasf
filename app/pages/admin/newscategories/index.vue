@@ -211,19 +211,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
-definePageMeta({
-  layout: 'admin',
-})
-
+definePageMeta({ layout: 'admin' })
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 
-// Data
+// State
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
@@ -231,6 +227,7 @@ const error = ref(null)
 const formErrors = ref([])
 const fieldErrors = ref({})
 const categories = ref([])
+const activeMenuId = ref(null) // State for the 3-dot dropdown
 
 // Modals
 const showCreateModal = ref(false)
@@ -239,38 +236,49 @@ const showDeleteModal = ref(false)
 // Forms
 const editingCategory = ref(null)
 const categoryToDelete = ref(null)
+const form = reactive({ name: '' })
 
-const form = reactive({
-  name: ''
-})
+// --- HELPER FUNCTIONS ---
 
-// Methods
+// 1. Logic for s.getCategoryType
+const getCategoryType = (name) => {
+  if (!name) return 'General'
+  const n = name.toLowerCase()
+  if (n.includes('weather')) return 'Weather'
+  if (n.includes('clearance') || n.includes('status')) return 'Safety'
+  if (n.includes('event')) return 'Community'
+  if (n.includes('alert') || n.includes('urgent')) return 'Alert'
+  return 'Information'
+}
+
+// 2. Logic for formatTimeAgo
+const formatTimeAgo = (date) => {
+  if (!date) return 'Recently'
+  const now = new Date()
+  const diff = Math.floor((now - new Date(date)) / 1000)
+  
+  if (diff < 60) return 'Just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
+}
+
+// 3. Dropdown Toggler
+const toggleMenu = (id) => {
+  activeMenuId.value = activeMenuId.value === id ? null : id
+}
+
+// --- API METHODS ---
+
 const fetchCategories = async () => {
   try {
     loading.value = true
-    error.value = null
-
-    const data = await $fetch(`${config.public.apiBase || 'http://localhost:8000'}/admin/news-categories`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
+    const data = await $fetch(`${config.public.apiBase}/admin/news-categories`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    
     categories.value = data.data || data
-    
   } catch (err) {
-    console.error('Failed to fetch categories:', err)
     error.value = err.message || 'Failed to load categories.'
-    
-    if (config.public.devMode) {
-      categories.value = [
-        { id: 1, name: 'Clearance Updates', news_count: 12, created_at: '2024-01-10T10:30:00Z' },
-        { id: 2, name: 'Weather Alerts', news_count: 8, created_at: '2024-01-09T14:20:00Z' },
-      ]
-      error.value = null
-    }
   } finally {
     loading.value = false
   }
@@ -279,54 +287,21 @@ const fetchCategories = async () => {
 const saveCategory = async () => {
   try {
     saving.value = true
-    formErrors.value = []
-    fieldErrors.value = {}
-    
-    const baseUrl = config.public.apiBase || 'http://localhost:8000'
     const isEditing = !!editingCategory.value
     const url = isEditing 
-      ? `${baseUrl}/admin/news-categories/${editingCategory.value.id}`
-      : `${baseUrl}/admin/news-categories`
+      ? `${config.public.apiBase}/admin/news-categories/${editingCategory.value.id}`
+      : `${config.public.apiBase}/admin/news-categories`
     
-    const response = await $fetch(url, {
+    await $fetch(url, {
       method: isEditing ? 'PUT' : 'POST',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form),
+      headers: { 'Authorization': `Bearer ${authStore.token}` },
+      body: form,
     })
     
-    if (response.success || response.data) {
-      // 1. Update the local list instantly (Optimistic UI)
-      if (isEditing) {
-        const index = categories.value.findIndex(c => c.id === editingCategory.value.id)
-        if (index !== -1) {
-          categories.value[index] = { ...categories.value[index], ...form }
-        }
-      } else {
-        await fetchCategories()
-      }
-
-      // 2. Trigger SUCCESS Toast
-      addToast(
-        isEditing ? 'Category updated successfully!' : 'Category created successfully!', 
-        'success'
-      )
-      
-      closeModal()
-    }
+    closeModal()
+    await fetchCategories()
   } catch (err) {
-    console.error('Failed to save category:', err)
-    
-    // Extract error message for the Toast
-    const errorMsg = err.data?.message || err.message || 'Failed to save category'
-    addToast(errorMsg, 'error')
-
-    if (err.data?.errors) {
-      fieldErrors.value = err.data.errors
-      formErrors.value = [err.data.message]
-    }
+    fieldErrors.value = err.data?.errors || {}
   } finally {
     saving.value = false
   }
@@ -335,40 +310,28 @@ const saveCategory = async () => {
 const deleteCategory = async () => {
   try {
     deleting.value = true
-    const baseUrl = config.public.apiBase || 'http://localhost:8000'
-    const url = `${baseUrl}/admin/news-categories/${categoryToDelete.value.id}`
-    
-    const response = await $fetch(url, {
+    await $fetch(`${config.public.apiBase}/admin/news-categories/${categoryToDelete.value.id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    
-    if (response.success || response.data) {
-      // Remove from local list instantly
-      categories.value = categories.value.filter(c => c.id !== categoryToDelete.value.id)
-      
-      addToast('Category deleted successfully!', 'success')
-      closeDeleteModal()
-    }
+    closeDeleteModal()
+    await fetchCategories()
   } catch (err) {
-    const errorMsg = err.data?.message || err.message || 'Failed to delete category'
-    addToast(errorMsg, 'error')
+    console.error(err)
   } finally {
     deleting.value = false
   }
 }
 
-// Utility methods remain same...
 const editCategory = (category) => {
+  activeMenuId.value = null
   editingCategory.value = category
   form.name = category.name
   showCreateModal.value = true
 }
 
 const confirmDelete = (category) => {
+  activeMenuId.value = null
   categoryToDelete.value = category
   showDeleteModal.value = true
 }
@@ -384,7 +347,16 @@ const closeDeleteModal = () => {
   categoryToDelete.value = null
 }
 
-onMounted(fetchCategories)
+const handleGlobalClick = () => { activeMenuId.value = null }
+
+onMounted(() => {
+  fetchCategories()
+  window.addEventListener('click', handleGlobalClick)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleGlobalClick)
+})
 </script>
 
 <style scoped>
