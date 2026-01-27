@@ -223,7 +223,9 @@ const showQRCode = async (location) => {
   await nextTick()
   
   if (location.qr_code?.token && qrCodeRef.value) {
-    const url = `${window.location.origin}/reserve/${location.slug}?token=${location.qr_code.token}`
+    // FIX: Point directly to the location page with the token as a query parameter
+    const url = `${window.location.origin}/location/${location.slug}?token=${location.qr_code.token}`
+    
     QRCode.toCanvas(qrCodeRef.value, url, { width: 220, margin: 2 })
   }
 }

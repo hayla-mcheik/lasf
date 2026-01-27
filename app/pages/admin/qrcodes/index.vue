@@ -425,12 +425,11 @@ const formatTimeAgo = (dateString) => {
   return `${Math.floor(diffMins / 10080)}w ago`
 }
 
-const generateQRURL = (location) => {
+const generateQRURL = (token, slug) => {
   const baseURL = window.location.origin 
-  // Redirects to the specific location page with the security token
-  return `${baseURL}/location/${location.slug || location.id}?token=${location.qr_code.token}`
+  // Use the slug for better SEO and consistency with your Nuxt file structure
+  return `${baseURL}/location/${slug}?token=${token}`
 }
-
 const generateQRImage = (token) => {
   const qrURL = generateQRURL(token)
   // Using a QR code generation service
