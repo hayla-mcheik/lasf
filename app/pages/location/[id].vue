@@ -246,20 +246,23 @@ async function handleCheckOut() {
   }
 }
 
-// Fix: Format time function
 function formatTime(dateString) {
-  if (!dateString) return 'N/A'
+  if (!dateString) return 'N/A';
   
   try {
-    const date = new Date(dateString)
+    // 1. Force the string to be treated as UTC if it doesn't have a 'Z' or offset
+    // This ensures JavaScript knows it's coming from the server's UTC clock
+    const date = new Date(dateString.includes('Z') ? dateString : dateString + 'Z');
+
+    // 2. Format to the user's locale (this automatically converts UTC to Beirut time)
     return date.toLocaleTimeString('en-US', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: true 
-    })
+    });
   } catch (error) {
-    console.error('Date formatting error:', error)
-    return 'Invalid time'
+    console.error('Date formatting error:', error);
+    return 'Invalid time';
   }
 }
 
@@ -302,13 +305,13 @@ async function refreshData() {
         <div class="container">
           <div class="row align-items-center">
             <div class="col-md-8">
-              <h1 class="display-5 fw-bold mb-2">{{ location.name }}</h1>
+              <h1 class="display-5 fw-bold mb-5 text-white">{{ location.name }}</h1>
               <div class="d-flex align-items-center gap-3">
                 <span class="badge bg-light text-dark">{{ location.type }}</span>
-                <span class="text-muted">
+                <!-- <span class="text-muted">
                   <i class="bi bi-geo-alt me-1"></i>
                   ID: {{ location.id }}
-                </span>
+                </span> -->
               </div>
             </div>
             <div class="col-md-4 text-md-end">
@@ -537,7 +540,7 @@ async function refreshData() {
                           <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">
                               <i class="bi bi-clock me-1"></i>
-                              {{ formatTime(session.checked_in_at) }}
+                              {{ formatTime(session.checked_in_at) }}  
                             </small>
                             
                             <span class="badge bg-success bg-opacity-10 text-success small">

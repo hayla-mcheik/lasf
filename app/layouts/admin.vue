@@ -104,30 +104,7 @@
           />
         </div>
 
-        <div class="nav-section">
-          <div class="nav-label" v-if="!sidebarCollapsed">Tools</div>
-          <NavItem 
-            :active="$route.path.startsWith('/admin/qrcodes')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-qr-code"
-            label="QR Codes"
-            to="/admin/qrcodes"
-          />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/reports')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-graph-up"
-            label="Reports"
-            to="/admin/reports"
-          />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/settings')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-gear"
-            label="Settings"
-            to="/admin/settings"
-          />
-        </div>
+   
       </nav>
 
       <!-- User Profile -->
