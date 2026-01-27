@@ -172,7 +172,7 @@
                     <thead>
                       <tr>
                         <th>Location</th>
-                        <th>Region</th>
+              
                         <th>Status</th>
                         <th>Updated</th>
                       </tr>
@@ -180,7 +180,7 @@
                     <tbody>
                       <tr v-for="location in locationStatus.locations.slice(0, 5)" :key="location.name">
                         <td>{{ location.name }}</td>
-                        <td>{{ location.region }}</td>
+                
                         <td>
                           <span :class="`badge bg-${getStatusColor(location.status)}`">
                             {{ location.status }}
