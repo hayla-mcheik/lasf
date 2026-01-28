@@ -294,7 +294,7 @@ const fetchMedia = async () => {
   } finally { loading.value = false }
 }
 
-const handleSearch = useDebounceFn(fetchEvents, 500)
+const handleSearch = useDebounceFn(fetchMedia, 500)
 
 const browseFiles = () => fileInput.value.click()
 const handleFileSelect = (e) => selectedFiles.value.push(...Array.from(e.target.files))
