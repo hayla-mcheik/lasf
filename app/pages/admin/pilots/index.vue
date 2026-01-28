@@ -354,42 +354,22 @@ const confirmDelete = (pilot) => {
 }
 
 const deletePilot = async () => {
+  deleting.value = true
   try {
-    deleting.value = true
-    
-    const baseUrl = config.public.apiBase || 'http://localhost:8000'
-    const url = `${baseUrl}/admin/pilots/${pilotToDelete.value.id}`
-    
-    const response = await $fetch(url, {
+    await $fetch(`${config.public.apiBase}/admin/pilots/${pilotToDelete.value.id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    
-    if (response.success || response.data) {
-      closeDeleteModal()
-      await fetchPilots()
-      alert('Pilot deleted successfully!')
-    } else {
-      throw new Error(response.message || 'Failed to delete pilot')
-    }
-    
+    closeDeleteModal()
+    await fetchPilots()
+    alert('Pilot deleted successfully!')
   } catch (err) {
-    console.error('Failed to delete pilot:', err)
-    
-    // Show error message
-    if (err.data && err.data.message) {
-      alert(err.data.message)
-    } else {
-      alert(err.message || 'Failed to delete pilot. Please try again.')
-    }
-  } finally {
-    deleting.value = false
+    console.error('Delete failed:', err)
+    alert(err.data?.message || 'Failed to delete pilot')
+  } finally { 
+    deleting.value = false 
   }
 }
-
 const exportPilots = async () => {
   try {
     const baseUrl = config.public.apiBase || 'http://localhost:8000'

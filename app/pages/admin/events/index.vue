@@ -321,7 +321,7 @@ const fetchEvents = async () => {
       page: pagination.current_page, search: filters.search, 
       status: filters.status, type: filters.type 
     })
-    const data = await $fetch(`${config.public.apiBase}/admin/events?${params}`, {
+    const data = await $fetch(`${config.public.apiBase}/admin/events`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     events.value = data.data || []
