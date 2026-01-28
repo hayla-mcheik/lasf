@@ -145,25 +145,6 @@
       </div>
     </div>
 
-    <div v-if="pagination.total > pagination.per_page" class="d-flex justify-content-between align-items-center mt-4 px-2">
-      <div class="text-muted small">
-        Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} events
-      </div>
-      <nav>
-        <ul class="pagination pagination-sm mb-0">
-          <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
-            <button class="page-link" @click="changePage(pagination.current_page - 1)">Previous</button>
-          </li>
-          <li v-for="page in pagination.last_page" :key="page" class="page-item" 
-              :class="{ active: page === pagination.current_page }">
-            <button class="page-link" @click="changePage(page)">{{ page }}</button>
-          </li>
-          <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
-            <button class="page-link" @click="changePage(pagination.current_page + 1)">Next</button>
-          </li>
-        </ul>
-      </nav>
-    </div>
 
     <div v-if="showCreateModal" class="modal-backdrop fade show"></div>
     <div v-if="showCreateModal" class="modal fade show d-block" tabindex="-1" @click.self="closeModal">
@@ -317,18 +298,30 @@ const formatEventDate = (e) => {
 const fetchEvents = async () => {
   loading.value = true
   try {
-    const params = new URLSearchParams({ 
-      page: pagination.current_page, search: filters.search, 
-      status: filters.status, type: filters.type 
-    })
-    const data = await $fetch(`${config.public.apiBase}/admin/events`, {
+    // Construct query parameters for search and filters
+    const query = new URLSearchParams({
+      search: filters.search || '',
+      status: filters.status || '',
+      type: filters.type || ''
+    }).toString();
+
+    const response = await $fetch(`${config.public.apiBase}/admin/events?${query}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    events.value = data.data || []
-    if (data.total) Object.assign(pagination, data)
-    stats.upcoming = events.value.filter(e => new Date(e.start_date) > new Date()).length
-    stats.ongoing = events.value.filter(e => e.status === 'ongoing').length
-  } catch (err) { error.value = "Failed to load events" } finally { loading.value = false }
+
+    // Assign the array directly
+    events.value = response;
+
+    // Update the dashboard counter boxes
+    stats.upcoming = events.value.filter(e => new Date(e.start_date) > new Date()).length;
+    stats.ongoing = events.value.filter(e => e.status === 'ongoing').length;
+
+  } catch (err) { 
+    error.value = "Failed to load events";
+    console.error('Fetch Error:', err);
+  } finally { 
+    loading.value = false;
+  }
 }
 
 const handleSearch = useDebounceFn(fetchEvents, 500)
