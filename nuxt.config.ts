@@ -31,7 +31,7 @@ debug:true,
   runtimeConfig: {
     public: {
       apiBase: process.env.API_BASE_URL || 'https://lasf.info/api',
-      mediaBase: process.env.MEDIA_BASE_URL || 'https://lasf.info'
+      mediaBase: process.env.MEDIA_BASE_URL || 'https://lasf.info/api'
  
     }
   },
