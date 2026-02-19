@@ -41,6 +41,7 @@
               <tr>
                 <th class="ps-4">Location & Type</th>
                 <th class="text-center">Takeoff (K/N)</th>
+                <th class="text-center">Allowed Sports</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">QR Code</th>
                 <th class="text-center">Actions</th>
@@ -57,25 +58,32 @@
                   <div class="text-muted">N: {{ location.takeoff_nazim }}</div>
                 </td>
                 <td class="text-center">
+                  <div class="d-flex flex-wrap justify-content-center gap-1">
+                    <span v-for="sport in location.sports" :key="sport.id" class="badge bg-secondary-subtle text-secondary border small">
+                      {{ sport.name }}
+                    </span>
+                    <span v-if="!location.sports?.length" class="text-muted small italic">None</span>
+                  </div>
+                </td>
+                <td class="text-center">
                   <span :class="`status-badge-modern ${getCurrentStatus(location).status}`">
                     <span class="pulse-dot"></span>
                     {{ getCurrentStatus(location).label }}
                   </span>
                 </td>
-<td class="text-center">
-  <button v-if="location.qr_code" class="btn btn-sm btn-success shadow-sm" @click="showQRCode(location)">
-    <i class="bi bi-qr-code"></i> View QR
-  </button>
-  
-  <button v-else 
-          class="btn btn-sm btn-outline-primary" 
-          @click="generateQRCode(location)"
-          :disabled="generatingId === location.id">
-    <span v-if="generatingId === location.id" class="spinner-border spinner-border-sm me-1"></span>
-    <i v-else class="bi bi-plus-circle"></i> 
-    Generate QR
-  </button>
-</td>
+                <td class="text-center">
+                  <button v-if="location.qr_code" class="btn btn-sm btn-success shadow-sm" @click="showQRCode(location)">
+                    <i class="bi bi-qr-code"></i> View QR
+                  </button>
+                  <button v-else 
+                          class="btn btn-sm btn-outline-primary" 
+                          @click="generateQRCode(location)"
+                          :disabled="generatingId === location.id">
+                    <span v-if="generatingId === location.id" class="spinner-border spinner-border-sm me-1"></span>
+                    <i v-else class="bi bi-plus-circle"></i> 
+                    Generate QR
+                  </button>
+                </td>
                 <td class="text-center">
                   <div class="btn-group">
                     <button class="btn btn-sm btn-light border" @click="editLocation(location)"><i class="bi bi-pencil"></i></button>
@@ -100,19 +108,24 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Name</label>
-                  <input v-model="form.name" type="text" class="form-control" required>
+                  <input v-model="form.name" type="text" :class="['form-control', {'is-invalid': validationErrors.name}]">
+                  <div v-if="validationErrors.name" class="invalid-feedback">{{ validationErrors.name[0] }}</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Type (Excel)</label>
-                  <input v-model="form.type" type="text" class="form-control" required>
+                  <input v-model="form.type" type="text" :class="['form-control', {'is-invalid': validationErrors.type}]">
+                  <div v-if="validationErrors.type" class="invalid-feedback">{{ validationErrors.type[0] }}</div>
+                </div>
+                
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Takeoff Kato *</label>
+                  <input v-model="form.takeoff_kato" type="text" :class="['form-control', {'is-invalid': validationErrors.takeoff_kato}]">
+                  <div v-if="validationErrors.takeoff_kato" class="invalid-feedback">{{ validationErrors.takeoff_kato[0] }}</div>
                 </div>
                 <div class="col-md-3">
-                  <label class="form-label small fw-bold">Takeoff Kato</label>
-                  <input v-model="form.takeoff_kato" type="text" class="form-control">
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small fw-bold">Takeoff Nazim</label>
-                  <input v-model="form.takeoff_nazim" type="text" class="form-control">
+                  <label class="form-label small fw-bold">Takeoff Nazim *</label>
+                  <input v-model="form.takeoff_nazim" type="text" :class="['form-control', {'is-invalid': validationErrors.takeoff_nazim}]">
+                  <div v-if="validationErrors.takeoff_nazim" class="invalid-feedback">{{ validationErrors.takeoff_nazim[0] }}</div>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label small fw-bold">Landing Kato</label>
@@ -122,7 +135,27 @@
                   <label class="form-label small fw-bold">Landing Nazim</label>
                   <input v-model="form.landing_nazim" type="text" class="form-control">
                 </div>
+
                 <div class="col-md-12">
+                  <label class="form-label fw-bold d-block">Allowed Sports</label>
+                  <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+                    <div v-for="sport in availableSports" :key="sport.id" class="form-check">
+                      <input 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        :id="'sport-' + sport.id"
+                        :value="sport.id"
+                        v-model="form.sports"
+                      >
+                      <label class="form-check-label" :for="'sport-' + sport.id">
+                        {{ sport.name }}
+                      </label>
+                    </div>
+                    <div v-if="availableSports.length === 0" class="text-muted small">Loading sports...</div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
                   <label class="form-label fw-bold">Max Altitude</label>
                   <input v-model="form.max_altitude" type="text" class="form-control">
                 </div>
@@ -137,7 +170,10 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-light" @click="closeModal">Cancel</button>
-              <button type="submit" class="btn btn-primary" :disabled="saving">Save</button>
+              <button type="submit" class="btn btn-primary" :disabled="saving">
+                <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
+                Save Location
+              </button>
             </div>
           </form>
         </div>
@@ -165,9 +201,7 @@
       </div>
     </div>
 
-<div v-if="showCreateModal || showQRModal" 
-     class="modal-backdrop fade show" 
-     @click="closeModal"></div>
+    <div v-if="showCreateModal || showQRModal" class="modal-backdrop fade show" @click="closeModal"></div>
   </div>
 </template>
 
@@ -181,10 +215,12 @@ definePageMeta({ layout: 'admin' })
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
-const { $toast } = useNuxtApp()
+const nuxtApp = useNuxtApp()
 
 // State
 const locations = ref([])
+const availableSports = ref([])
+const validationErrors = ref({})
 const loading = ref(false)
 const saving = ref(false)
 const showCreateModal = ref(false)
@@ -193,15 +229,44 @@ const editingLocation = ref(null)
 const selectedLocation = ref(null)
 const qrCodeRef = ref(null)
 const searchQuery = ref('')
+const generatingId = ref(null)
 const pagination = reactive({ total: 0 })
 
 const form = reactive({
   name: '', type: '', takeoff_kato: '', takeoff_nazim: '',
   landing_kato: '', landing_nazim: '', max_altitude: '',
-  clearance_status: 'green', is_enabled: true
+  clearance_status: 'green', is_enabled: true,
+  sports: [] 
 })
 
-// Functions
+// --- ROBUST NOTIFICATION HELPER ---
+const notify = (type, message) => {
+  if (process.client) {
+    // Try to use $toast if available, otherwise use native alert
+    try {
+      if (nuxtApp.$toast && typeof nuxtApp.$toast[type] === 'function') {
+        nuxtApp.$toast[type](message)
+      } else {
+        alert(`${type.toUpperCase()}: ${message}`)
+      }
+    } catch (e) {
+      alert(`${type.toUpperCase()}: ${message}`)
+    }
+  }
+}
+
+// --- FETCH LOGIC ---
+const fetchSports = async () => {
+  try {
+    const res = await $fetch(`${config.public.apiBase}/sports`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    availableSports.value = res.data || res
+  } catch (err) {
+    console.error('Sports load failed', err)
+  }
+}
+
 const fetchLocations = async () => {
   loading.value = true
   try {
@@ -211,96 +276,16 @@ const fetchLocations = async () => {
     locations.value = res.data || res
     pagination.total = locations.value.length
   } catch (err) {
-    $toast.error('Failed to load data')
+    notify('error', 'Failed to load locations')
   } finally {
     loading.value = false
   }
 }
 
-const showQRCode = async (location) => {
-  selectedLocation.value = location
-  showQRModal.value = true
-  await nextTick()
-  
-  if (location.qr_code?.token && qrCodeRef.value) {
-    // FIX: Point directly to the location page with the token as a query parameter
-    const url = `${window.location.origin}/location/${location.slug}?token=${location.qr_code.token}`
-    
-    QRCode.toCanvas(qrCodeRef.value, url, { width: 220, margin: 2 })
-  }
-}
-
-// أضف هذا المتغير في قسم الـ State
-const generatingId = ref(null)
-
-const generateQRCode = async (location) => {
-  generatingId.value = location.id // تفعيل حالة التحميل لهذا الزر فقط
-  
-  try {
-    const res = await $fetch(`${config.public.apiBase}/admin/flying-locations/${location.id}/generate-qr`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
-    
-    if (res.success) {
-      // 1. ابحث عن مكان هذا الموقع في المصفوفة الحالية
-      const index = locations.value.findIndex(l => l.id === location.id)
-      
-      if (index !== -1) {
-        // 2. تحديث الكائن بالكامل (Object Spread) 
-        // هذه الطريقة تجبر Vue على إعادة رندر هذا السطر فوراً
-        const updatedLocation = {
-          ...locations.value[index],
-          qr_code: res.data // تأكد أن السيرفر يرجع بيانات الـ QR في res.data
-        }
-        
-        locations.value[index] = updatedLocation
-        
-        $toast.success('QR Code Generated Successfully')
-        
-        // 3. فتح نافذة العرض تلقائياً للمستخدم بعد التوليد
-        showQRCode(updatedLocation)
-      }
-    }
-  } catch (err) {
-    console.error('QR Generation Error:', err)
-    $toast.error('Failed to generate QR code')
-  } finally {
-    generatingId.value = null // إغلاق حالة التحميل
-  }
-}
-// Add this helper function at the top of your script
-const showToast = (type, message) => {
-  try {
-    if (typeof $toast !== 'undefined') {
-      if (type === 'success' && $toast.success) {
-        $toast.success(message)
-      } else if (type === 'error' && $toast.error) {
-        $toast.error(message)
-      } else if ($toast) {
-        $toast(message) // Fallback
-      }
-    } else {
-      // Fallback if $toast is not available
-      console.log(`${type.toUpperCase()}: ${message}`)
-      
-      // Optionally use a different toast library or simple alert
-      if (process.client) {
-        // You could use a simple browser notification
-        if (type === 'error') {
-          alert('Error: ' + message)
-        } else {
-          alert(message)
-        }
-      }
-    }
-  } catch (e) {
-    console.error('Toast error:', e)
-  }
-}
-
+// --- SAVE LOGIC ---
 const saveLocation = async () => {
   saving.value = true
+  validationErrors.value = {}
   
   const isEditing = !!editingLocation.value
   const url = isEditing 
@@ -317,117 +302,101 @@ const saveLocation = async () => {
       body: JSON.stringify(form)
     })
 
-    console.log('Save successful:', result)
+    const updatedData = result.data || result
     
-    // ============ IMPORTANT: UPDATE UI IMMEDIATELY ============
     if (isEditing) {
-      // Find and update the existing location in the array
       const index = locations.value.findIndex(l => l.id === editingLocation.value.id)
       if (index !== -1) {
-        // Create a new array to trigger Vue reactivity
-        const updatedLocations = [...locations.value]
-        
-        // Update with the returned data or form data
-        const updatedData = result.data || result || form
-        
-        // Preserve the QR code if it exists
-        const existingQrCode = updatedLocations[index].qr_code
-        
-        updatedLocations[index] = {
-          ...updatedLocations[index],
+        locations.value[index] = { 
+          ...locations.value[index], 
           ...updatedData,
-          qr_code: existingQrCode, // Keep existing QR code
-          clearance_statuses: [{ 
-            status: form.clearance_status,
-            updated_at: new Date().toISOString()
-          }]
+          clearance_statuses: [{ status: form.clearance_status }] 
         }
-        
-        locations.value = updatedLocations
       }
     } else {
-      // For new location - add to the beginning of the array
-      const newLocation = result.data || result || form
-      
-      if (newLocation.id) {
-        locations.value = [newLocation, ...locations.value]
-        pagination.total += 1
-      } else {
-        // If no ID returned, refresh the list
-        await fetchLocations()
-      }
+      locations.value = [updatedData, ...locations.value]
+      pagination.total++
     }
-    // ============ END UI UPDATE ============
     
-    showToast('success', 'Saved successfully')
+    notify('success', 'Location saved successfully')
     closeModal()
-    
   } catch (error) {
-    console.error('Save failed:', error)
-    
-    let errorMsg = 'Failed to save location'
-    if (error.data) {
-      errorMsg = error.data.message || JSON.stringify(error.data)
-    } else if (error.message) {
-      errorMsg = error.message
-    }
-    
-    showToast('error', errorMsg)
-    
-    if (error.status !== 422) {
-      closeModal()
+    console.error('Error saving:', error)
+    if (error.status === 422) {
+      validationErrors.value = error.data?.errors || {}
+      notify('error', 'Please fix validation errors')
+    } else {
+      notify('error', error.data?.message || 'Server error occurred')
     }
   } finally {
     saving.value = false
   }
 }
 
-const closeModal = () => {
-  console.log('Closing modal...')
-  showCreateModal.value = false
+// --- UI HANDLERS ---
+const openCreateModal = () => {
   editingLocation.value = null
   resetForm()
-  
-  // Small delay to ensure DOM updates
-  setTimeout(() => {
-    if (process.client) {
-      document.body.classList.remove('modal-open')
-      document.body.style.overflow = 'auto'
-    }
-  }, 50)
+  validationErrors.value = {}
+  showCreateModal.value = true
 }
-
-const handleSearch = useDebounceFn(() => fetchLocations(), 500)
 
 const editLocation = (location) => {
   editingLocation.value = location
+  validationErrors.value = {}
   Object.assign(form, location)
+  form.sports = location.sports ? location.sports.map(s => s.id) : []
   form.clearance_status = location.clearance_statuses?.[0]?.status || 'green'
   showCreateModal.value = true
 }
 
-const openCreateModal = () => {
+const closeModal = () => {
+  showCreateModal.value = false
   editingLocation.value = null
   resetForm()
-  showCreateModal.value = true
 }
 
-
-
-const closeQRModal = () => { showQRModal.value = false }
 const resetForm = () => {
   Object.assign(form, {
     name: '', type: '', takeoff_kato: '', takeoff_nazim: '',
     landing_kato: '', landing_nazim: '', max_altitude: '',
-    clearance_status: 'green', is_enabled: true
+    clearance_status: 'green', is_enabled: true, sports: []
   })
 }
 
-const getCurrentStatus = (location) => {
-  const s = location.clearance_statuses?.[0]?.status || 'green'
-  return { status: s, label: s === 'green' ? 'Cleared' : 'Closed' }
+const showQRCode = async (location) => {
+  selectedLocation.value = location
+  showQRModal.value = true
+  await nextTick()
+  if (location.qr_code?.token && qrCodeRef.value) {
+    const url = `${window.location.origin}/location/${location.slug}?token=${location.qr_code.token}`
+    QRCode.toCanvas(qrCodeRef.value, url, { width: 220, margin: 2 })
+  }
 }
 
+const generateQRCode = async (location) => {
+  generatingId.value = location.id
+  try {
+    const res = await $fetch(`${config.public.apiBase}/admin/flying-locations/${location.id}/generate-qr`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    if (res.success) {
+      const index = locations.value.findIndex(l => l.id === location.id)
+      if (index !== -1) {
+        locations.value[index].qr_code = res.data
+        showQRCode(locations.value[index])
+      }
+      notify('success', 'QR Code Generated')
+    }
+  } catch (err) {
+    notify('error', 'Failed to generate QR')
+  } finally {
+    generatingId.value = null
+  }
+}
+
+const closeQRModal = () => { showQRModal.value = false }
 const downloadQR = () => {
   const link = document.createElement('a')
   link.download = `QR-${selectedLocation.value.name}.png`
@@ -435,7 +404,16 @@ const downloadQR = () => {
   link.click()
 }
 
-onMounted(fetchLocations)
+const handleSearch = useDebounceFn(() => fetchLocations(), 500)
+const getCurrentStatus = (location) => {
+  const s = location.clearance_statuses?.[0]?.status || 'green'
+  return { status: s, label: s === 'green' ? 'Cleared' : 'Closed' }
+}
+
+onMounted(() => {
+  fetchLocations()
+  fetchSports()
+})
 </script>
 
 <style scoped>
@@ -445,6 +423,6 @@ onMounted(fetchLocations)
 .status-badge-modern.red { background: #fee2e2; color: #991b1b; }
 .pulse-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
 .green .pulse-dot { background: #22c55e; animation: pulse 2s infinite; }
-
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+.italic { font-style: italic; }
 </style>

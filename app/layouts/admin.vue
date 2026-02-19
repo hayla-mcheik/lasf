@@ -103,13 +103,13 @@
             to="/admin/regulations"
           />
 
-                 <NavItem 
+                 <!-- <NavItem 
             :active="$route.path.startsWith('/admin/settings')"
             :collapsed="sidebarCollapsed"
             icon="bi-shield-check"
             label="Settings"
             to="/admin/settings"
-          />
+          /> -->
         </div>
 
    

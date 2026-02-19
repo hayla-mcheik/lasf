@@ -118,27 +118,11 @@
                     </button>
                     <ul class="dropdown-menu shadow-sm" :class="{ 'show': activeMenuId === item.id }" 
                         style="right: 0; left: auto; top: 100%; z-index: 1060;">
-                      <li>
-                        <a class="dropdown-item" href="#" @click.prevent="previewMedia(item)">
-                          <i class="bi bi-eye me-2 text-primary"></i> Preview
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" @click.prevent="editMedia(item)">
-                          <i class="bi bi-pencil me-2"></i> Rename
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" @click.prevent="downloadMedia(item)">
-                          <i class="bi bi-download me-2"></i> Download
-                        </a>
-                      </li>
+                      <li><a class="dropdown-item" href="#" @click.prevent="previewMedia(item)"><i class="bi bi-eye me-2 text-primary"></i> Preview</a></li>
+                      <li><a class="dropdown-item" href="#" @click.prevent="editMedia(item)"><i class="bi bi-pencil me-2"></i> Rename</a></li>
+                      <li><a class="dropdown-item" href="#" @click.prevent="downloadMedia(item)"><i class="bi bi-download me-2"></i> Download</a></li>
                       <li><hr class="dropdown-divider"></li>
-                      <li>
-                        <a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(item)">
-                          <i class="bi bi-trash me-2"></i> Delete
-                        </a>
-                      </li>
+                      <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(item)"><i class="bi bi-trash me-2"></i> Delete</a></li>
                     </ul>
                   </div>
                 </td>
@@ -162,6 +146,12 @@
           </div>
           <form @submit.prevent="uploadMedia">
             <div class="modal-body p-4">
+              <div v-if="uploadError" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Upload Failed:</strong> {{ uploadError }}
+                <button type="button" class="btn-close" @click="uploadError = null"></button>
+              </div>
+
               <div class="upload-zone border-dashed p-5 text-center mb-3" 
                    @dragover.prevent="isDragging = true" 
                    @dragleave.prevent="isDragging = false" 
@@ -169,7 +159,7 @@
                    :class="{ 'bg-primary-subtle border-primary': isDragging }">
                 <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
                 <h5 class="mt-3">Drag and drop files here</h5>
-                <p class="text-muted small">or click to browse from your computer</p>
+                <!-- <p class="text-muted small">Maximum file size: 20MB</p> -->
                 <input type="file" ref="fileInput" multiple accept="image/*,video/*" class="d-none" @change="handleFileSelect">
                 <button type="button" class="btn btn-outline-primary mt-2" @click="browseFiles">Browse Files</button>
               </div>
@@ -182,8 +172,8 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-bold">Global Title (Applied to all)</label>
-                <input v-model="uploadData.title" type="text" class="form-control" placeholder="e.g. Summer Competition 2025">
+                <label class="form-label fw-bold">Global Title (Applied to all uploads)</label>
+                <input v-model="uploadData.title" type="text" class="form-control" placeholder="e.g. LASF Championship 2026">
               </div>
             </div>
             <div class="modal-footer bg-light">
@@ -203,7 +193,7 @@
       <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow bg-dark">
           <div class="modal-header border-0 text-white">
-            <h5 class="modal-title">{{ previewItem?.title }}</h5>
+            <h5 class="modal-title">{{ previewItem?.title || 'Preview' }}</h5>
             <button type="button" class="btn-close btn-close-white" @click="closePreviewModal"></button>
           </div>
           <div class="modal-body p-0 text-center">
@@ -224,7 +214,7 @@
           </div>
           <div class="modal-body text-center p-4">
             <i class="bi bi-trash display-4 text-danger mb-3"></i>
-            <p>Delete this media file permanently?</p>
+            <p>Are you sure you want to delete this media file permanently?</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="closeDeleteModal">Cancel</button>
@@ -250,21 +240,21 @@ const config = useRuntimeConfig()
 const loading = ref(false)
 const uploading = ref(false)
 const deleting = ref(false)
-const error = ref(null)
+const uploadError = ref(null)
 const media = ref([])
 const activeMenuId = ref(null)
 const isDragging = ref(false)
 
 const filters = reactive({ search: '', type: '', sort: 'newest' })
 const stats = reactive({ images: 0, videos: 0 })
-const pagination = reactive({ current_page: 1, last_page: 1, per_page: 12, total: 0, from: 0, to: 0 })
+const pagination = reactive({ current_page: 1, last_page: 1, total: 0 })
 
 const showUploadModal = ref(false)
 const showPreviewModal = ref(false)
 const showDeleteModal = ref(false)
 
 const selectedFiles = ref([])
-const uploadData = reactive({ type: 'image', title: '' })
+const uploadData = reactive({ title: '' })
 const previewItem = ref(null)
 const mediaToDelete = ref(null)
 const fileInput = ref(null)
@@ -274,24 +264,51 @@ const toggleMenu = (id) => { activeMenuId.value = activeMenuId.value === id ? nu
 const closeMenus = () => { activeMenuId.value = null }
 const formatTimeAgo = (date) => date ? new Date(date).toLocaleDateString() : 'Just now'
 
+// Helper to ensure images show up correctly from Laravel Storage
+const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${config.public.apiBase.replace('/api', '')}${path}`;
+}
+
 // API
 const fetchMedia = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     const params = new URLSearchParams({ 
         page: pagination.current_page, 
         search: filters.search, 
         type: filters.type, 
         sort: filters.sort 
-    })
-    const data = await $fetch(`${config.public.apiBase}/admin/gallery?${params}`, {
+    });
+    
+    const response = await $fetch(`${config.public.apiBase}/admin/gallery?${params}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
-    media.value = data.data || []
-    if (data.total) Object.assign(pagination, data)
-    stats.images = media.value.filter(m => m.type === 'image').length
-    stats.videos = media.value.filter(m => m.type === 'video').length
-  } finally { loading.value = false }
+    });
+
+    const rawData = response.data || response;
+    
+    media.value = Array.isArray(rawData) ? rawData.map(item => ({
+      ...item,
+      file: getImageUrl(item.file)
+    })) : [];
+
+    if (response.total !== undefined) {
+      pagination.total = response.total;
+      pagination.last_page = response.last_page;
+      pagination.current_page = response.current_page;
+    } else {
+      pagination.total = media.value.length;
+    }
+
+    stats.images = media.value.filter(m => m.type === 'image').length;
+    stats.videos = media.value.filter(m => m.type === 'video').length;
+
+  } catch (err) {
+    console.error("Failed to fetch gallery:", err);
+  } finally {
+    loading.value = false;
+  }
 }
 
 const handleSearch = useDebounceFn(fetchMedia, 500)
@@ -306,6 +323,7 @@ const removeFile = (idx) => selectedFiles.value.splice(idx, 1)
 
 const uploadMedia = async () => {
   uploading.value = true
+  uploadError.value = null
   try {
     for (const file of selectedFiles.value) {
       const formData = new FormData()
@@ -313,15 +331,28 @@ const uploadMedia = async () => {
       formData.append('type', file.type.startsWith('image') ? 'image' : 'video')
       if (uploadData.title) formData.append('title', uploadData.title)
 
-      await $fetch(`${config.public.apiBase}/admin/gallery`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authStore.token}` },
-        body: formData
-      })
+      try {
+        await $fetch(`${config.public.apiBase}/admin/gallery`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authStore.token}` },
+          body: formData
+        })
+      } catch (err) {
+        // Extract validation errors from Laravel response
+        const errorData = err.data;
+        const msg = errorData?.errors 
+          ? Object.values(errorData.errors).flat().join(' ') 
+          : (errorData?.message || "File upload failed");
+        throw new Error(msg);
+      }
     }
     closeUploadModal()
     fetchMedia()
-  } finally { uploading.value = false }
+  } catch (err) {
+    uploadError.value = err.message;
+  } finally {
+    uploading.value = false
+  }
 }
 
 const previewMedia = (item) => { previewItem.value = item; showPreviewModal.value = true }
@@ -335,8 +366,11 @@ const deleteMedia = async () => {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    showDeleteModal.value = false; fetchMedia()
-  } finally { deleting.value = false }
+    showDeleteModal.value = false; 
+    fetchMedia()
+  } finally {
+    deleting.value = false
+  }
 }
 
 const editMedia = async (item) => {
@@ -351,7 +385,11 @@ const editMedia = async (item) => {
   }
 }
 
-const closeUploadModal = () => { showUploadModal.value = false; selectedFiles.value = [] }
+const closeUploadModal = () => { 
+  showUploadModal.value = false; 
+  selectedFiles.value = [];
+  uploadError.value = null; 
+}
 const closePreviewModal = () => { showPreviewModal.value = false }
 const closeDeleteModal = () => { showDeleteModal.value = false }
 
