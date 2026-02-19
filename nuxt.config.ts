@@ -32,8 +32,7 @@ debug:true,
     public: {
       apiBase: process.env.API_BASE_URL || 'https://lasf.info/api',
       mediaBase: process.env.MEDIA_BASE_URL || 'https://lasf.info'
-      //       apiBase:  'http://127.0.0.1:8000/api',
-      // mediaBase: 'http://127.0.0.1:8000'
+ 
     }
   },
 
