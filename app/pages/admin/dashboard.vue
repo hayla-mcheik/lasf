@@ -293,7 +293,7 @@ const loadDashboardData = async () => {
     loading.value = true
     error.value = null
     
-    const { data } = await $fetch('https://lasf.info/api/admin/dashboard', {
+    const { data } = await $fetch(`${config.public.apiBase}/admin/dashboard`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authStore.token}`,

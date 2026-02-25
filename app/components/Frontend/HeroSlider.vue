@@ -1,11 +1,11 @@
 <template>
     <div>
-    <div class="px-5"> 
+    <div class="px-md-5"> 
    
         <div class="cloud-icon2">
             <img src="assets/images/icons/cloud2.svg" alt="image">
         </div>
-        <div class="row px-5">
+        <div class="row ">
             <div class="col-md-6">
                     <div class="">
       <WeatherCheck />
