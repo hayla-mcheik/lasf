@@ -17,8 +17,12 @@ export const useAuthStore = defineStore('auth', {
   },
   getters: {
     isAuthenticated: (state) => !!state.token,
+    // Super Admin Getter
     isAdmin: (state) => state.user?.is_admin === true || state.user?.is_admin == 1,
-
+    // ✅ Lebanese Army Role Getter
+    isArmy: (state) => state.user?.role === 'army',
+    // Helper for display name
+    userFullName: (state) => state.user?.name || 'User'
   },
   actions: {
     async login(credentials) {
@@ -26,7 +30,8 @@ export const useAuthStore = defineStore('auth', {
       const route = useRoute() 
 
       try {
-        const response = await $fetch('https://lasf.info/api/login', {
+        const config = useRuntimeConfig()
+        const response = await $fetch(`${config.public.apiBase}/login`, {
           method: 'POST',
           body: credentials,
         })
@@ -34,12 +39,22 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.user
         this.token = response.token
 
-        // --- AUTOMATIC REDIRECTION LOGIC ---
-        // 1. If we came from the QR scan, return there.
-        // 2. Otherwise, go to Admin Dashboard or Home.
-        const redirectTo = route.query.redirect || (this.isAdmin ? '/admin/dashboard' : '/')
-        navigateTo(redirectTo)
+        // --- TARGET REDIRECTION LOGIC ---
+        let redirectTo = route.query.redirect
 
+        if (!redirectTo) {
+          if (this.isAdmin) {
+            redirectTo = '/admin/dashboard'
+          } else if (this.isArmy) {
+            // ✅ Matches your folder structure: pages/admin/locations/index.vue
+            console.log('Army user detected, redirecting to admin locations');
+            redirectTo = '/admin/locations'
+          } else {
+            redirectTo = '/'
+          }
+        }
+
+        await navigateTo(redirectTo)
         return { success: true }
       } catch (error) {
         return { success: false, message: error.data?.message || 'Login failed' }
@@ -47,9 +62,23 @@ export const useAuthStore = defineStore('auth', {
         this.loading = false
       }
     },
-    
 
-    
+    // ✅ Action to refresh user data and verify token on page load
+    async checkAuth() {
+      if (!this.token) return false
+      try {
+        const config = useRuntimeConfig()
+        const data = await $fetch(`${config.public.apiBase}/user`, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        })
+        this.user = data
+        return true
+      } catch (err) {
+        this.logout()
+        return false
+      }
+    },
+
     logout() {
       this.user = null
       this.token = null

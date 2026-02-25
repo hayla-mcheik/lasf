@@ -1,8 +1,6 @@
 <template>
   <div class="admin-layout">
-    <!-- Sidebar -->
     <div class="sidebar" :class="{ 'collapsed': sidebarCollapsed }">
-      <!-- Logo -->
       <div class="sidebar-header">
         <NuxtLink to="/admin/dashboard" class="logo-link">
           <i class="bi bi-airplane fs-4"></i>
@@ -15,7 +13,6 @@
         </button>
       </div>
 
-      <!-- Navigation -->
       <nav class="sidebar-nav">
         <div class="nav-section">
           <div class="nav-label" v-if="!sidebarCollapsed">Main</div>
@@ -30,6 +27,7 @@
 
         <div class="nav-section">
           <div class="nav-label" v-if="!sidebarCollapsed">Management</div>
+          
           <NavItem 
             :active="$route.path.startsWith('/admin/locations')"
             :collapsed="sidebarCollapsed"
@@ -37,96 +35,96 @@
             label="Locations"
             to="/admin/locations"
           />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/newscategories')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-newspaper"
-            label="News Categories"
-            to="/admin/newscategories"
-          />
-                    <NavItem 
-            :active="$route.path.startsWith('/admin/news')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-newspaper"
-            label="News"
-            to="/admin/news"
-          />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/pilots')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-people"
-            label="Pilots"
-            to="/admin/pilots"
-          />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/sports')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-clock-history"
-            label="Sports"
-            to="/admin/sports"
-          />
-                  <NavItem 
-            :active="$route.path.startsWith('/admin/testimonials')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-clock-history"
-            label="Testimonials"
-            to="/admin/testimonials"
-          />
 
-             <NavItem 
-            :active="$route.path.startsWith('/admin/events')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-clock-history"
-            label="Events"
-            to="/admin/events"
-          />
-
-                 <NavItem 
-            :active="$route.path.startsWith('/admin/gallery')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-clock-history"
-            label="Gallery"
-            to="/admin/gallery"
-          />
-                <NavItem 
-            :active="$route.path.startsWith('/admin/about')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-info-square"
-            label="About LASF"
-            to="/admin/about"
-          />
-          <NavItem 
-            :active="$route.path.startsWith('/admin/regulations')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-shield-check"
-            label="Regulations"
-            to="/admin/regulations"
-          />
-
-                 <!-- <NavItem 
-            :active="$route.path.startsWith('/admin/settings')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-shield-check"
-            label="Settings"
-            to="/admin/settings"
-          /> -->
+          <template v-if="authStore.user?.is_admin">
+            <NavItem 
+              :active="$route.path.startsWith('/admin/newscategories')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-tags"
+              label="News Categories"
+              to="/admin/newscategories"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/news')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-newspaper"
+              label="News"
+              to="/admin/news"
+            />
+            <NavItem 
+    :active="$route.path.startsWith('/admin/weather')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-cloud-sun"
+    label="Weather Reports"
+    to="/admin/weather"
+  />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/pilots')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-people"
+              label="Pilots"
+              to="/admin/pilots"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/sports')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-trophy"
+              label="Sports"
+              to="/admin/sports"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/testimonials')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-chat-quote"
+              label="Testimonials"
+              to="/admin/testimonials"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/events')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-calendar-event"
+              label="Events"
+              to="/admin/events"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/gallery')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-images"
+              label="Gallery"
+              to="/admin/gallery"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/about')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-info-square"
+              label="About LASF"
+              to="/admin/about"
+            />
+            <NavItem 
+              :active="$route.path.startsWith('/admin/regulations')"
+              :collapsed="sidebarCollapsed"
+              icon="bi-shield-check"
+              label="Regulations"
+              to="/admin/regulations"
+            />
+          </template>
         </div>
-
-   
       </nav>
 
-      <!-- User Profile -->
       <div class="sidebar-footer">
         <div class="user-profile">
           <div class="user-avatar">
             <i class="bi bi-person-circle"></i>
           </div>
           <div v-if="!sidebarCollapsed" class="user-info">
-            <div class="user-name"><p class="text-muted">
-  Welcome back, {{ authStore.userFullName || 'Admin' }}
-</p>
-</div>
-            <div class="user-role">Administrator</div>
+            <div class="user-name">
+              <p class="mb-0">
+                {{ authStore.user?.name || 'User' }}
+              </p>
+            </div>
+            <div class="user-role">
+              {{ authStore.user?.is_admin ? 'Administrator' : 'Lebanese Army' }}
+            </div>
           </div>
         </div>
         <button @click="logout" class="logout-btn">
@@ -136,9 +134,7 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content" :class="{ 'expanded': sidebarCollapsed }">
-      <!-- Top Navigation Bar -->
       <header class="topbar">
         <div class="topbar-left">
           <button class="menu-toggle" @click="toggleSidebar">
@@ -146,10 +142,8 @@
           </button>
           <h1 class="page-title">{{ pageTitle }}</h1>
         </div>
-
       </header>
 
-      <!-- Page Content -->
       <main class="content-wrapper">
         <slot />
       </main>
@@ -158,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from '#app'
 import { useAuthStore } from '~/stores/auth'
 import NavItem from '../components/Frontend/NavItem.vue'
@@ -172,7 +166,6 @@ const pageTitle = computed(() => {
   const titles = {
     '/admin/dashboard': 'Dashboard',
     '/admin/locations': 'Locations',
-    '/admin/qrcodes': 'QR Codes',
     '/admin/news': 'News',
     '/admin/events': 'Events',
     '/admin/pilots': 'Pilots',
@@ -180,15 +173,11 @@ const pageTitle = computed(() => {
     '/admin/about': 'About LASF Page',
     '/admin/regulations': 'Safety & Regulations',
     '/admin/testimonials': 'Testimonials',
-    '/admin/reports': 'Reports',
-    '/admin/settings': 'Settings'
+    '/admin/gallery': 'Gallery'
   }
   
-  // Find matching route
   for (const [path, title] of Object.entries(titles)) {
-    if (route.path.startsWith(path)) {
-      return title
-    }
+    if (route.path.startsWith(path)) return title
   }
   
   return 'Admin Dashboard'
@@ -200,18 +189,27 @@ const toggleSidebar = () => {
 
 const logout = async () => {
   await authStore.logout()
+  navigateTo('/login')
 }
 
-// Check admin status on mount
+// AdminLayout.vue
+
+// Inside <script setup> of AdminLayout.vue
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     const isAuth = await authStore.checkAuth()
     if (!isAuth) {
-      navigateTo('/login')
-    } else if (!authStore.isAdmin) {
-      navigateTo('/')
+      return navigateTo('/login')
     }
-  } else if (!authStore.isAdmin) {
+  }
+
+  // ✅ Consistent role check
+  const isArmy = authStore.isArmy
+  const isAdmin = authStore.isAdmin
+
+  if (!isAdmin && !isArmy) {
+    console.log('Access denied in Layout: Redirecting home...')
     navigateTo('/')
   }
 })
@@ -224,7 +222,6 @@ onMounted(async () => {
   background-color: #f8f9fa;
 }
 
-/* Sidebar Styles */
 .sidebar {
   width: 250px;
   background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
@@ -283,7 +280,7 @@ onMounted(async () => {
 
 .nav-label {
   padding: 0 20px 10px 20px;
-  font-size: 1.4rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgba(255,255,255,0.5);
@@ -317,11 +314,11 @@ onMounted(async () => {
 
 .user-name {
   font-weight: 600;
-  font-size: 1.4rem;
+  font-size: 0.9rem;
 }
 
 .user-role {
-  font-size: 1.4rem;
+  font-size: 0.75rem;
   color: rgba(255,255,255,0.7);
 }
 
@@ -344,7 +341,6 @@ onMounted(async () => {
   background: rgba(255,255,255,0.2);
 }
 
-/* Main Content Styles */
 .main-content {
   flex: 1;
   margin-left: 250px;
@@ -361,7 +357,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -383,14 +379,9 @@ onMounted(async () => {
 
 .page-title {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.25rem;
   font-weight: 600;
-}
-
-.quick-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  color: #334155;
 }
 
 .content-wrapper {
@@ -398,7 +389,6 @@ onMounted(async () => {
   min-height: calc(100vh - 70px);
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -418,6 +408,6 @@ onMounted(async () => {
   }
 }
 .w-80px{
-  width: 180px;
+  width: 150px;
 }
 </style>

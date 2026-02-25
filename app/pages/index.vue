@@ -4,7 +4,11 @@
     <!-- Animated Hero with Parallax -->
     <HeroSlider />
    
-   
+   <section>
+    <div>
+      <WeatherCheckTwo />
+    </div>
+   </section>
     <!-- Flying Locations Dashboard -->
     <section class="locations-dashboard py-6 bg-gradient">
       <div class="container">
@@ -43,6 +47,7 @@ import FlightClearanceNews from '~/components/Frontend/FlightClearanceNews.vue'
 import LocationsStatus from '~/components/Frontend/LocationsStatus.vue'
 import WhyChooseUse from '~/components/Frontend/WhyChooseUse.vue'
 import WeatherCheck from '~/components/Frontend/WeatherCheck.vue'
+import WeatherCheckTwo from '~/components/Frontend/WeatherCheckTwo.vue'
 </script>
 
 <style scoped>

@@ -79,22 +79,25 @@ const handleLogin = async () => {
   const result = await authStore.login(payload)
 
   if (result.success) {
-    // 1. Check for the 'redirect' query parameter first (from the URL)
     const redirectPath = route.query.redirect
-    
-    // 2. Check for the legacy localStorage slug
     const pendingSlug = localStorage.getItem('pending_location_slug')
 
     if (redirectPath) {
-      // If ?redirect=/location/batroun exists, go there
       navigateTo(redirectPath)
     } else if (pendingSlug) {
-      // If we have a stored slug, go there
       localStorage.removeItem('pending_location_slug')
       navigateTo(`/location/${pendingSlug}?auto_checkin=true`)
     } else {
-      // Default fallback
-      navigateTo(authStore.isAdmin ? '/admin/dashboard' : '/')
+      // ✅ UPDATED FALLBACK LOGIC
+      if (authStore.isAdmin) {
+        navigateTo('/admin/dashboard')
+      } else if (authStore.isArmy) {
+        // Redirect Lebanese Army directly to the locations page
+        console.log('Redirecting Army user to locations management')
+        navigateTo('/admin/locations')
+      } else {
+        navigateTo('/')
+      }
     }
   } else {
     error.value = 'Verification failed. Please check your details.'

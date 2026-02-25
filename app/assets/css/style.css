@@ -8797,19 +8797,8 @@ h4.package-widget-title {
     min-height: 330px;
 }
 }
-.weather-card {
-  background: linear-gradient(135deg, darkgreen 0%, #fff 100%);
-  border-radius: 20px;
-  padding: 30px;
-  color: #000;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  margin-bottom: 20px;
-}
-@media (min-width: 767px) {
-    .weather-card{
-        margin-top: 40%;
-    }
-}
+
+
 @media (max-width: 767px) {
     .wild-package-single {
     min-height: 300px;
