@@ -191,7 +191,7 @@ onMounted(fetchWeather);
 /* Modal specific badge */
 .badge-outline-success { border: 3px solid #198754; color: #198754; border-radius: 12px; display: inline-block; }
 
-.situation-container { border-right: 10px solid #198754; }
+.situation-container { border-right: 10px solid #198754; padding-right: 10px;}
 .dot-indicator { width: 18px; height: 18px; border-radius: 50%; }
 
 .border-start-success-thick { border-left: 12px solid #198754; }
@@ -199,5 +199,8 @@ onMounted(fetchWeather);
 ; }
 .bg-black{
   background-color: #09100D;
+}
+.table-container th , .table-container td{
+  font-size: 14px;
 }
 </style>
