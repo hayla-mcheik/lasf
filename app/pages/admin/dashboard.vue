@@ -264,6 +264,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+const config = useRuntimeConfig()
 
 definePageMeta({
   layout: 'admin',
