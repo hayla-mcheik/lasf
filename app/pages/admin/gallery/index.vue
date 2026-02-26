@@ -264,14 +264,15 @@ const closeMenus = () => { activeMenuId.value = null }
 const formatTimeAgo = (date) => date ? new Date(date).toLocaleDateString() : 'Just now'
 
 
-const getImageUrl = (path) => {
-  if (!path) return '';
-  // If Laravel already returned http://... just return it
-  if (path.startsWith('http')) return path;
+const getFullUrl = (path) => {
+  if (!path) return ''
   
-  // Otherwise, construct it using the base URL
-  const base = config.public.apiBase.replace('/api', '');
-  return `${base}${path}`;
+  // If it's already a full URL, return it
+  if (path.startsWith('http')) return path 
+  
+  // Your server requires /api/ before /storage/
+  // config.public.apiBase is likely https://lasf.info/api
+  return `${config.public.apiBase}${path}`
 }
 
 // API

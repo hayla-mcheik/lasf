@@ -84,11 +84,13 @@ const isYouTube = (url) => url && (url.includes('youtube.com') || url.includes('
 
 const getFullUrl = (path) => {
   if (!path) return ''
-  // Prevents doubled URLs (e.g., http://site.com/apihttp://site.com/storage)
+  
+  // If it's already a full URL, return it
   if (path.startsWith('http')) return path 
   
-  const base = config.public.apiBase.replace('/api', '')
-  return `${base}${path}`
+  // Your server requires /api/ before /storage/
+  // config.public.apiBase is likely https://lasf.info/api
+  return `${config.public.apiBase}${path}`
 }
 
 const getVideoThumbnail = (url) => {
