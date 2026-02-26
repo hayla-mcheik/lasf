@@ -91,8 +91,10 @@
               <tr v-for="item in media" :key="item.id">
                 <td>
                   <div class="media-thumb-container" @click="previewMedia(item)" style="cursor: pointer;">
-                    <img v-if="item.type === 'image'" :src="item.file" class="rounded border" 
-                         style="width: 60px; height: 45px; object-fit: cover;">
+            <img v-if="item.type === 'image'" 
+     :src="getImageUrl(item.file)" 
+     class="rounded border shadow-sm" 
+     style="width: 60px; height: 45px; object-fit: cover;">
                     <div v-else class="rounded border bg-dark d-flex align-items-center justify-content-center" 
                          style="width: 60px; height: 45px;">
                       <i class="bi bi-play-fill text-white"></i>
@@ -118,10 +120,7 @@
                     </button>
                     <ul class="dropdown-menu shadow-sm" :class="{ 'show': activeMenuId === item.id }" 
                         style="right: 0; left: auto; top: 100%; z-index: 1060;">
-                      <li><a class="dropdown-item" href="#" @click.prevent="previewMedia(item)"><i class="bi bi-eye me-2 text-primary"></i> Preview</a></li>
-                      <li><a class="dropdown-item" href="#" @click.prevent="editMedia(item)"><i class="bi bi-pencil me-2"></i> Rename</a></li>
-                      <li><a class="dropdown-item" href="#" @click.prevent="downloadMedia(item)"><i class="bi bi-download me-2"></i> Download</a></li>
-                      <li><hr class="dropdown-divider"></li>
+       
                       <li><a class="dropdown-item text-danger" href="#" @click.prevent="confirmDelete(item)"><i class="bi bi-trash me-2"></i> Delete</a></li>
                     </ul>
                   </div>
@@ -264,11 +263,15 @@ const toggleMenu = (id) => { activeMenuId.value = activeMenuId.value === id ? nu
 const closeMenus = () => { activeMenuId.value = null }
 const formatTimeAgo = (date) => date ? new Date(date).toLocaleDateString() : 'Just now'
 
-// Helper to ensure images show up correctly from Laravel Storage
+
 const getImageUrl = (path) => {
   if (!path) return '';
+  // If Laravel already returned http://... just return it
   if (path.startsWith('http')) return path;
-  return `${config.public.apiBase.replace('/api', '')}${path}`;
+  
+  // Otherwise, construct it using the base URL
+  const base = config.public.apiBase.replace('/api', '');
+  return `${base}${path}`;
 }
 
 // API
