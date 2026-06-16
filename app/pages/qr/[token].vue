@@ -114,7 +114,9 @@ const fetchData = async () => {
 // 2. Computed check for current session
 const isFlyingHere = computed(() => {
   if (!location.value?.id || !authStore.activeSession) return false
-  return authStore.activeSession.flying_location_id === location.value.id
+return (
+  authStore.activeSession?.flying_location_id === location.value?.id
+)
 })
 
 // 3. Handle Check-in Action
@@ -128,6 +130,7 @@ const handleCheckIn = async () => {
     })
     
     authStore.activeSession = res
+  
     // Direct redirect to the full location details page
     navigateTo(`/location/${location.value.slug}`)
   } catch (err) {
@@ -138,6 +141,7 @@ const handleCheckIn = async () => {
 }
 
 onMounted(fetchData)
+
 </script>
 
 <style scoped>

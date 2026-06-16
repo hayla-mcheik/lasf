@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="location-detail-page bg-light min-vh-100">
     <Breadcrumbs />
 
@@ -213,4 +213,9 @@ const formatTimeAgo = (dateString) => {
   height: 40px;
   font-weight: bold;
 }
-</style>
+</style> -->
+<template>
+
+</template>
+<script setup>
+</script>

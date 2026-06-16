@@ -4,6 +4,7 @@ import { useAuthStore } from '~/stores/auth'
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 const route = useRoute()
+
 console.log('Full Route Params:', route.params)
 console.log('Slug Value:', route.params.slug)
 console.log('ID Value:', route.params.id)
@@ -11,10 +12,14 @@ console.log('ID Value:', route.params.id)
 const API_BASE = 'https://lasf.info/api'
 console.log('🌐 Using API Base:', API_BASE)
 
-const { data: location, pending, error: locationError } = await useFetch(
-  () => `${API_BASE}/flying-locations/${route.params.slug || route.params.id}`, 
+const {
+  data: location,
+  pending,
+  error: locationError,
+  refresh: refreshLocation
+} = await useFetch(
+  () => `${API_BASE}/flying-locations/${route.params.slug || route.params.id}`,
   {
-    // The arrow function () => above makes the URL reactive
     key: `location-${route.params.slug || route.params.id}`,
     immediate: true,
     transform: (res) => res.data || res,
@@ -63,9 +68,18 @@ async function fetchActivePilots() {
     loadingActivePilots.value = false
   }
 }
-
+watch(
+  () => isFlyingHere.value,
+  (active) => {
+    if (active && !watchId) {
+      startTracking()
+    }
+  },
+  { immediate: true }
+)
 // Fix: Use onMounted properly
 onMounted(async () => {
+
   console.log('🚀 Component mounted')
   console.log('🔗 Current URL:', window.location.href)
   console.log('🔗 Route query:', route.query)
@@ -118,6 +132,7 @@ onMounted(async () => {
     console.log('⚠️ Location data not available')
   }
 })
+
 
 // Fix: Auto check-in function
 async function handleAutoCheckIn(token) {
@@ -211,12 +226,58 @@ const isFlyingHere = computed(() => {
   return isHere
 })
 
+let watchId = null
+
+const startTracking = () => {
+
+  if (!navigator.geolocation) {
+    console.log('GPS not supported')
+    return
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    async (position) => {
+
+      try {
+
+        await $fetch(
+          `${config.public.apiBase}/gps/update`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${authStore.token}`
+            },
+            body: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            }
+          }
+        )
+
+      } catch (e) {
+        console.error(e)
+      }
+
+    },
+    (err) => {
+      console.error(err)
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000
+    }
+  )
+}
 // Fix: Checkout function
 async function handleCheckOut() {
   if (!authStore.activeSession || !confirm("Are you sure you want to check out?")) {
     return
   }
-  
+  if (watchId) {
+  navigator.geolocation.clearWatch(watchId)
+}
   try {
     const sessionId = authStore.activeSession.id
     
@@ -245,6 +306,11 @@ async function handleCheckOut() {
     alert('Failed to check out. Please try again.')
   }
 }
+onUnmounted(() => {
+  if (watchId) {
+    navigator.geolocation.clearWatch(watchId)
+  }
+})
 
 function formatTime(dateString) {
   if (!dateString) return 'N/A';

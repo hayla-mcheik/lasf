@@ -8,6 +8,7 @@
             <img src="/assets/images/icons/logo.png" class="w-80px" />
           </span>
         </NuxtLink>
+
         <button class="sidebar-toggle" @click="toggleSidebar">
           <i :class="sidebarCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left'"></i>
         </button>
@@ -23,6 +24,13 @@
             label="Dashboard"
             to="/admin/dashboard"
           />
+                  <NavItem 
+  :active="$route.path.startsWith('/admin/live-tracking')"
+  :collapsed="sidebarCollapsed"
+  icon="bi-crosshair"
+  label="Live Tracking"
+  to="/admin/live-tracking"
+/>
         </div>
 
         <div class="nav-section">
@@ -165,6 +173,7 @@ const sidebarCollapsed = ref(false)
 const pageTitle = computed(() => {
   const titles = {
     '/admin/dashboard': 'Dashboard',
+      '/admin/live-tracking': 'Live Tracking',
     '/admin/locations': 'Locations',
     '/admin/news': 'News',
     '/admin/events': 'Events',
