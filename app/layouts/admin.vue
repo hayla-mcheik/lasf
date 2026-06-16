@@ -24,13 +24,7 @@
             label="Dashboard"
             to="/admin/dashboard"
           />
-                  <NavItem 
-  :active="$route.path.startsWith('/admin/live-tracking')"
-  :collapsed="sidebarCollapsed"
-  icon="bi-crosshair"
-  label="Live Tracking"
-  to="/admin/live-tracking"
-/>
+
         </div>
 
         <div class="nav-section">
@@ -115,6 +109,15 @@
               label="Regulations"
               to="/admin/regulations"
             />
+          </template>
+          <template v-if="authStore.user?.is_admin || authStore.user?.role === 'army'">
+            <NavItem
+  :active="$route.path.startsWith('/admin/live-tracking')"
+  :collapsed="sidebarCollapsed"
+  icon="bi-crosshair"
+  label="Live Tracking"
+  to="/admin/live-tracking"
+/>
           </template>
         </div>
       </nav>
