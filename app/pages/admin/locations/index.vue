@@ -112,7 +112,7 @@
                   <div v-if="validationErrors.name" class="invalid-feedback">{{ validationErrors.name[0] }}</div>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label fw-bold">Type (Excel)</label>
+                  <label class="form-label fw-bold">Type</label>
                   <input v-model="form.type" type="text" :class="['form-control', {'is-invalid': validationErrors.type}]">
                   <div v-if="validationErrors.type" class="invalid-feedback">{{ validationErrors.type[0] }}</div>
                 </div>
@@ -282,10 +282,46 @@ const fetchLocations = async () => {
   }
 }
 
+const validateForm = () => {
+  validationErrors.value = {}
+
+  if (!form.name?.trim()) {
+    validationErrors.value.name = ['Location name is required']
+  }
+
+  if (!form.takeoff_kato?.trim()) {
+    validationErrors.value.takeoff_kato = ['Takeoff Kato is required']
+  }
+
+  if (!form.takeoff_nazim?.trim()) {
+    validationErrors.value.takeoff_nazim = ['Takeoff Nazim is required']
+  }
+
+  if (!['green', 'red'].includes(form.clearance_status)) {
+    validationErrors.value.clearance_status = ['Invalid status']
+  }
+
+  if (
+    form.max_altitude &&
+    form.max_altitude.length > 255
+  ) {
+    validationErrors.value.max_altitude = [
+      'Maximum altitude is too long'
+    ]
+  }
+
+  return Object.keys(validationErrors.value).length === 0
+}
 // --- SAVE LOGIC ---
 const saveLocation = async () => {
+    validationErrors.value = {}
+
+  if (!validateForm()) {
+    notify('error', 'Please fix validation errors')
+    return
+  }
   saving.value = true
-  validationErrors.value = {}
+
   
   const isEditing = !!editingLocation.value
   const url = isEditing 
