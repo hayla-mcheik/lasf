@@ -1,7 +1,7 @@
 <!-- components/Frontend/TheHeader.vue -->
 <template>
     <header class="header-area style-2">
-        <div class="container d-flex justify-content-between align-items-center">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
             <div class="header-logo">
                 <NuxtLink to="/"><img alt="image" class="img-fluid" src="/assets/images/icons/logo.png"></NuxtLink>
             </div>
@@ -13,7 +13,7 @@
                         <NuxtLink to="/" class="drop-down" :class="{ 'active': $route.path === '/' }">Home</NuxtLink>
                     </li>
                     
-                  <li class="menu-item-has-children">
+                    <li class="menu-item-has-children">
                         <NuxtLink to="#" class="drop-down" :class="{ 'active': $route.path.includes('/about') || $route.path.includes('/gallery') || $route.path.includes('/regulations') }">
                              Flight Operations <i class="bi bi-chevron-down dropdown-icon"></i>
                         </NuxtLink>
@@ -25,7 +25,7 @@
                     <!-- About LASF Dropdown -->
                     <li class="menu-item-has-children">
                         <NuxtLink to="#" class="drop-down" :class="{ 'active': $route.path.includes('/about') || $route.path.includes('/gallery') || $route.path.includes('/regulations') }">
-                            About LASF <i class="bi bi-chevron-down dropdown-icon"></i>
+                            About Us <i class="bi bi-chevron-down dropdown-icon"></i>
                         </NuxtLink>
                         <ul class="sub-menu">
                             <li><NuxtLink to="/about" :class="{ 'active': $route.path === '/about' }">About Us</NuxtLink></li>
@@ -45,12 +45,38 @@
                         <NuxtLink to="/events" class="drop-down" :class="{ 'active': $route.path === '/events' }">Events</NuxtLink>
                     </li>
                     
-             
                     <!-- Contact Us -->
                     <li>
-                        <NuxtLink to="/contact" class="drop-down" :class="{ 'active': $route.path === '/contact' }">Contact Us</NuxtLink>
+                        <NuxtLink to="/contact" class="drop-down" :class="{ 'active': $route.path === '/contact' }">Contact us</NuxtLink>
                     </li>
                 </ul>
+            </div>
+            
+            <!-- Auth Buttons - Desktop -->
+            <div class="auth-buttons d-lg-flex d-none">
+  <template v-if="!authStore.isAuthenticated">
+
+    <NuxtLink to="/login">
+      Login
+    </NuxtLink>
+
+    <NuxtLink to="/register">
+      Register
+    </NuxtLink>
+
+  </template>
+
+  <template v-else>
+
+    <NuxtLink to="/account">
+      My Account
+    </NuxtLink>
+
+    <a href="#" @click.prevent="authStore.logout()">
+      Logout
+    </a>
+
+  </template>
             </div>
             
             <!-- Mobile Navigation -->
@@ -75,6 +101,33 @@
                         </div>
                     </div>
                     
+                    <!-- Mobile Auth Buttons -->
+                    <div class="mobile-auth-buttons mb-4">
+  <template v-if="!authStore.isAuthenticated">
+
+    <NuxtLink to="/login">
+      Login
+    </NuxtLink>
+
+    <NuxtLink to="/register">
+      Register
+    </NuxtLink>
+
+  </template>
+
+  <template v-else>
+
+    <NuxtLink to="/account">
+      My Account
+    </NuxtLink>
+
+    <a href="#" @click.prevent="authStore.logout()">
+      Logout
+    </a>
+
+  </template>
+                    </div>
+                    
                     <ul class="mobile-menu-list">
                         <!-- Home -->
                         <li>
@@ -88,9 +141,7 @@
                             </NuxtLink>
                         </li>
                         
-                 
-
-                         <li class="mobile-menu-item-has-children">
+                        <li class="mobile-menu-item-has-children">
                             <div 
                                 class="mobile-dropdown-header" 
                                 @click="toggleMobileDropdown('clearance-news')"
@@ -120,10 +171,8 @@
                                        Flying Locations Status
                                     </NuxtLink>
                                 </li>
-                      
                             </ul>
                         </li>
-                        
                         
                         <!-- About LASF - Mobile Accordion -->
                         <li class="mobile-menu-item-has-children">
@@ -132,7 +181,7 @@
                                 @click="toggleMobileDropdown('about')"
                                 :class="{ 'active': $route.path.includes('/about') || $route.path.includes('/gallery') || $route.path.includes('/regulations') }"
                             >
-                                <span>About LASF</span>
+                                <span>About Us</span>
                                 <i class="bi bi-chevron-down" :class="{ 'rotate': activeMobileDropdown === 'about' }"></i>
                             </div>
                             <ul class="mobile-sub-menu" :class="{ 'active': activeMobileDropdown === 'about' }">
@@ -156,7 +205,7 @@
                                         Gallery
                                     </NuxtLink>
                                 </li>
-                                       <li>
+                                <li>
                                     <NuxtLink 
                                         to="/pilots" 
                                         class="mobile-sub-link" 
@@ -215,8 +264,6 @@
                             </NuxtLink>
                         </li>
                     </ul>
-                    
-    
                 </div>
             </div>
         </div>
@@ -226,7 +273,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from '#imports'
+import { useAuthStore } from '~/stores/auth'
 
+const authStore = useAuthStore()
 const route = useRoute()
 
 // Mobile menu state
@@ -305,6 +354,9 @@ onBeforeUnmount(() => {
 
 .container {
     position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* Desktop Navigation */
@@ -406,7 +458,48 @@ onBeforeUnmount(() => {
     padding-left: 1.75rem;
 }
 
+/* Desktop Auth Buttons */
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-left: 2rem;
+}
 
+.btn-login,
+.btn-register {
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s;
+    display: inline-block;
+    font-size: 12px;
+}
+
+.btn-login {
+    color: darkgreen;
+    border: 2px solid darkgreen;
+    background: transparent;
+}
+
+.btn-login:hover {
+    background: darkgreen;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-register {
+    color: white;
+    background: darkgreen;
+    border: 2px solid darkgreen;
+}
+
+.btn-register:hover {
+    background: #006400;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,100,0,0.2);
+}
 
 /* Mobile Navigation */
 .mobile-menu-btn {
@@ -474,6 +567,44 @@ onBeforeUnmount(() => {
     transform: rotate(90deg);
 }
 
+/* Mobile Auth Buttons */
+.mobile-auth-buttons {
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.mobile-btn-login,
+.mobile-btn-register {
+    flex: 1;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s;
+    font-size: 12px;
+}
+
+.mobile-btn-login {
+    color: darkgreen;
+    border: 2px solid darkgreen;
+    background: transparent;
+}
+
+.mobile-btn-register {
+    color: white;
+    background: darkgreen;
+    border: 2px solid darkgreen;
+}
+
+.mobile-btn-login:active,
+.mobile-btn-register:active {
+    transform: scale(0.98);
+}
+
 /* Mobile Menu List */
 .mobile-menu-list {
     list-style: none;
@@ -484,7 +615,8 @@ onBeforeUnmount(() => {
 .mobile-menu-list > li {
     border-bottom: 1px solid #eee;
 }
-.mobile-logo-wrap{
+
+.mobile-logo-wrap {
     width: 60%;
 }
 
@@ -596,47 +728,6 @@ onBeforeUnmount(() => {
     border-radius: 50%;
 }
 
-/* Mobile Contact Info */
-.mobile-contact-info {
-    border-top: 1px solid #eee;
-    padding-top: 1.5rem;
-    margin-top: 2rem;
-}
-
-.phone-call {
-    padding: 1rem;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border-radius: 10px;
-    transition: transform 0.3s;
-}
-
-.phone-call:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.phone-call .icon {
-    color: darkgreen;
-    background: white;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,123,255,0.2);
-}
-
-.phone-text p {
-    font-size: 0.875rem;
-}
-
-.phone-text p:first-child {
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 0.25rem;
-}
-
 /* Responsive Adjustments */
 @media (max-width: 991px) {
     .menu-list {
@@ -650,6 +741,10 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
     .main-nav {
+        display: none;
+    }
+    
+    .auth-buttons {
         display: none;
     }
     
@@ -668,7 +763,7 @@ onBeforeUnmount(() => {
     }
 }
 
-/* Tablet View - Show both for testing */
+/* Tablet View */
 @media (min-width: 577px) and (max-width: 768px) {
     .mobile-menu-content {
         max-width: 280px;
@@ -685,13 +780,11 @@ onBeforeUnmount(() => {
     
     .mobile-nav-link,
     .mobile-dropdown-header {
-        padding: 1.4rem 0;
-        font-size: 1.4rem;
+        padding: 1rem 0;
     }
     
     .mobile-sub-link {
-        padding: 1.2rem 1.2rem 1.2rem 2.2rem;
-        font-size: 1.4rem;
+        padding: 0.875rem 1rem 0.875rem 2rem;
     }
 }
 
@@ -720,4 +813,7 @@ onBeforeUnmount(() => {
 .mobile-menu-content.active .mobile-nav-link:nth-child(5) { animation-delay: 0.3s; }
 .mobile-menu-content.active .mobile-nav-link:nth-child(6) { animation-delay: 0.35s; }
 .mobile-menu-content.active .mobile-nav-link:nth-child(7) { animation-delay: 0.4s; }
+header.style-2 .main-nav ul li a{
+    font-size: 14px !important;
+}
 </style>

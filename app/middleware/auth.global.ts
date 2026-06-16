@@ -1,32 +1,54 @@
 import { useAuthStore } from "~/stores/auth"
 
-// middleware/auth.global.ts
-
 export default defineNuxtRouteMiddleware((to, from) => {
   const auth = useAuthStore()
 
-  if (to.path.startsWith('/admin')) {
-    if (!auth.isAuthenticated) return navigateTo('/login')
+  // Prevent logged-in users from visiting Login
+  if (to.path === '/login' && auth.isAuthenticated) {
 
-    // 1. Super Admin can access everything
-    if (auth.isAdmin) return
+    if (auth.isAdmin) {
+      return navigateTo('/admin/dashboard')
+    }
 
-    // 2. Army Access Rules
     if (auth.isArmy) {
-      // Define what the Army IS allowed to see
-      const allowedArmyPaths = ['/admin/locations', '/admin/dashboard']
-      
-      // Check if the current path is in the allowed list
-      const isAllowed = allowedArmyPaths.some(path => to.path.startsWith(path))
+      return navigateTo('/admin/locations')
+    }
 
-      if (!isAllowed) {
-        console.warn('Army user tried to access restricted route:', to.path)
-        return navigateTo('/admin/locations') // Force them back to Locations
-      }
+    return navigateTo('/account')
+  }
+
+  // Existing Admin Protection
+  if (to.path.startsWith('/admin')) {
+
+    if (!auth.isAuthenticated) {
+      return navigateTo('/login')
+    }
+
+    // Super Admin
+    if (auth.isAdmin) {
       return
     }
 
-    // 3. If neither Admin nor Army, kick to home
+    // Army
+    if (auth.isArmy) {
+
+      const allowedArmyPaths = [
+        '/admin/locations',
+        '/admin/dashboard'
+      ]
+
+      const isAllowed = allowedArmyPaths.some(path =>
+        to.path.startsWith(path)
+      )
+
+      if (!isAllowed) {
+        return navigateTo('/admin/locations')
+      }
+
+      return
+    }
+
+    // Normal user
     return navigateTo('/')
   }
 })

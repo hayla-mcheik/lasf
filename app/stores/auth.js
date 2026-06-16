@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', {
             console.log('Army user detected, redirecting to admin locations');
             redirectTo = '/admin/locations'
           } else {
-            redirectTo = '/'
+            redirectTo = '/account'
           }
         }
 

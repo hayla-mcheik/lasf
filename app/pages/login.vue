@@ -1,57 +1,183 @@
 <template>
-<ClientOnly>
-  <div class="login-page">
-    <div class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header text-white text-center py-4" :class="isPilotMode ? 'bg-success' : 'bg-primary'">
-              <h2 class="mb-0">
-                <i :class="isPilotMode ? 'bi bi-qr-code-scan' : 'bi bi-person-badge'"></i>
-                {{ isPilotMode ? 'Pilot Airspace Entry' : 'Admin Login' }}
-              </h2>
-            </div>
-            
-            <div class="card-body p-4">
-              <form @submit.prevent="handleLogin">
-                <div v-if="error" class="alert alert-danger">{{ error }}</div>
+  <Breadcrumbs />
+  <ClientOnly>
+    <div class="login-page">
+      <div class="container py-5">
+        <div class="row justify-content-center">
+          <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-4">
+              <!-- Card Header with Mode Selection -->
+            <div
+  class="card-header text-white text-center py-4"
+  :class="[
+    loginType === 'pilot'
+      ? 'bg-success text-white'
+      : loginType === 'army'
+        ? 'bg-warning text-dark'
+        : 'bg-primary text-white'
+  ]"
+>
 
-                <div class="mb-3">
-                  <label class="form-label fw-bold">{{ isPilotMode ? 'License Number' : 'Email Address' }}</label>
-                  <input v-model="identifier" type="text" class="form-control" :placeholder="isPilotMode ? 'PG-LB-001' : 'admin@lasf.lb'" required />
-                </div>
+  <h2 class="mb-0">
 
-                <div class="mb-4">
-                  <label class="form-label fw-bold">{{ isPilotMode ? 'Phone Number' : 'Password' }}</label>
-                  <input 
-                    v-model="securityValue" 
-                    :type="isPilotMode ? 'tel' : 'password'" 
-                    class="form-control" 
-                    :placeholder="isPilotMode ? '03123456' : '••••••••'" 
-                    required 
-                  />
-                </div>
+    <template v-if="loginType === 'pilot'">
+      <i class="bi bi-qr-code-scan"></i>
+      Pilot Login
+    </template>
 
-                <button type="submit" class="btn btn-lg w-100 py-3 text-white" :class="isPilotMode ? 'bg-success' : 'bg-primary'">
-                   {{ isPilotMode ? 'Verify & Check-In' : 'Admin Login' }}
-                </button>
+    <template v-else-if="loginType === 'army'">
+      <i class="bi bi-shield-lock"></i>
+      Army Login
+    </template>
 
-                <div class="text-center mt-3">
-                    <button type="button" @click="isPilotMode = !isPilotMode" class="btn btn-link btn-sm text-decoration-none">
-                        {{ isPilotMode ? 'Admin Login' : 'Pilot Entry' }}
-                    </button>
-                </div>
-              </form>
+    <template v-else>
+      <i class="bi bi-person-badge"></i>
+      Admin Login
+    </template>
+
+  </h2>
+
+</div>
+              
+             <div class="card-body p-4">
+
+  <div class="d-flex gap-2 mb-4">
+
+    <button
+      type="button"
+      class="btn flex-fill"
+      :class="loginType === 'pilot'
+        ? 'btn-success'
+        : 'btn-outline-success'"
+      @click="loginType = 'pilot'"
+    >
+      Pilot
+    </button>
+
+    <button
+      type="button"
+      class="btn flex-fill mx-2"
+      :class="loginType === 'army'
+        ? 'btn-warning'
+        : 'btn-outline-warning'"
+      @click="loginType = 'army'"
+    >
+      Army
+    </button>
+
+    <button
+      type="button"
+      class="btn flex-fill"
+      :class="loginType === 'admin'
+        ? 'btn-primary'
+        : 'btn-outline-primary'"
+      @click="loginType = 'admin'"
+    >
+      Admin
+    </button>
+
+  </div>
+
+  <form @submit.prevent="handleLogin">
+
+    <div
+      v-if="error"
+      class="alert alert-danger"
+    >
+      {{ error }}
+    </div>
+
+    <div class="mb-3">
+
+      <label class="form-label fw-bold">
+
+        {{
+          loginType === 'pilot'
+            ? 'License Number'
+            : 'Email Address'
+        }}
+
+      </label>
+
+      <input
+        v-model="identifier"
+        type="text"
+        class="form-control"
+        :placeholder="
+          loginType === 'pilot'
+            ? '26-08-0001'
+            : 'admin@lasf.lb'
+        "
+        required
+      >
+
+    </div>
+
+    <div class="mb-4">
+
+      <label class="form-label fw-bold">
+
+        {{
+          loginType === 'pilot'
+            ? 'Phone Number'
+            : 'Password'
+        }}
+
+      </label>
+
+      <input
+        v-model="securityValue"
+        :type="
+          loginType === 'pilot'
+            ? 'tel'
+            : 'password'
+        "
+        class="form-control"
+        :placeholder="
+          loginType === 'pilot'
+            ? '03123456'
+            : '••••••••'
+        "
+        required
+      >
+
+    </div>
+
+    <button
+      type="submit"
+      class="btn btn-lg w-100 py-3 text-white"
+      :class="
+        loginType === 'pilot'
+          ? 'bg-success'
+          : loginType === 'army'
+            ? 'bg-warning'
+            : 'bg-primary'
+      "
+    >
+
+      {{
+        loginType === 'pilot'
+          ? 'Pilot Login'
+          : loginType === 'army'
+            ? 'Army Login'
+            : 'Admin Login'
+      }}
+
+    </button>
+
+  </form>
+
+</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</ClientOnly>
+  </ClientOnly>
 </template>
 
 <script setup>
+import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
 
 const route = useRoute()
@@ -60,65 +186,182 @@ const authStore = useAuthStore()
 const identifier = ref('')
 const securityValue = ref('')
 const error = ref('')
-const isPilotMode = ref(false)
+
+const loginType = ref('pilot')
 
 onMounted(() => {
-    // If arriving from QR, default to Pilot Mode
-    if (localStorage.getItem('pending_location_slug') || route.query.source === 'qr') {
-        isPilotMode.value = true
-    }
+
+  window.scrollTo(0, 0)
+
+  if (route.query.type === 'army') {
+    loginType.value = 'army'
+  }
+
+  if (
+    localStorage.getItem('pending_location_slug') ||
+    route.query.source === 'qr'
+  ) {
+    loginType.value = 'pilot'
+  }
+
 })
 
 const handleLogin = async () => {
+
   error.value = ''
-  
-  const payload = isPilotMode.value 
-    ? { license_number: identifier.value, phone: securityValue.value }
-    : { email: identifier.value, password: securityValue.value }
+
+  const payload =
+    loginType.value === 'pilot'
+      ? {
+          license_number: identifier.value,
+          phone: securityValue.value
+        }
+      : {
+          email: identifier.value,
+          password: securityValue.value
+        }
 
   const result = await authStore.login(payload)
 
   if (result.success) {
+
     const redirectPath = route.query.redirect
     const pendingSlug = localStorage.getItem('pending_location_slug')
 
     if (redirectPath) {
+
       navigateTo(redirectPath)
+
     } else if (pendingSlug) {
+
       localStorage.removeItem('pending_location_slug')
-      navigateTo(`/location/${pendingSlug}?auto_checkin=true`)
+
+      navigateTo(
+        `/location/${pendingSlug}?auto_checkin=true`
+      )
+
+    } else if (authStore.isAdmin) {
+
+      navigateTo('/admin/dashboard')
+
+    } else if (authStore.isArmy) {
+
+      navigateTo('/admin/locations')
+
     } else {
-      // ✅ UPDATED FALLBACK LOGIC
-      if (authStore.isAdmin) {
-        navigateTo('/admin/dashboard')
-      } else if (authStore.isArmy) {
-        // Redirect Lebanese Army directly to the locations page
-        console.log('Redirecting Army user to locations management')
-        navigateTo('/admin/locations')
-      } else {
-        navigateTo('/')
-      }
+
+      navigateTo('/account')
+
     }
+
   } else {
-    error.value = 'Verification failed. Please check your details.'
+
+    error.value = result.message
+
   }
+
 }
 </script>
 
 <style scoped>
-.login-page { min-height: 100vh; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding-top: 100px; }
-.card { border-radius: 20px; }
-.btn-primary{
-    background-color: #0f6847 !important;
-    border-radius: 0px;
-    padding: 10px 15px;
-    width: 50%;
-    margin: auto;
+.login-page { 
+  min-height: 100vh; 
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+  padding-top: 100px; 
 }
-.bg-primary{
+
+.card { 
+  border-radius: 20px; 
+  overflow: hidden;
+}
+
+.card-header {
+  border-bottom: none;
+}
+
+.bg-primary {
   background-color: #0f6847 !important;
 }
-.btn-link{
+
+.btn-primary {
+  background-color: #0f6847 !important;
+  border-color: #0f6847 !important;
+}
+
+.btn-primary:hover {
+  background-color: #0a4d34 !important;
+  border-color: #0a4d34 !important;
+}
+
+.btn-outline-primary {
   color: #0f6847 !important;
+  border-color: #0f6847 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active {
+  background-color: #0f6847 !important;
+  color: #fff !important;
+  border-color: #0f6847 !important;
+}
+
+.btn-outline-success.active {
+  background-color: #198754 !important;
+  color: #fff !important;
+}
+
+.btn-outline-warning.active {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+.btn-link {
+  color: #0f6847 !important;
+}
+
+.btn-link:hover {
+  color: #0a4d34 !important;
+}
+
+.btn-group .btn {
+  flex: 1;
+  border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.btn-group .btn:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.btn-group .btn:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.form-control:focus {
+  border-color: #0f6847;
+  box-shadow: 0 0 0 0.2rem rgba(15, 104, 71, 0.15);
+}
+
+.alert {
+  border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .login-page {
+    padding-top: 60px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .btn-group .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+  }
 }
 </style>

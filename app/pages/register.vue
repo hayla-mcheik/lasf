@@ -24,13 +24,13 @@
                   {{ successMessage }}
                 </div>
 
-                <div
-                  v-if="error"
-                  class="alert alert-danger"
-                >
-                  {{ error }}
-                </div>
-
+ <div
+  v-if="error"
+  class="alert alert-danger"
+  style="white-space: pre-line"
+>
+  {{ error }}
+</div>
                 <form @submit.prevent="registerPilot">
 
                   <div class="row">
@@ -65,6 +65,18 @@
                       >
                     </div>
 
+                    <div class="col-md-6 mb-3">
+  <label class="form-label">
+    Date of Birth
+  </label>
+
+  <input
+    v-model="form.date_of_birth"
+    type="date"
+    class="form-control"
+    required
+  >
+</div>
                     <div class="col-md-6 mb-3">
                       <label class="form-label">Blood Type</label>
                       <select
@@ -352,6 +364,7 @@ const form = reactive({
   name: '',
   email: '',
   phone: '',
+  date_of_birth: '',
   password: '',
   password_confirmation: '',
   blood_type: '',
@@ -411,7 +424,10 @@ const registerPilot = async () => {
     formData.append('name', form.name)
     formData.append('email', form.email)
     formData.append('phone', form.phone)
-
+formData.append(
+  'date_of_birth',
+  form.date_of_birth
+)
     formData.append('password', form.password)
     formData.append('password_confirmation', form.password_confirmation)
 
@@ -455,6 +471,7 @@ const registerPilot = async () => {
       name: '',
       email: '',
       phone: '',
+      date_of_birth:'',
       password: '',
       password_confirmation: '',
       blood_type: '',
@@ -482,9 +499,18 @@ setTimeout(() => {
 
   } catch (err) {
 
-    error.value =
-      err?.data?.message ||
-      'Registration failed'
+   if (err?.data?.errors) {
+
+  error.value = Object.values(
+    err.data.errors
+  ).flat().join('\n')
+
+} else {
+
+  error.value =
+    err?.data?.message ||
+    'Registration failed'
+}
 
   } finally {
     loading.value = false

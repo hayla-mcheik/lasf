@@ -45,6 +45,7 @@
                 <th>Club Connection</th>
                 <th>Socials</th>
                 <th>Valid Until</th>
+                <th>Status</th>
                 <th class="text-center">Actions</th>
               </tr>
             </thead>
@@ -91,17 +92,61 @@
                     <span v-if="!pilot.pilot_profile?.facebook_url && !pilot.pilot_profile?.instagram_url" class="text-muted small text-xs">--</span>
                   </div>
                 </td>
-                <td>
-                  <span class="text-success small fw-bold font-roboto">19/05/2027</span>
-                </td>
-                <td class="text-center">
-                  <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-success d-flex align-items-center gap-1" @click="generateCardView(pilot)">
-                      <i class="bi bi-printer"></i> Badge
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" @click="editPilot(pilot)"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(pilot)"><i class="bi bi-trash"></i></button>
-                  </div>
+            <td>
+  <span class="text-success small fw-bold font-roboto">
+    19/05/2027
+  </span>
+</td>
+
+<td>
+  <span
+    v-if="pilot.is_approved"
+    class="badge bg-success"
+  >
+    Approved
+  </span>
+
+  <span
+    v-else
+    class="badge bg-warning text-dark"
+  >
+    Pending Approval
+  </span>
+</td>
+
+<td class="text-center">
+              <div class="btn-group">
+
+  <button
+    v-if="!pilot.is_approved"
+    class="btn btn-sm btn-success"
+    @click="approvePilot(pilot.id)"
+  >
+    Approve
+  </button>
+
+  <button
+    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
+    @click="generateCardView(pilot)"
+  >
+    <i class="bi bi-printer"></i> Badge
+  </button>
+
+  <button
+    class="btn btn-sm btn-outline-primary"
+    @click="editPilot(pilot)"
+  >
+    <i class="bi bi-pencil"></i>
+  </button>
+
+  <button
+    class="btn btn-sm btn-outline-danger"
+    @click="confirmDelete(pilot)"
+  >
+    <i class="bi bi-trash"></i>
+  </button>
+
+</div>
                 </td>
               </tr>
             </tbody>
@@ -139,6 +184,17 @@
                   <label class="form-label fw-bold small">Phone Number</label>
                   <input v-model="form.phone" type="text" class="form-control" placeholder="+961..." :class="{'is-invalid': fieldErrors.phone}">
                 </div>
+                <div class="col-md-6">
+  <label class="form-label fw-bold small">
+    Date of Birth
+  </label>
+
+  <input
+    v-model="form.date_of_birth"
+    type="date"
+    class="form-control"
+  >
+</div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold small">Blood Type</label>
                   <select v-model="form.blood_type" class="form-select">
@@ -418,27 +474,29 @@ const getAvatarUrl = (imagePath) => {
 }
 
 const evaluateDynamicRatings = () => {
-  const optionsSet = new Set()
-  const selectedSportNames = availableSports.value
-    .filter(s => form.disciplines.includes(s.id))
-    .map(s => s.name.toLowerCase())
 
-  const hasParaglideGroup = selectedSportNames.some(name => 
-    ['paraglide', 'paramotor', 'paratrike', 'speedwing', 'delta plane', 'speed wing'].includes(name)
-  )
-  const hasSkydiveGroup = selectedSportNames.some(name => name.includes('skydive'))
+  allowedRatingsOptions.value = [
+    'P1',
+    'P2',
+    'P3',
+    'P4',
+    'TP Non Commercial',
+    'TP Commercial',
+    'AI',
+    'I',
+    'MI',
+    'A',
+    'B',
+    'C',
+    'D',
+    'PRO',
+    'Coach',
+    'Instructor',
+    'Examiner',
+    'TAN'
+  ]
 
-  if (hasParaglideGroup) {
-    ['P1', 'P2', 'P3', 'P4', 'TP Non Commercial', 'TP Commercial', 'AI', 'I', 'MI'].forEach(r => optionsSet.add(r))
-  }
-  if (hasSkydiveGroup) {
-    ['A', 'B', 'C', 'D', 'PRO', 'Coach', 'Instructor', 'Examiner', 'TAN'].forEach(r => optionsSet.add(r))
-  }
-
-  allowedRatingsOptions.value = Array.from(optionsSet)
-  form.ratings = form.ratings.filter(r => allowedRatingsOptions.value.includes(r))
 }
-
 const syncClubFields = () => {
   if (selectedClubIndex.value !== '') {
     const targetClub = clubsList[selectedClubIndex.value]
@@ -479,6 +537,10 @@ const savePilot = async () => {
   formData.append('name', form.name)
   formData.append('email', form.email)
   formData.append('phone', form.phone || '')
+  formData.append(
+  'date_of_birth',
+  form.date_of_birth || ''
+)
   formData.append('blood_type', form.blood_type)
   formData.append('club_name', form.club_name)
   formData.append('club_code', form.club_code)
@@ -544,7 +606,10 @@ const editPilot = (p) => {
   form.designation = prof?.designation || 'Professional Pilot'
   form.valid_until = prof?.valid_until || '2027-05-19'
   form.image = prof?.image || ''
-  
+  form.date_of_birth =
+  prof?.date_of_birth
+    ? prof.date_of_birth.substring(0,10)
+    : ''
   form.disciplines = prof?.disciplines ? prof.disciplines.map(d => d.id) : []
   form.ratings = prof?.ratings ? prof.ratings.split(' | ') : []
 
@@ -558,6 +623,33 @@ const editPilot = (p) => {
 const confirmDelete = (pilot) => {
   pilotToDelete.value = pilot
   showDeleteModal.value = true
+}
+const approvePilot = async (id) => {
+
+  try {
+
+    await $fetch(
+      `${config.public.apiBase}/admin/pilots/${id}/approve`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
+      }
+    )
+
+    alert('Pilot approved successfully')
+
+    fetchPilots()
+
+  } catch (err) {
+
+    alert(
+      err?.data?.message ||
+      'Approval failed'
+    )
+
+  }
 }
 
 const deletePilot = async () => {
@@ -630,7 +722,7 @@ const resetForm = () => {
   Object.assign(form, {
     name: '', email: '', phone: '', blood_type: 'O+', club_name: '', club_code: '',
     insurance_provider: '', insurance_number: '', facebook_url: '', instagram_url: '',
-    designation: 'Professional Pilot', disciplines: [], ratings: [], valid_until: '2027-05-19', image: ''
+    designation: 'Professional Pilot', disciplines: [], ratings: [], valid_until: '2027-05-19', image: '',date_of_birth:'',
   })
 }
 

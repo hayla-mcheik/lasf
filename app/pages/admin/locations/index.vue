@@ -242,7 +242,6 @@ const form = reactive({
 // --- ROBUST NOTIFICATION HELPER ---
 const notify = (type, message) => {
   if (process.client) {
-    // Try to use $toast if available, otherwise use native alert
     try {
       if (nuxtApp.$toast && typeof nuxtApp.$toast[type] === 'function') {
         nuxtApp.$toast[type](message)
@@ -270,7 +269,8 @@ const fetchSports = async () => {
 const fetchLocations = async () => {
   loading.value = true
   try {
-    const res = await $fetch(`${config.public.apiBase}/admin/flying-locations?search=${searchQuery.value}`, {
+    // ✅ FIXED: Using public route instead of admin route
+    const res = await $fetch(`${config.public.apiBase}/flying-locations?search=${searchQuery.value}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     locations.value = res.data || res
