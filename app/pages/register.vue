@@ -1,5 +1,6 @@
-```vue
+
 <template>
+    <Breadcrumbs />
   <ClientOnly>
     <div class="register-page">
       <div class="container py-5">
@@ -277,6 +278,8 @@
 </template>
 
 <script setup>
+import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+
 
 const config = useRuntimeConfig()
 
@@ -542,4 +545,4 @@ onMounted(() => {
 }
 
 </style>
-```
+
