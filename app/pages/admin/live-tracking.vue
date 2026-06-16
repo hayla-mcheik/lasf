@@ -78,6 +78,10 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useAuthStore } from '~/stores/auth'
 
+
+definePageMeta({
+  layout: 'admin'
+})
 const config = useRuntimeConfig()
 const authStore = useAuthStore()
 

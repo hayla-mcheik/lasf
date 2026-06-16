@@ -89,6 +89,14 @@
 </template>
 
 <script setup>
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onUnmounted
+} from 'vue'
+
 import { useAuthStore } from '~/stores/auth'
 
 const route = useRoute()
@@ -113,10 +121,11 @@ const fetchData = async () => {
 
 // 2. Computed check for current session
 const isFlyingHere = computed(() => {
-  if (!location.value?.id || !authStore.activeSession) return false
-return (
-  authStore.activeSession?.flying_location_id === location.value?.id
-)
+  if (!location.value) return false
+
+  if (!authStore.activeSession) return false
+
+  return authStore.activeSession.flying_location_id === location.value.id
 })
 
 // 3. Handle Check-in Action

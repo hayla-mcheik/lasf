@@ -1,5 +1,13 @@
 <script setup>
 import { useAuthStore } from '~/stores/auth'
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onUnmounted
+} from 'vue'
+
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
@@ -68,15 +76,7 @@ async function fetchActivePilots() {
     loadingActivePilots.value = false
   }
 }
-watch(
-  () => isFlyingHere.value,
-  (active) => {
-    if (active && !watchId) {
-      startTracking()
-    }
-  },
-  { immediate: true }
-)
+
 // Fix: Use onMounted properly
 onMounted(async () => {
 
@@ -107,9 +107,17 @@ onMounted(async () => {
     }, 30000) // Poll every 30 seconds
     
     // Clean up interval
-    onUnmounted(() => {
-      clearInterval(pollInterval)
-    })
+  onUnmounted(() => {
+
+  if (pollInterval) {
+    clearInterval(pollInterval)
+  }
+
+  if (watchId) {
+    navigator.geolocation.clearWatch(watchId)
+  }
+
+})
     
     // Handle auto check-in if token exists
     const scanToken = route.query.token
@@ -209,24 +217,28 @@ async function handleAutoCheckIn(token) {
 }
 
 // Fix: Compute if user is flying here
+
 const isFlyingHere = computed(() => {
-  const sessionLocationId = authStore.activeSession?.flying_location_id || 
-                          authStore.activeSession?.location?.id
+  const sessionLocationId =
+    authStore.activeSession?.flying_location_id ||
+    authStore.activeSession?.location?.id
+
   const currentLocationId = location.value?.id
-  
-  const isHere = sessionLocationId === currentLocationId
-  
-  console.log('🛩️ Flying here check:', {
-    sessionLocationId,
-    currentLocationId,
-    isHere,
-    activeSession: authStore.activeSession
-  })
-  
-  return isHere
+
+  return sessionLocationId === currentLocationId
 })
 
 let watchId = null
+
+watch(
+  () => isFlyingHere.value,
+  (active) => {
+    if (active && !watchId) {
+      startTracking()
+    }
+  },
+  { immediate: true }
+)
 
 const startTracking = () => {
 
