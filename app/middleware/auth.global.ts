@@ -32,10 +32,11 @@ export default defineNuxtRouteMiddleware((to, from) => {
     // Army
     if (auth.isArmy) {
 
-      const allowedArmyPaths = [
-        '/admin/locations',
-        '/admin/dashboard'
-      ]
+const allowedArmyPaths = [
+  '/admin/locations',
+  '/admin/dashboard',
+  '/admin/live-tracking'
+]
 
       const isAllowed = allowedArmyPaths.some(path =>
         to.path.startsWith(path)
