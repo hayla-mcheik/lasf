@@ -230,16 +230,9 @@ const isFlyingHere = computed(() => {
 
 let watchId = null
 
-watch(
-  () => isFlyingHere.value,
-  (active) => {
-    if (active && !watchId) {
-      startTracking()
-    }
-  },
-  { immediate: true }
-)
-
+// ==========================
+// GPS TRACKING
+// ==========================
 const startTracking = () => {
 
   if (!navigator.geolocation) {
@@ -248,6 +241,7 @@ const startTracking = () => {
   }
 
   watchId = navigator.geolocation.watchPosition(
+
     async (position) => {
 
       try {
@@ -267,14 +261,22 @@ const startTracking = () => {
           }
         )
 
+        console.log(
+          'GPS Updated:',
+          position.coords.latitude,
+          position.coords.longitude
+        )
+
       } catch (e) {
-        console.error(e)
+        console.error('GPS Update Failed', e)
       }
 
     },
+
     (err) => {
-      console.error(err)
+      console.error('GPS Error', err)
     },
+
     {
       enableHighAccuracy: true,
       maximumAge: 5000,
@@ -282,46 +284,83 @@ const startTracking = () => {
     }
   )
 }
-// Fix: Checkout function
+
+// ==========================
+// WATCH ACTIVE SESSION
+// ==========================
+watch(
+  () => isFlyingHere.value,
+  (active) => {
+
+    if (active && !watchId) {
+      startTracking()
+    }
+
+    if (!active && watchId) {
+      navigator.geolocation.clearWatch(watchId)
+      watchId = null
+    }
+
+  },
+  {
+    immediate: true
+  }
+)
+
+// ==========================
+// CHECKOUT
+// ==========================
 async function handleCheckOut() {
-  if (!authStore.activeSession || !confirm("Are you sure you want to check out?")) {
+
+  if (
+    !authStore.activeSession ||
+    !confirm('Are you sure you want to check out?')
+  ) {
     return
   }
-  if (watchId) {
-  navigator.geolocation.clearWatch(watchId)
-}
+
   try {
-    const sessionId = authStore.activeSession.id
-    
-    console.log('🛬 Checking out session:', sessionId)
-    
-    await $fetch(`${API_BASE}/airspace-sessions/${sessionId}/checkout`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
+
+    await $fetch(
+      `${API_BASE}/airspace-sessions/${authStore.activeSession.id}/checkout`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.token}`
+        }
       }
-    })
-    
-    console.log('✅ Check-out successful')
-    
-    // Clear session from auth store
+    )
+
+    if (watchId) {
+      navigator.geolocation.clearWatch(watchId)
+      watchId = null
+    }
+
     authStore.activeSession = null
-    
-    // Refresh active pilots
+
     await fetchActivePilots()
-    
-    alert('✅ Successfully checked out!')
-    
+
+    alert('Successfully checked out')
+
   } catch (error) {
-    console.error('❌ Check-out error:', error)
-    alert('Failed to check out. Please try again.')
+
+    console.error(error)
+
+    alert('Failed to check out')
+
   }
 }
+
+// ==========================
+// COMPONENT UNMOUNT
+// ==========================
 onUnmounted(() => {
+
   if (watchId) {
     navigator.geolocation.clearWatch(watchId)
+    watchId = null
   }
+
 })
 
 function formatTime(dateString) {
