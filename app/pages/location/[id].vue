@@ -240,14 +240,17 @@ watch(
   { immediate: true }
 )
 
-const startTracking = () => {
+function startTracking() {
 
-  if (!navigator.geolocation) {
-    console.log('GPS not supported')
+  if (!process.client) return
+
+  if (!window.navigator?.geolocation) {
+    console.log('Geolocation not supported')
     return
   }
 
-  watchId = navigator.geolocation.watchPosition(
+  watchId = window.navigator.geolocation.watchPosition(
+
     async (position) => {
 
       try {
@@ -272,9 +275,11 @@ const startTracking = () => {
       }
 
     },
-    (err) => {
-      console.error(err)
+
+    (error) => {
+      console.error(error)
     },
+
     {
       enableHighAccuracy: true,
       maximumAge: 5000,
@@ -288,7 +293,7 @@ async function handleCheckOut() {
     return
   }
   if (watchId) {
-  navigator.geolocation.clearWatch(watchId)
+window.navigator.geolocation.clearWatch(watchId)
 }
   try {
     const sessionId = authStore.activeSession.id
