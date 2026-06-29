@@ -37,45 +37,45 @@ const {
 console.log('📍 Location data:', location.value)
 console.log('📍 Location ID:', location.value?.id)
 
-const activePilots = ref([])
+// const activePilots = ref([])
 const checkingIn = ref(false)
-const fetchError = ref(null)
-const loadingActivePilots = ref(false)
+// const fetchError = ref(null)
+// const loadingActivePilots = ref(false)
 
 // Fix: Proper fetch function
 // pages/location/[id].vue
 
-async function fetchActivePilots() {
-  if (!location.value?.id) return
+// async function fetchActivePilots() {
+//   if (!location.value?.id) return
   
-  loadingActivePilots.value = true
-  fetchError.value = null
+//   loadingActivePilots.value = true
+//   fetchError.value = null
   
-  try {
-    // 1. Ensure NO trailing slash unless Laravel requires it
-    // 2. Use simple 'query' object
-    const response = await $fetch(`${API_BASE}/airspace-sessions/active`, {
-      method: 'GET',
-      params: { location_id: location.value.id }, // $fetch uses 'params' for query strings
-      // Remove custom headers for the GET request to avoid CORS preflight issues
-      headers: {
-        'Accept': 'application/json'
-      },
-      // Important for Nuxt: ignore the base URL if API_BASE is absolute
-      baseURL: undefined 
-    })
+//   try {
+//     // 1. Ensure NO trailing slash unless Laravel requires it
+//     // 2. Use simple 'query' object
+//     const response = await $fetch(`${API_BASE}/airspace-sessions/active`, {
+//       method: 'GET',
+//       params: { location_id: location.value.id }, // $fetch uses 'params' for query strings
+//       // Remove custom headers for the GET request to avoid CORS preflight issues
+//       headers: {
+//         'Accept': 'application/json'
+//       },
+//       // Important for Nuxt: ignore the base URL if API_BASE is absolute
+//       baseURL: undefined 
+//     })
     
-    // ... handle response ...
-    if (response) {
-       activePilots.value = Array.isArray(response) ? response : (response.data || [])
-    }
-  } catch (error) {
-    console.error('❌ Fetch error:', error)
-    fetchError.value = error
-  } finally {
-    loadingActivePilots.value = false
-  }
-}
+//     // ... handle response ...
+//     if (response) {
+//        activePilots.value = Array.isArray(response) ? response : (response.data || [])
+//     }
+//   } catch (error) {
+//     console.error('❌ Fetch error:', error)
+//     fetchError.value = error
+//   } finally {
+//     loadingActivePilots.value = false
+//   }
+// }
 
 // Fix: Use onMounted properly
 onMounted(async () => {
@@ -88,36 +88,15 @@ onMounted(async () => {
     console.log('📍 Location loaded:', location.value.name, '(ID:', location.value.id, ')')
     
     // Fetch active pilots
-    await fetchActivePilots()
+    // await fetchActivePilots()
     
     // Set up polling with error handling
-    let retryCount = 0
-    const maxRetries = 3
+    // let retryCount = 0
+    // const maxRetries = 3
     
-    const pollInterval = setInterval(async () => {
-      if (retryCount < maxRetries) {
-        await fetchActivePilots()
-        if (fetchError.value) {
-          retryCount++
-          console.log(`🔄 Retry ${retryCount}/${maxRetries}`)
-        } else {
-          retryCount = 0 // Reset on success
-        }
-      }
-    }, 30000) // Poll every 30 seconds
+  
     
-    // Clean up interval
-  onUnmounted(() => {
 
-  if (pollInterval) {
-    clearInterval(pollInterval)
-  }
-
-  if (watchId) {
-    navigator.geolocation.clearWatch(watchId)
-  }
-
-})
     
     // Handle auto check-in if token exists
     const scanToken = route.query.token
@@ -182,7 +161,7 @@ async function handleAutoCheckIn(token) {
     }
     
     // Refresh active pilots list
-    await fetchActivePilots()
+    // await fetchActivePilots()
     
     // Clean URL without token
     window.history.replaceState({}, '', route.path)
@@ -314,7 +293,7 @@ window.navigator.geolocation.clearWatch(watchId)
     authStore.activeSession = null
     
     // Refresh active pilots
-    await fetchActivePilots()
+    // await fetchActivePilots()
     
     alert('✅ Successfully checked out!')
     
@@ -351,10 +330,7 @@ function formatTime(dateString) {
 
 // Refresh function for manual refresh
 async function refreshData() {
-  await Promise.all([
-    refreshLocation(),
-    fetchActivePilots()
-  ])
+    await refreshLocation()
 }
 </script>
 
@@ -398,10 +374,10 @@ async function refreshData() {
               </div>
             </div>
             <div class="col-md-4 text-md-end">
-              <div class="location-stats">
+              <!-- <div class="location-stats">
                 <div class="fw-bold fs-4">{{ activePilots.length }}</div>
                 <div class="text-muted">Active Pilots</div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -411,7 +387,7 @@ async function refreshData() {
       <div class="container py-5">
         <div class="row g-4">
           <!-- Left column - Check-in/Check-out -->
-          <div class="col-lg-8">
+          <div class="col-lg-12">
             <div class="card shadow border-0 rounded-4">
               <div class="card-body p-5">
                 <!-- Loading check-in state -->
@@ -550,101 +526,7 @@ async function refreshData() {
           </div>
 
           <!-- Right column - Live airspace -->
-          <div class="col-lg-4">
-            <div class="card shadow border-0 rounded-4 h-100">
-              <div class="card-header bg-white border-0 pt-4 pb-3">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h4 class="fw-bold mb-0">
-                    <i class="bi bi-people-fill text-primary me-2"></i>
-                    Live Airspace
-                  </h4>
-                  
-                  <div class="d-flex align-items-center">
-                    <span class="badge bg-primary rounded-pill px-3 py-2 me-2">
-                      {{ activePilots.length }}
-                    </span>
-                    
-                    <button 
-                      @click="fetchActivePilots" 
-                      :disabled="loadingActivePilots"
-                      class="btn btn-sm btn-outline-primary"
-                      title="Refresh"
-                    >
-                      <i v-if="loadingActivePilots" class="bi bi-arrow-clockwise spin"></i>
-                      <i v-else class="bi bi-arrow-clockwise"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="card-body p-0">
-                <!-- Loading state -->
-                <div v-if="loadingActivePilots" class="text-center py-5">
-                  <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                  <p class="mt-2 text-muted">Updating airspace...</p>
-                </div>
-                
-                <!-- Error state -->
-                <div v-else-if="fetchError" class="text-center py-5">
-                  <i class="bi bi-wifi-off display-4 text-muted mb-3"></i>
-                  <p class="text-muted">Unable to load airspace data</p>
-                  <button @click="fetchActivePilots" class="btn btn-sm btn-outline-primary">
-                    Try Again
-                  </button>
-                </div>
-                
-                <!-- Empty state -->
-                <div v-else-if="activePilots.length === 0" class="text-center py-5">
-                  <i class="bi bi-people display-4 text-muted mb-3"></i>
-                  <h5 class="fw-bold">Airspace is Clear</h5>
-                  <p class="text-muted small">No pilots currently active</p>
-                </div>
-                
-                <!-- Active pilots list -->
-                <div v-else class="active-pilots-list">
-                  <div class="list-group list-group-flush">
-                    <div 
-                      v-for="session in activePilots" 
-                      :key="session.id" 
-                      class="list-group-item border-0 py-3 px-4"
-                    >
-                      <div class="d-flex align-items-center">
-                        <div class="pilot-avatar me-3">
-                          <i class="bi bi-person-circle fs-2 text-primary"></i>
-                        </div>
-                        
-                        <div class="flex-grow-1">
-                          <div class="fw-bold mb-1">
-                            {{ session.pilot?.name || 'Unknown Pilot' }}
-                          </div>
-                          
-                          <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                              <i class="bi bi-clock me-1"></i>
-                              {{ formatTime(session.checked_in_at) }}  
-                            </small>
-                            
-                            <span class="badge bg-success bg-opacity-10 text-success small">
-                              Active
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="card-footer bg-white border-0 py-3">
-                <div class="text-center small text-muted">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Updates automatically every 30 seconds
-                </div>
-              </div>
-            </div>
-          </div>
+         
         </div>
       </div>
     </div>

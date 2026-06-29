@@ -24,6 +24,55 @@
       </div>
 
       <div class="p-4 mx-md-5 flex-grow-1">
+        <!-- Flyable Status -->
+<div
+  class="mb-5 p-4 rounded-4 shadow-sm border"
+  :class="flyableCardClass"
+>
+
+  <div class="d-flex align-items-center justify-content-between">
+
+    <div>
+
+      <h3 class="fw-bold mb-2">
+
+        <i
+          class="bi me-2"
+          :class="flyableIcon"
+        ></i>
+
+        Flyable Status
+
+      </h3>
+
+ <h4
+    class="fw-black mb-2"
+    :class="{
+        'text-success': weather.flyable_status === 'good',
+        'text-warning': weather.flyable_status === 'caution',
+        'text-danger': weather.flyable_status === 'not_flyable'
+    }"
+>
+    {{ flyableTitle }}
+</h4>
+
+<p
+    class="mb-0 fs-5 fw-semibold"
+>
+    {{ weather.flyable_message || defaultFlyableMessage }}
+</p>
+
+    </div>
+
+    <div class="display-2">
+
+      {{ flyableEmoji }}
+
+    </div>
+
+  </div>
+
+</div>
         <div class="situation-container mb-5 shadow-sm p-4 bg-light-subtle rounded-3" dir="rtl">
           <div class="d-flex align-items-center gap-3 mb-3">
             <div class="dot-indicator bg-success"></div>
@@ -144,11 +193,109 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const config = useRuntimeConfig();
 const weather = ref(null);
 const loading = ref(true);
+
+const flyableTitle = computed(() => {
+
+    switch (weather.value?.flyable_status) {
+
+        case 'good':
+            return 'Good Conditions'
+
+        case 'caution':
+            return 'Fly With Caution'
+
+        case 'not_flyable':
+            return 'Not Flyable'
+
+        default:
+            return 'Good Conditions'
+
+    }
+
+})
+const defaultFlyableMessage = computed(() => {
+
+    switch (weather.value?.flyable_status) {
+
+        case 'good':
+            return 'Excellent weather conditions for flying.'
+
+        case 'caution':
+            return 'Please evaluate the weather carefully before takeoff.'
+
+        case 'not_flyable':
+            return 'Flying operations are not recommended today.'
+
+        default:
+            return ''
+
+    }
+
+})
+const flyableEmoji = computed(() => {
+
+    switch (weather.value?.flyable_status) {
+
+        case 'good':
+            return '🟢'
+
+        case 'caution':
+            return '🟡'
+
+        case 'not_flyable':
+            return '🔴'
+
+        default:
+            return '🟢'
+
+    }
+
+})
+
+const flyableIcon = computed(() => {
+
+    switch (weather.value?.flyable_status) {
+
+        case 'good':
+            return 'bi-check-circle-fill'
+
+        case 'caution':
+            return 'bi-exclamation-triangle-fill'
+
+        case 'not_flyable':
+            return 'bi-x-circle-fill'
+
+        default:
+            return 'bi-check-circle-fill'
+
+    }
+
+})
+
+const flyableCardClass = computed(() => {
+
+    switch (weather.value?.flyable_status) {
+
+        case 'good':
+            return 'border-success bg-success-subtle'
+
+        case 'caution':
+            return 'border-warning bg-warning-subtle'
+
+        case 'not_flyable':
+            return 'border-danger bg-danger-subtle'
+
+        default:
+            return 'border-success bg-success-subtle'
+
+    }
+
+})
 
 const fetchWeather = async () => {
   try {
@@ -182,6 +329,33 @@ onMounted(fetchWeather);
 </script>
 
 <style scoped>
+/* ================================
+   Flyable Status Card
+================================ */
+
+.bg-success-subtle{
+    background:#ecfdf3;
+}
+
+.bg-warning-subtle{
+    background:#fff8e1;
+}
+
+.bg-danger-subtle{
+    background:#fdecec;
+}
+
+.border-success{
+    border:3px solid #198754 !important;
+}
+
+.border-warning{
+    border:3px solid #ffc107 !important;
+}
+
+.border-danger{
+    border:3px solid #dc3545 !important;
+}
 .fw-black { font-weight: 900; }
 .letter-spacing-1 { letter-spacing: 1px; }
 .letter-spacing-2 { letter-spacing: 2px; }

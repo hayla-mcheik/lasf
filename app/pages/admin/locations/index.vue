@@ -162,8 +162,17 @@
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Status</label>
                   <select v-model="form.clearance_status" class="form-select">
-                    <option value="green">Green (Open)</option>
-                    <option value="red">Red (Closed)</option>
+          <option value="green">
+    🟢 Green (Open)
+</option>
+
+<option value="yellow">
+    🟡 Yellow (Pending)
+</option>
+
+<option value="red">
+    🔴 Red (Closed)
+</option>
                   </select>
                 </div>
               </div>
@@ -297,7 +306,7 @@ const validateForm = () => {
     validationErrors.value.takeoff_nazim = ['Takeoff Nazim is required']
   }
 
-  if (!['green', 'red'].includes(form.clearance_status)) {
+ if (!['green', 'yellow', 'red'].includes(form.clearance_status)){
     validationErrors.value.clearance_status = ['Invalid status']
   }
 
@@ -442,10 +451,37 @@ const downloadQR = () => {
 
 const handleSearch = useDebounceFn(() => fetchLocations(), 500)
 const getCurrentStatus = (location) => {
-  const s = location.clearance_statuses?.[0]?.status || 'green'
-  return { status: s, label: s === 'green' ? 'Cleared' : 'Closed' }
-}
 
+    const status =
+        location.clearance_statuses?.[0]?.status || 'green'
+
+    switch (status) {
+
+        case 'green':
+            return {
+                status: 'green',
+                label: 'Open'
+            }
+
+        case 'yellow':
+            return {
+                status: 'yellow',
+                label: 'Pending'
+            }
+
+        case 'red':
+            return {
+                status: 'red',
+                label: 'Closed'
+            }
+
+        default:
+            return {
+                status: 'green',
+                label: 'Open'
+            }
+    }
+}
 onMounted(() => {
   fetchLocations()
   fetchSports()
@@ -456,9 +492,17 @@ onMounted(() => {
 .flying-locations-admin { background: #f8fafc; min-height: 100vh; }
 .status-badge-modern { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
 .status-badge-modern.green { background: #dcfce7; color: #166534; }
+.status-badge-modern.yellow {
+    background: #fff3cd;
+    color: #856404;
+}
 .status-badge-modern.red { background: #fee2e2; color: #991b1b; }
 .pulse-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
 .green .pulse-dot { background: #22c55e; animation: pulse 2s infinite; }
+.yellow .pulse-dot {
+    background: #ffc107;
+    animation: pulse 2s infinite;
+}
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
 .italic { font-style: italic; }
 </style>

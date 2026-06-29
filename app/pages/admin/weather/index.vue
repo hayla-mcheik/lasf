@@ -27,6 +27,129 @@
               <label class="form-label fw-bold small text-uppercase">General Situation (الحالة العامة)</label>
               <textarea v-model="form.general_situation_ar" class="form-control border-2 shadow-sm" rows="3"></textarea>
             </div>
+            <div class="col-12 mt-4">
+
+    <div class="card border-success shadow-sm">
+
+        <div class="card-header bg-success text-white">
+
+            <h5 class="mb-0">
+                <i class="bi bi-airplane-fill me-2"></i>
+
+                Flyable Status
+
+            </h5>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <div class="form-check">
+
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            value="good"
+                            v-model="form.flyable_status"
+                            id="good"
+                        >
+
+                        <label
+                            class="form-check-label fw-bold text-success"
+                            for="good"
+                        >
+
+                            🟢 Good Conditions
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="form-check">
+
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            value="caution"
+                            v-model="form.flyable_status"
+                            id="caution"
+                        >
+
+                        <label
+                            class="form-check-label fw-bold text-warning"
+                            for="caution"
+                        >
+
+                            🟡 Fly With Caution
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="form-check">
+
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            value="not_flyable"
+                            v-model="form.flyable_status"
+                            id="not_flyable"
+                        >
+
+                        <label
+                            class="form-check-label fw-bold text-danger"
+                            for="not_flyable"
+                        >
+
+                            🔴 Not Flyable
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <label class="form-label fw-bold">
+
+                    Message shown to pilots
+
+                </label>
+
+                <textarea
+
+                    v-model="form.flyable_message"
+
+                    rows="2"
+
+                    class="form-control"
+
+                    placeholder="Example: Strong wind after 3 PM"
+
+                ></textarea>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
             <div class="col-md-4">
               <label class="form-label fw-bold small text-primary">Surface Winds (الرياح السطحية)</label>
@@ -153,7 +276,7 @@ const loading = ref(true)
 const form = ref({
   id: null, forecast_date: '', day_name_ar: '', general_situation_ar: '',
   daily_description_ar: '', sea_state_ar: '', pressure_hpa: '', water_temp_ar: '',
-  surface_winds_ar: '', visibility_ar: '', humidity_range: '',
+  surface_winds_ar: '', visibility_ar: '', humidity_range: '',flyable_status: 'good',flyable_message: '',
   daily_details: { day_1: '', day_2: '', day_3: '' }, 
   temperatures: [],
   precipitation: [] 
@@ -168,7 +291,10 @@ const fetchBriefing = async () => {
     if (res.forecast) {
       const item = res.forecast
       form.value = {
-        ...item,
+        ...item, flyable_status:
+    item.flyable_status ?? 'good',
+flyable_message:
+    item.flyable_message ?? '',
         forecast_date: item.forecast_date.split('T')[0],
         daily_details: item.daily_details || { day_1: '', day_2: '', day_3: '' },
         temperatures: item.regional_temperatures || [],

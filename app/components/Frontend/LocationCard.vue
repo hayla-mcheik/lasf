@@ -24,17 +24,26 @@
         <div class="status-details p-3 rounded-3 mb-3 bg-light border-start border-4" :class="'border-' + bootstrapColor">
           <div class="status-message small fw-bold">
             <i class="bi" :class="statusIcon"></i>
-            {{ location?.clearance_statuses?.[0]?.reason || (statusKey === 'cleared' ? 'Open for flight' : 'Temporary restricted') }}
+{{
+  location?.clearance_statuses?.[0]?.reason ||
+  (
+    statusKey === 'green'
+      ? 'Open for flight'
+      : statusKey === 'yellow'
+      ? 'Pending approval'
+      : 'Closed for flight'
+  )
+}}
           </div>
         </div>
-
+<!-- 
         <div v-if="location?.active_sessions_count > 0" class="active-pilots-widget p-2 px-3 rounded-pill d-flex align-items-center justify-content-between bg-primary-subtle border border-primary-subtle">
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-person-badge-fill text-primary"></i>
             <span class="small fw-bold text-primary">{{ location.active_sessions_count }} Pilots Live</span>
           </div>
           <div class="live-pulse"></div>
-        </div>
+        </div> -->
       </div>
 
       <div class="card-footer bg-white border-top p-3 d-flex gap-2">
@@ -46,7 +55,7 @@
           class="btn flex-grow-2 btn-sm py-2 rounded-3 fw-bold" 
           :class="isCurrentLocationSession ? 'btn-success' : 'btn-primary'"
           @click="navigateTo(`/location/${location.slug}`)" 
-          :disabled="statusKey !== 'cleared'"
+      :disabled="statusKey !== 'green'"
         >
           <template v-if="isCurrentLocationSession">
             <i class="bi bi-airplane-fill me-1"></i> You are Live
@@ -74,12 +83,39 @@ const isCurrentLocationSession = computed(() => {
 
 // Status Logic
 const statusKey = computed(() => {
-  const s = props.location?.clearance_statuses?.[0]?.status || 'green';
-  return s === 'green' ? 'cleared' : 'closed';
-});
+  return props.location?.clearance_statuses?.[0]?.status || 'green'
+})
 
-const bootstrapColor = computed(() => statusKey.value === 'cleared' ? 'success' : 'danger');
-const statusIcon = computed(() => statusKey.value === 'cleared' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
+const bootstrapColor = computed(() => {
+  switch (statusKey.value) {
+    case 'green':
+      return 'success'
+
+    case 'yellow':
+      return 'warning'
+
+    case 'red':
+      return 'danger'
+
+    default:
+      return 'secondary'
+  }
+})
+const statusIcon = computed(() => {
+  switch (statusKey.value) {
+    case 'green':
+      return 'bi-check-circle-fill'
+
+    case 'yellow':
+      return 'bi-exclamation-triangle-fill'
+
+    case 'red':
+      return 'bi-x-circle-fill'
+
+    default:
+      return 'bi-question-circle'
+  }
+})
 
 const getSportIcon = (name) => {
   const icons = { 'Paragliding': 'bi-parachute', 'Hang Gliding': 'bi-airplane', 'Paramotoring': 'bi-fan' };
@@ -131,7 +167,16 @@ const getSportIcon = (name) => {
 
 /* Footer sizing */
 .flex-grow-2 { flex-grow: 2; }
+.status-green {
+  background: linear-gradient(135deg, #198754, #28a745);
+}
 
-.status-cleared { background: linear-gradient(135deg, #198754, #28a745); }
-.status-closed { background: linear-gradient(135deg, #dc3545, #bd2130); }
+.status-yellow {
+  background: linear-gradient(135deg, #ffc107, #ffca2c);
+  color: #212529;
+}
+
+.status-red {
+  background: linear-gradient(135deg, #dc3545, #bd2130);
+}
 </style>

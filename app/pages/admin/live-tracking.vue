@@ -100,12 +100,13 @@ onMounted(async () => {
     8
   )
 
-  L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
-      attribution: '&copy; OpenStreetMap'
-    }
-  ).addTo(map)
+L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  {
+    attribution: '&copy; OpenStreetMap & CARTO',
+    maxZoom: 20
+  }
+).addTo(map)
 
   await loadLocations()
 
@@ -154,6 +155,15 @@ const clearMarkers = () => {
 
 }
 
+const airplaneIcon = L.icon({
+  iconUrl: '/images/airplane-marker.png',
+
+  iconSize: [48, 48],
+
+  iconAnchor: [24, 24],
+
+  popupAnchor: [0, -22]
+})
 const loadPilots = async () => {
 
   if (!selectedLocation.value) return
@@ -175,42 +185,112 @@ const loadPilots = async () => {
 
     response.forEach(session => {
 
-      const gps = session.locations?.[0]
+const gps = session.locations?.[0]
 
-      if (!gps) return
+if (!gps) return
 
-      const marker = L.marker([
+const rawPhone = session.pilot?.phone ?? ''
+
+let phone = rawPhone.replace(/\D/g, '')
+
+// Lebanon numbers
+if (phone.startsWith('0')) {
+    phone = phone.substring(1)
+}
+
+if (!phone.startsWith('961')) {
+    phone = '961' + phone
+}
+
+const mapsUrl =
+`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
+
+const marker = L.marker(
+    [
         Number(gps.latitude),
         Number(gps.longitude)
-      ])
-      .addTo(map)
-      .bindPopup(`
-        <strong>${session.pilot?.name ?? 'Pilot'}</strong>
-        <br>
-        Latitude: ${gps.latitude}
-        <br>
-        Longitude: ${gps.longitude}
-      `)
+    ],
+    {
+        icon: airplaneIcon
+    }
+)
+.addTo(map)
 
+.bindPopup(`
+<div style="width:260px">
+
+    <h5 class="text-center mb-3">
+        ✈️ ${session.pilot?.name ?? 'Pilot'}
+    </h5>
+
+    <div class="alert alert-success text-center p-2">
+        <strong>🟢 Currently Flying</strong>
+    </div>
+
+    <table class="table table-sm">
+
+        <tr>
+            <td><strong>📞 Phone</strong></td>
+            <td>${rawPhone}</td>
+        </tr>
+
+        <tr>
+            <td><strong>📍 Latitude</strong></td>
+            <td>${Number(gps.latitude).toFixed(6)}</td>
+        </tr>
+
+        <tr>
+            <td><strong>📍 Longitude</strong></td>
+            <td>${Number(gps.longitude).toFixed(6)}</td>
+        </tr>
+
+    </table>
+
+    <div class="d-grid gap-2">
+
+        <a
+            href="tel:${phone}"
+            class="btn btn-primary btn-sm"
+        >
+            📞 Call Pilot
+        </a>
+
+        <a
+            href="https://wa.me/${phone}?text=${encodeURIComponent('⚠️ LASF Emergency: Please land immediately.')}"
+            target="_blank"
+            class="btn btn-success btn-sm"
+        >
+            💬 Send WhatsApp
+        </a>
+
+        <a
+            href="${mapsUrl}"
+            target="_blank"
+            class="btn btn-dark btn-sm"
+        >
+            🗺️ Open Google Maps
+        </a>
+
+    </div>
+
+</div>
+`)
       markers.push(marker)
 
     })
 
-    if (response.length > 0) {
+if (markers.length > 0) {
 
-      const firstGps = response[0]?.locations?.[0]
+    const group = L.featureGroup(markers)
 
-      if (firstGps) {
-        map.setView(
-          [
-            Number(firstGps.latitude),
-            Number(firstGps.longitude)
-          ],
-          13
-        )
-      }
+    map.fitBounds(
+        group.getBounds(),
+        {
+            padding: [50, 50]
+        }
+    )
 
-    }
+}
 
   } catch (error) {
     console.error('Failed loading pilots', error)
@@ -219,14 +299,85 @@ const loadPilots = async () => {
 }
 </script>
 <style scoped>
-#map {
-  width: 100%;
-  height: 700px;
-  border-radius: 12px;
-  overflow: hidden;
+#map{
+    width:100%;
+    height:700px;
+    border-radius:12px;
 }
 
-.card {
-  border-radius: 12px;
+.pilot-popup{
+
+    width:290px;
+
+    font-family:Arial,sans-serif;
+
+}
+
+.pilot-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.pilot-avatar{
+
+    width:60px;
+
+    height:60px;
+
+    border-radius:50%;
+
+    background:#198754;
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:28px;
+
+}
+
+.pilot-header h5{
+
+    margin:0;
+
+    font-weight:700;
+
+}
+
+.pilot-info{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:10px 0;
+
+    font-size:14px;
+
+}
+
+.pilot-buttons{
+
+    display:grid;
+
+    gap:10px;
+
+    margin-top:20px;
+
+}
+
+.pilot-buttons .btn{
+
+    width:100%;
+
 }
 </style>

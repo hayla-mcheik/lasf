@@ -7,7 +7,11 @@
       </div>
 
       <div v-else-if="location" class="card shadow-lg border-0 rounded-4 overflow-hidden animate-fade-in">
-        <div class="card-header py-4 text-center border-0" :class="location.status === 'cleared' ? 'bg-success' : 'bg-danger'">
+        <div class="card-header py-4 text-center border-0" :class="{
+  'bg-success': location.status === 'green',
+  'bg-warning text-dark': location.status === 'yellow',
+  'bg-danger': location.status === 'red'
+}">
           <h1 class="text-white fw-bold mb-0">{{ location.name }}</h1>
           <p class="text-white-50 mb-0"><i class="bi bi-geo-alt me-1"></i>{{ location.region }}</p>
         </div>
@@ -57,7 +61,7 @@
               
               <button 
                 @click="handleCheckIn" 
-                :disabled="location.status !== 'cleared' || checkingIn"
+                :disabled="location.status !== 'green' || checkingIn"
                 class="btn btn-success btn-lg px-5 rounded-pill shadow-lg w-100 py-3 fw-bold action-btn"
               >
                 <span v-if="checkingIn" class="spinner-border spinner-border-sm me-2"></span>
@@ -65,12 +69,21 @@
                 Confirm Arrival & Start
               </button>
 
-              <div v-if="location.status !== 'cleared'" class="mt-4 p-3 bg-danger-subtle rounded-3">
-                <p class="text-danger mb-0 fw-bold">
-                  <i class="bi bi-x-circle-fill me-1"></i> This airspace is currently CLOSED. 
-                  Check-in is disabled.
-                </p>
-              </div>
+<div v-if="location.status === 'yellow'" class="mt-4 p-3 bg-warning-subtle rounded-3">
+  <p class="text-warning mb-0 fw-bold">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    This airspace is currently PENDING.
+    Check-in is temporarily disabled.
+  </p>
+</div>
+
+<div v-if="location.status === 'red'" class="mt-4 p-3 bg-danger-subtle rounded-3">
+  <p class="text-danger mb-0 fw-bold">
+    <i class="bi bi-x-circle-fill me-1"></i>
+    This airspace is currently CLOSED.
+    Check-in is disabled.
+  </p>
+</div>
             </div>
           </div>
         </div>
@@ -130,6 +143,9 @@ const isFlyingHere = computed(() => {
 
 // 3. Handle Check-in Action
 const handleCheckIn = async () => {
+  if (location.value.status !== 'green') {
+  return alert('This flying location is currently unavailable.')
+}
   checkingIn.value = true
   try {
     const res = await $fetch(`${config.public.apiBase}/airspace-sessions`, {
