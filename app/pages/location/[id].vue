@@ -1,24 +1,12 @@
 <script setup>
 import { useAuthStore } from '~/stores/auth'
-import {
-  ref,
-  computed,
-  watch,
-  onMounted,
-  onUnmounted
-} from 'vue'
-
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-console.log('Full Route Params:', route.params)
-console.log('Slug Value:', route.params.slug)
-console.log('ID Value:', route.params.id)
-// Use production API
 const API_BASE = 'https://lasf.info/api'
-console.log('🌐 Using API Base:', API_BASE)
 
 const {
   data: location,
@@ -34,303 +22,253 @@ const {
   }
 )
 
-console.log('📍 Location data:', location.value)
-console.log('📍 Location ID:', location.value?.id)
-
-// const activePilots = ref([])
 const checkingIn = ref(false)
-// const fetchError = ref(null)
-// const loadingActivePilots = ref(false)
 
-// Fix: Proper fetch function
-// pages/location/[id].vue
+onMounted(() => {
 
-// async function fetchActivePilots() {
-//   if (!location.value?.id) return
-  
-//   loadingActivePilots.value = true
-//   fetchError.value = null
-  
-//   try {
-//     // 1. Ensure NO trailing slash unless Laravel requires it
-//     // 2. Use simple 'query' object
-//     const response = await $fetch(`${API_BASE}/airspace-sessions/active`, {
-//       method: 'GET',
-//       params: { location_id: location.value.id }, // $fetch uses 'params' for query strings
-//       // Remove custom headers for the GET request to avoid CORS preflight issues
-//       headers: {
-//         'Accept': 'application/json'
-//       },
-//       // Important for Nuxt: ignore the base URL if API_BASE is absolute
-//       baseURL: undefined 
-//     })
-    
-//     // ... handle response ...
-//     if (response) {
-//        activePilots.value = Array.isArray(response) ? response : (response.data || [])
-//     }
-//   } catch (error) {
-//     console.error('❌ Fetch error:', error)
-//     fetchError.value = error
-//   } finally {
-//     loadingActivePilots.value = false
-//   }
-// }
+  console.log('Component Loaded')
 
-// Fix: Use onMounted properly
-onMounted(async () => {
+  if (!location.value)
+    return
 
-  console.log('🚀 Component mounted')
-  console.log('🔗 Current URL:', window.location.href)
-  console.log('🔗 Route query:', route.query)
-  
-  if (location.value) {
-    console.log('📍 Location loaded:', location.value.name, '(ID:', location.value.id, ')')
-    
-    // Fetch active pilots
-    // await fetchActivePilots()
-    
-    // Set up polling with error handling
-    // let retryCount = 0
-    // const maxRetries = 3
-    
-  
-    
+  console.log('Location:', location.value.name)
 
-    
-    // Handle auto check-in if token exists
-    const scanToken = route.query.token
-    
-    if (scanToken) {
-      console.log('🔑 QR Token found:', scanToken)
-      
-      if (authStore.isAuthenticated) {
-        console.log('👤 User authenticated, attempting auto check-in...')
-        await handleAutoCheckIn(scanToken)
-      } else {
-        console.log('🔒 User not authenticated, redirecting to login...')
-        const redirectUrl = `/login?redirect=${encodeURIComponent(route.fullPath)}`
-        navigateTo(redirectUrl)
-      }
-    } else {
-      console.log('❌ No QR token in URL')
-    }
-  } else {
-    console.log('⚠️ Location data not available')
-  }
+  // NO AUTO CHECK-IN ANYMORE
+
 })
 
-
-// Fix: Auto check-in function
-async function handleAutoCheckIn(token) {
-  if (isFlyingHere.value) {
-    console.log('✈️ User already flying here')
-    return
-  }
-  
-  if (!token) {
-    console.log('⚠️ No token provided for check-in')
-    return
-  }
-  
-  checkingIn.value = true
-  
-  try {
-    console.log('🔄 Sending check-in request...')
-    
-    const response = await $fetch(`${API_BASE}/airspace-sessions`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token: token }),
-      timeout: 15000,
-      onRequest({ request, options }) {
-        console.log('📤 Check-in request:', { token })
-      }
-    })
-    
-    console.log('✅ Check-in response:', response)
-    
-    // Update session in auth store
-    if (response.data) {
-      authStore.activeSession = response.data
-    } else if (response) {
-      authStore.activeSession = response
-    }
-    
-    // Refresh active pilots list
-    // await fetchActivePilots()
-    
-    // Clean URL without token
-    window.history.replaceState({}, '', route.path)
-    
-    // Show success message
-    alert(`✅ Successfully checked in at ${location.value.name}!`)
-    
-  } catch (error) {
-    console.error('❌ Check-in failed:', {
-      message: error.message,
-      status: error.status,
-      data: error.data
-    })
-    
-    let errorMessage = 'Check-in failed'
-    
-    if (error.status === 403) {
-      errorMessage = error.data?.message || 'You are not authorized to check in'
-    } else if (error.status === 401) {
-      errorMessage = 'Please login again'
-      authStore.logout()
-      navigateTo('/login')
-    } else if (error.message?.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please try again.'
-    }
-    
-    alert(`❌ ${errorMessage}`)
-    
-  } finally {
-    checkingIn.value = false
-  }
-}
-
-// Fix: Compute if user is flying here
-
 const isFlyingHere = computed(() => {
+
   const sessionLocationId =
     authStore.activeSession?.flying_location_id ||
     authStore.activeSession?.location?.id
 
-  const currentLocationId = location.value?.id
+  return sessionLocationId === location.value?.id
 
-  return sessionLocationId === currentLocationId
 })
+
+async function handleCheckIn(token) {
+
+  if (!token) {
+    alert('QR token missing.')
+    return
+  }
+
+  if (isFlyingHere.value) {
+    alert('You are already flying here.')
+    return
+  }
+
+  checkingIn.value = true
+
+  try {
+
+    const session = await $fetch(`${API_BASE}/airspace-sessions`, {
+
+      method: 'POST',
+
+      headers: {
+        Authorization: `Bearer ${authStore.token}`
+      },
+
+      body: {
+        token
+      }
+
+    })
+
+    authStore.activeSession = session
+
+    // remove token from url
+    window.history.replaceState({}, '', `/location/${location.value.slug}`)
+
+    alert('Successfully checked in.')
+
+    navigateTo(`/location/${location.value.slug}`)
+
+  } catch (error) {
+
+    console.error(error)
+
+    alert(error?.data?.message || 'Check-in failed.')
+
+  } finally {
+
+    checkingIn.value = false
+
+  }
+
+}
 
 let watchId = null
 
 watch(
+
   () => isFlyingHere.value,
+
   (active) => {
+
     if (active && !watchId) {
+
       startTracking()
+
     }
+
   },
-  { immediate: true }
+
+  {
+    immediate: true
+  }
+
 )
 
 function startTracking() {
 
-  if (!process.client) return
-
-  if (!window.navigator?.geolocation) {
-    console.log('Geolocation not supported')
+  if (!process.client)
     return
-  }
 
-  watchId = window.navigator.geolocation.watchPosition(
+  if (!navigator.geolocation)
+    return
+
+  watchId = navigator.geolocation.watchPosition(
 
     async (position) => {
 
       try {
 
-        await $fetch(
-          `${config.public.apiBase}/gps/update`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${authStore.token}`
-            },
-            body: {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy
-            }
+        await $fetch(`${config.public.apiBase}/gps/update`, {
+
+          method: 'POST',
+
+          headers: {
+            Authorization: `Bearer ${authStore.token}`
+          },
+
+          body: {
+
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+
           }
-        )
+
+        })
 
       } catch (e) {
+
         console.error(e)
+
       }
 
     },
 
     (error) => {
+
       console.error(error)
+
     },
 
     {
+
       enableHighAccuracy: true,
       maximumAge: 5000,
       timeout: 10000
+
     }
+
   )
+
 }
-// Fix: Checkout function
+
 async function handleCheckOut() {
-  if (!authStore.activeSession || !confirm("Are you sure you want to check out?")) {
+
+  if (!authStore.activeSession)
     return
-  }
-  if (watchId) {
-window.navigator.geolocation.clearWatch(watchId)
-}
+
+  if (!confirm('Are you sure you landed?'))
+    return
+
   try {
+
     const sessionId = authStore.activeSession.id
-    
-    console.log('🛬 Checking out session:', sessionId)
-    
-    await $fetch(`${API_BASE}/airspace-sessions/${sessionId}/checkout`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
+
+    const response = await $fetch(
+
+      `${API_BASE}/airspace-sessions/${sessionId}/checkout`,
+
+      {
+
+        method: 'POST',
+
+        headers: {
+
+          Authorization: `Bearer ${authStore.token}`
+
+        }
+
       }
-    })
-    
-    console.log('✅ Check-out successful')
-    
-    // Clear session from auth store
+
+    )
+
+    console.log(response)
+
+    if (watchId) {
+
+      navigator.geolocation.clearWatch(watchId)
+
+      watchId = null
+
+    }
+
     authStore.activeSession = null
-    
-    // Refresh active pilots
-    // await fetchActivePilots()
-    
-    alert('✅ Successfully checked out!')
-    
+
+    alert('Successfully checked out.')
+
   } catch (error) {
-    console.error('❌ Check-out error:', error)
-    alert('Failed to check out. Please try again.')
+
+    console.error(error)
+
+    alert(error?.data?.message || 'Checkout failed.')
+
   }
+
 }
+
 onUnmounted(() => {
+
   if (watchId) {
+
     navigator.geolocation.clearWatch(watchId)
+
   }
+
 })
 
 function formatTime(dateString) {
-  if (!dateString) return 'N/A';
-  
-  try {
-    // 1. Force the string to be treated as UTC if it doesn't have a 'Z' or offset
-    // This ensures JavaScript knows it's coming from the server's UTC clock
-    const date = new Date(dateString.includes('Z') ? dateString : dateString + 'Z');
 
-    // 2. Format to the user's locale (this automatically converts UTC to Beirut time)
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  } catch (error) {
-    console.error('Date formatting error:', error);
-    return 'Invalid time';
-  }
+  if (!dateString)
+    return 'N/A'
+
+  const date = new Date(
+    dateString.includes('Z')
+      ? dateString
+      : dateString + 'Z'
+  )
+
+  return date.toLocaleTimeString('en-US', {
+
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+
+  })
+
 }
 
-// Refresh function for manual refresh
 async function refreshData() {
-    await refreshLocation()
+
+  await refreshLocation()
+
 }
 </script>
 
@@ -492,7 +430,7 @@ async function refreshData() {
                       </div>
                       
                       <button 
-                        @click="handleAutoCheckIn(route.query.token)" 
+                        @click="handleCheckIn(route.query.token)" 
                         class="btn btn-success btn-lg px-5 rounded-pill shadow"
                       >
                         <i class="bi bi-check-circle me-2"></i>
