@@ -1,20 +1,49 @@
 <template>
   <div class="container-fluid py-4">
 
+    <!-- HEADER -->
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
-        <h2 class="fw-bold">
-          <i class="bi bi-airplane-fill me-2"></i>
-          Live Pilot Tracking
-        </h2>
 
-        <div class="row mt-3">
-          <div class="col-md-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+          <div>
+            <h2 class="fw-bold mb-1">
+              <i class="bi bi-airplane-fill text-primary me-2"></i>
+              Live Pilot Tracking
+            </h2>
+
+            <p class="text-muted mb-0">
+              Track all currently flying pilots in real time.
+            </p>
+          </div>
+
+          <div class="text-end">
+
+            <div class="badge bg-success fs-6 px-3 py-2">
+              {{ pilots.length }} Active Pilots
+            </div>
+
+          </div>
+
+        </div>
+
+        <hr>
+
+        <div class="row">
+
+          <div class="col-lg-4">
+
+            <label class="fw-bold mb-2">
+              Flying Location
+            </label>
+
             <select
               v-model="selectedLocation"
               class="form-select"
               @change="loadPilots"
             >
+
               <option value="">
                 Select Flying Location
               </option>
@@ -26,221 +55,339 @@
               >
                 {{ location.name }}
               </option>
+
             </select>
+
           </div>
+
         </div>
+
       </div>
     </div>
 
-    <div id="map"></div>
+    <!-- MAP -->
 
-    <div class="card mt-4 shadow-sm">
-      <div class="card-header fw-bold">
+    <div class="card shadow-sm border-0">
+
+      <div class="card-body p-0">
+
+        <div id="map"></div>
+
+      </div>
+
+    </div>
+
+    <!-- ACTIVE PILOTS -->
+
+    <div class="card shadow-sm border-0 mt-4">
+
+      <div class="card-header bg-white fw-bold">
+
+        <i class="bi bi-people-fill me-2"></i>
+
         Active Pilots
+
       </div>
 
       <div class="card-body">
 
         <div
-          v-if="pilots.length === 0"
-          class="text-muted"
+          v-if="pilots.length==0"
+          class="text-center text-muted py-5"
         >
-          No active pilots
+
+          <i class="bi bi-airplane display-3"></i>
+
+          <p class="mt-3">
+            No pilots currently flying.
+          </p>
+
         </div>
 
         <div
           v-for="pilot in pilots"
           :key="pilot.id"
-          class="border-bottom py-2"
+          class="pilot-card"
         >
-          <strong>{{ pilot.pilot?.name }}</strong>
 
-          <br>
+          <div class="pilot-card-left">
 
-          Latitude:
-          {{ pilot.locations?.[0]?.latitude }}
+            <div class="pilot-avatar">
 
-          <br>
+              <i class="bi bi-person-fill"></i>
 
-          Longitude:
-          {{ pilot.locations?.[0]?.longitude }}
+            </div>
+
+            <div>
+
+              <h5>
+
+                {{ pilot.pilot?.name }}
+
+              </h5>
+
+              <small class="text-muted">
+
+                {{ getSelectedLocationName() }}
+
+              </small>
+
+            </div>
+
+          </div>
+
+          <div class="pilot-card-right">
+
+            <span class="badge bg-success">
+
+              Flying
+
+            </span>
+
+          </div>
+
         </div>
 
       </div>
+
     </div>
 
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+
+import { ref,onMounted,onUnmounted } from 'vue'
+
 import L from 'leaflet'
+
 import 'leaflet/dist/leaflet.css'
+
 import { useAuthStore } from '~/stores/auth'
 
-
 definePageMeta({
-  layout: 'admin'
+
+layout:'admin'
+
 })
+
 const config = useRuntimeConfig()
+
 const authStore = useAuthStore()
 
-const locations = ref([])
-const pilots = ref([])
-const selectedLocation = ref('')
+const locations=ref([])
 
-let map = null
-let markers = []
-let refreshTimer = null
+const pilots=ref([])
 
-onMounted(async () => {
+const selectedLocation=ref('')
 
-  map = L.map('map').setView(
-    [33.8547, 35.8623],
-    8
-  )
+let map=null
+
+let markers=[]
+
+let refreshTimer=null
+
+const airplaneIcon=L.icon({
+
+iconUrl:'/images/airplane-marker.png',
+
+iconSize:[52,52],
+
+iconAnchor:[26,52],
+
+popupAnchor:[0,-48]
+
+})
+
+onMounted(async()=>{
+
+map=L.map('map',{
+
+zoomControl:true
+
+}).setView([33.8547,35.8623],8)
+
+/*
+Same light map used in Flying Locations
+*/
 
 L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  {
-    attribution: '&copy; OpenStreetMap & CARTO',
-    maxZoom: 20
-  }
+
+'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+
+{
+
+maxZoom:20,
+
+attribution:'© CARTO'
+
+}
+
 ).addTo(map)
 
-  await loadLocations()
+await loadLocations()
 
-  refreshTimer = setInterval(() => {
-    if (selectedLocation.value) {
-      loadPilots()
-    }
-  }, 10000)
+refreshTimer=setInterval(()=>{
+
+if(selectedLocation.value){
+
+loadPilots()
+
+}
+
+},10000)
 
 })
 
-onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
+onUnmounted(()=>{
+
+if(refreshTimer){
+
+clearInterval(refreshTimer)
+
+}
+
 })
 
-const loadLocations = async () => {
+function getSelectedLocationName(){
 
-  try {
+const loc=locations.value.find(
 
-    const response = await $fetch(
-      `${config.public.apiBase}/admin/flying-locations`,
-      {
-        headers: {
-          Authorization: `Bearer ${authStore.token}`
-        }
-      }
-    )
+l=>l.id==selectedLocation.value
 
-    locations.value = response.data || response
-
-  } catch (error) {
-    console.error('Failed loading locations', error)
-  }
-
-}
-
-const clearMarkers = () => {
-
-  markers.forEach(marker => {
-    map.removeLayer(marker)
-  })
-
-  markers = []
-
-}
-
-const airplaneIcon = L.icon({
-  iconUrl: '/images/airplane-marker.png',
-
-  iconSize: [48, 48],
-
-  iconAnchor: [24, 24],
-
-  popupAnchor: [0, -22]
-})
-const loadPilots = async () => {
-
-  if (!selectedLocation.value) return
-
-  try {
-
-    const response = await $fetch(
-      `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`,
-      {
-        headers: {
-          Authorization: `Bearer ${authStore.token}`
-        }
-      }
-    )
-
-    pilots.value = response
-
-    clearMarkers()
-
-    response.forEach(session => {
-
-const gps = session.locations?.[0]
-
-if (!gps) return
-
-const rawPhone = session.pilot?.phone ?? ''
-
-let phone = rawPhone.replace(/\D/g, '')
-
-// Lebanon numbers
-if (phone.startsWith('0')) {
-    phone = phone.substring(1)
-}
-
-if (!phone.startsWith('961')) {
-    phone = '961' + phone
-}
-
-const mapsUrl =
-`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
-
-const marker = L.marker(
-    [
-        Number(gps.latitude),
-        Number(gps.longitude)
-    ],
-    {
-        icon: airplaneIcon
-    }
 )
-.addTo(map)
 
-.bindPopup(`
-<div style="width:260px">
+return loc?.name || ''
 
-    <h5 class="text-center mb-3">
-        ✈️ ${session.pilot?.name ?? 'Pilot'}
-    </h5>
+}
 
-    <div class="alert alert-success text-center p-2">
-        <strong>🟢 Currently Flying</strong>
+async function loadLocations(){
+
+try{
+
+const response=await $fetch(
+
+`${config.public.apiBase}/admin/flying-locations`,
+
+{
+
+headers:{
+
+Authorization:`Bearer ${authStore.token}`
+
+}
+
+}
+
+)
+
+locations.value=response.data||response
+
+}catch(e){
+
+console.error(e)
+
+}
+
+}
+
+function clearMarkers(){
+
+markers.forEach(marker=>{
+
+map.removeLayer(marker)
+
+})
+
+markers=[]
+
+}
+async function loadPilots(){
+
+    if(!selectedLocation.value) return
+
+    try{
+
+        const response=await $fetch(
+            `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`,
+            {
+                headers:{
+                    Authorization:`Bearer ${authStore.token}`
+                }
+            }
+        )
+
+        pilots.value=response
+
+        clearMarkers()
+
+        response.forEach(session=>{
+
+            const gps=session.locations?.[0]
+
+            if(!gps) return
+
+            const rawPhone=session.pilot?.phone ?? ''
+
+            let phone=rawPhone.replace(/\D/g,'')
+
+            if(phone.startsWith('0')){
+                phone=phone.substring(1)
+            }
+
+            if(!phone.startsWith('961')){
+                phone='961'+phone
+            }
+
+            const mapsUrl=`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
+
+            const marker=L.marker(
+                [
+                    Number(gps.latitude),
+                    Number(gps.longitude)
+                ],
+                {
+                    icon:airplaneIcon
+                }
+            ).addTo(map)
+
+            marker.bindPopup(`
+<div class="pilot-popup">
+
+    <div class="popup-header">
+
+        <div class="popup-icon">
+            ✈️
+        </div>
+
+        <div>
+
+            <h5>${session.pilot?.name ?? 'Pilot'}</h5>
+
+            <small>${getSelectedLocationName()}</small>
+
+        </div>
+
     </div>
 
-    <table class="table table-sm">
+    <div class="popup-status">
+        🟢 Currently Flying
+    </div>
+
+    <table class="table table-sm mb-3">
 
         <tr>
-            <td><strong>📞 Phone</strong></td>
+            <td><strong>Phone</strong></td>
             <td>${rawPhone}</td>
         </tr>
 
         <tr>
-            <td><strong>📍 Latitude</strong></td>
+            <td><strong>Latitude</strong></td>
             <td>${Number(gps.latitude).toFixed(6)}</td>
         </tr>
 
         <tr>
-            <td><strong>📍 Longitude</strong></td>
+            <td><strong>Longitude</strong></td>
             <td>${Number(gps.longitude).toFixed(6)}</td>
         </tr>
 
@@ -249,71 +396,101 @@ const marker = L.marker(
     <div class="d-grid gap-2">
 
         <a
-            href="tel:${phone}"
             class="btn btn-primary btn-sm"
-        >
+            href="tel:${phone}">
             📞 Call Pilot
         </a>
 
         <a
-            href="https://wa.me/${phone}?text=${encodeURIComponent('⚠️ LASF Emergency: Please land immediately.')}"
             target="_blank"
             class="btn btn-success btn-sm"
-        >
+            href="https://wa.me/${phone}?text=${encodeURIComponent('⚠️ LASF Emergency: Please land immediately.')}">
             💬 Send WhatsApp
         </a>
 
         <a
-            href="${mapsUrl}"
             target="_blank"
             class="btn btn-dark btn-sm"
-        >
-            🗺️ Open Google Maps
+            href="${mapsUrl}">
+            🗺️ Google Maps
         </a>
 
     </div>
 
 </div>
 `)
-      markers.push(marker)
 
-    })
+            markers.push(marker)
 
-if (markers.length > 0) {
+        })
 
-    const group = L.featureGroup(markers)
+        if(markers.length){
 
-    map.fitBounds(
-        group.getBounds(),
-        {
-            padding: [50, 50]
+            const group=L.featureGroup(markers)
+
+            map.fitBounds(
+                group.getBounds(),
+                {
+                    padding:[60,60]
+                }
+            )
+
         }
-    )
 
-}
+    }catch(e){
 
-  } catch (error) {
-    console.error('Failed loading pilots', error)
-  }
+        console.error(e)
+
+    }
 
 }
 </script>
+
 <style scoped>
+
 #map{
+
     width:100%;
-    height:700px;
+
+    height:720px;
+
+    border-radius:14px;
+
+}
+
+/***************************
+ACTIVE PILOT CARD
+****************************/
+
+.pilot-card{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px;
+
     border-radius:12px;
+
+    border:1px solid #eee;
+
+    margin-bottom:12px;
+
+    transition:.3s;
+
 }
 
-.pilot-popup{
+.pilot-card:hover{
 
-    width:290px;
+    transform:translateY(-2px);
 
-    font-family:Arial,sans-serif;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
 
 }
 
-.pilot-header{
+.pilot-card-left{
 
     display:flex;
 
@@ -325,15 +502,13 @@ if (markers.length > 0) {
 
 .pilot-avatar{
 
-    width:60px;
+    width:55px;
 
-    height:60px;
+    height:55px;
 
     border-radius:50%;
 
-    background:#198754;
-
-    color:white;
+    background:#0d6efd;
 
     display:flex;
 
@@ -341,11 +516,13 @@ if (markers.length > 0) {
 
     justify-content:center;
 
-    font-size:28px;
+    color:white;
+
+    font-size:24px;
 
 }
 
-.pilot-header h5{
+.pilot-card h5{
 
     margin:0;
 
@@ -353,31 +530,116 @@ if (markers.length > 0) {
 
 }
 
-.pilot-info{
+.pilot-card small{
+
+    color:#888;
+
+}
+
+/***************************
+LEAFLET POPUP
+****************************/
+
+:deep(.pilot-popup){
+
+    width:260px;
+
+}
+
+:deep(.popup-header){
 
     display:flex;
 
-    justify-content:space-between;
+    align-items:center;
 
-    margin:10px 0;
+    gap:15px;
 
-    font-size:14px;
-
-}
-
-.pilot-buttons{
-
-    display:grid;
-
-    gap:10px;
-
-    margin-top:20px;
+    margin-bottom:15px;
 
 }
 
-.pilot-buttons .btn{
+:deep(.popup-icon){
 
-    width:100%;
+    width:55px;
+
+    height:55px;
+
+    border-radius:50%;
+
+    background:#0d6efd;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#fff;
+
+    font-size:24px;
 
 }
+
+:deep(.popup-header h5){
+
+    margin:0;
+
+    font-weight:700;
+
+}
+
+:deep(.popup-status){
+
+    background:#198754;
+
+    color:#fff;
+
+    text-align:center;
+
+    padding:8px;
+
+    border-radius:8px;
+
+    margin-bottom:15px;
+
+    font-weight:bold;
+
+}
+
+:deep(.leaflet-popup-content-wrapper){
+
+    border-radius:16px;
+
+}
+
+:deep(.leaflet-popup-content){
+
+    margin:15px;
+
+}
+
+/***************************
+Responsive
+****************************/
+
+@media(max-width:768px){
+
+#map{
+
+height:500px;
+
+}
+
+.pilot-card{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:15px;
+
+}
+
+}
+
 </style>

@@ -56,7 +56,7 @@
             <div class="auth-buttons d-lg-flex d-none">
   <template v-if="!authStore.isAuthenticated">
 
-    <NuxtLink to="/login">
+    <NuxtLink to="/login" >
       Login
     </NuxtLink>
 
@@ -66,17 +66,27 @@
 
   </template>
 
-  <template v-else>
+<template v-else>
 
-    <NuxtLink to="/account">
-      My Account
-    </NuxtLink>
+  <NuxtLink
+    v-if="authStore.user?.is_admin || authStore.user?.role === 'army'"
+    to="/admin/dashboard"
+  >
+    Dashboard
+  </NuxtLink>
 
-    <a href="#" @click.prevent="authStore.logout()">
-      Logout
-    </a>
+  <NuxtLink
+    v-else
+    to="/account"
+  >
+    My Account
+  </NuxtLink>
 
-  </template>
+  <a href="#" @click.prevent="authStore.logout()">
+    Logout
+  </a>
+
+</template>
             </div>
             
             <!-- Mobile Navigation -->
@@ -105,27 +115,43 @@
                     <div class="mobile-auth-buttons mb-4">
   <template v-if="!authStore.isAuthenticated">
 
-    <NuxtLink to="/login">
+    <NuxtLink to="/login" @click="closeMobileMenu">
       Login
     </NuxtLink>
 
-    <NuxtLink to="/register">
+    <NuxtLink to="/register" @click="closeMobileMenu">
       Register
     </NuxtLink>
 
   </template>
 
-  <template v-else>
+<template v-else>
 
-    <NuxtLink to="/account">
-      My Account
-    </NuxtLink>
+  <NuxtLink
+    v-if="authStore.user?.is_admin || authStore.user?.role === 'army'"
+    to="/admin/dashboard" @click="closeMobileMenu"
+  >
+    Dashboard
+  </NuxtLink>
 
-    <a href="#" @click.prevent="authStore.logout()">
-      Logout
-    </a>
+  <NuxtLink
+    v-else
+    to="/account" @click="closeMobileMenu"
+  >
+    My Account
+  </NuxtLink>
 
-  </template>
+ <a
+    href="#"
+    @click.prevent="
+        closeMobileMenu();
+        authStore.logout();
+    "
+>
+    Logout
+  </a>
+
+</template>
                     </div>
                     
                     <ul class="mobile-menu-list">
@@ -513,41 +539,38 @@ onBeforeUnmount(() => {
     transform: scale(1.1);
 }
 
-.mobile-menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s;
-    z-index: 999;
+.mobile-menu-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    z-index:99998;
+    opacity:0;
+    visibility:hidden;
+    transition:.3s;
 }
 
-.mobile-menu-overlay.active {
-    opacity: 1;
-    visibility: visible;
+.mobile-menu-overlay.active{
+    opacity:1;
+    visibility:visible;
 }
 
-.mobile-menu-content {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 100%;
-    max-width: 320px;
-    height: 100vh;
-    background: white;
-    padding: 1.5rem;
-    overflow-y: auto;
-    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1000;
-    box-shadow: -2px 0 20px rgba(0,0,0,0.15);
+.mobile-menu-content{
+    position:fixed;
+    top:0;
+    right:-100%;
+    width:320px;
+    max-width:90%;
+    height:100vh;
+    background:#fff;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:20px;
+    transition:right .35s ease;
+    z-index:99999;
+    pointer-events:auto;
 }
-
-.mobile-menu-content.active {
-    right: 0;
+.mobile-menu-content.active{
+    right:0;
 }
 
 .mobile-logo-area {
@@ -568,12 +591,41 @@ onBeforeUnmount(() => {
 }
 
 /* Mobile Auth Buttons */
-.mobile-auth-buttons {
-    display: flex;
-    gap: 1rem;
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #eee;
+.mobile-auth-buttons{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:20px;
+    padding-bottom:20px;
+    border-bottom:1px solid #eee;
+}
+.mobile-auth-buttons a{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    width:100%;
+    min-height:48px;
+
+    text-decoration:none;
+    border-radius:8px;
+
+    cursor:pointer;
+
+    position:relative;
+    z-index:10;
+
+    pointer-events:auto;
+}
+.mobile-auth-buttons a:first-child{
+    border:2px solid darkgreen;
+    color:darkgreen;
+    background:#fff;
+}
+
+.mobile-auth-buttons a:last-child{
+    background:darkgreen;
+    color:#fff;
 }
 
 .mobile-btn-login,
@@ -621,7 +673,11 @@ onBeforeUnmount(() => {
 }
 
 .mobile-nav-link {
-    display: block;
+    display:flex;
+    align-items:center;
+    width:100%;
+    min-height:48px;
+    cursor:pointer;
     padding: 1rem 0;
     color: #333;
     text-decoration: none;
@@ -653,14 +709,27 @@ onBeforeUnmount(() => {
 }
 
 .mobile-dropdown-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+       display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    min-height:48px;
+    cursor:pointer;
+    position:relative;
+    z-index:5;
     padding: 1rem 0;
-    cursor: pointer;
     color: #333;
     font-weight: 500;
     transition: all 0.3s;
+}
+.mobile-menu-content *,
+.mobile-menu-content a,
+.mobile-menu-content button{
+    pointer-events:auto;
+}
+
+.mobile-menu-content{
+    touch-action:manipulation;
 }
 
 .mobile-dropdown-header:hover,
@@ -696,13 +765,19 @@ onBeforeUnmount(() => {
 }
 
 .mobile-sub-link {
-    display: block;
+     display:flex;
+    align-items:center;
+    width:100%;
+    min-height:48px;
+    color:#000;
+    text-decoration:none;
+    cursor:pointer;
+    position:relative;
+    z-index:20;
     padding: 1rem 1.2rem 1rem 2.2rem;
     color: #000;
-    text-decoration: none;
     transition: all 0.3s;
     border-bottom: 1px solid #eee;
-    position: relative;
 }
 
 .mobile-sub-link:last-child {
