@@ -128,7 +128,7 @@
 
               <small class="text-muted">
 
-                {{ getSelectedLocationName() }}
+            {{ pilot.location?.name }}
 
               </small>
 
@@ -238,11 +238,10 @@ setTimeout(() => {
 }, 200)
 
     await loadLocations()
+    await loadPilots()
 
     refreshTimer = setInterval(() => {
-        if (selectedLocation.value) {
-            loadPilots()
-        }
+   loadPilots()
     }, 10000)
 
 })
@@ -315,19 +314,17 @@ function clearMarkers() {
 
 async function loadPilots(){
 
-    if(!selectedLocation.value) return
-
     try{
 
-        const response=await $fetch(
-            `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`,
-            {
-                headers:{
-                    Authorization:`Bearer ${authStore.token}`
-                }
-            }
-        )
+        const url = selectedLocation.value
+            ? `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`
+            : `${config.public.apiBase}/admin/gps/live`
 
+        const response = await $fetch(url,{
+            headers:{
+                Authorization:`Bearer ${authStore.token}`
+            }
+        })
         pilots.value=response
 
         clearMarkers()
@@ -381,7 +378,9 @@ const marker = L.marker(
 
             <h5>${session.pilot?.name ?? 'Pilot'}</h5>
 
-            <small>${getSelectedLocationName()}</small>
+  <small>
+📍 ${session.location?.name ?? 'Unknown Location'}
+</small>
 
         </div>
 
