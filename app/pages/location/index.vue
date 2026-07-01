@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue';
 import LocationCard from '~/components/Frontend/LocationCard.vue';
 import LocationsStatus from '~/components/Frontend/LocationsStatus.vue';
 

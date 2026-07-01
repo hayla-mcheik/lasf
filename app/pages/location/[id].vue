@@ -307,9 +307,9 @@ async function refreshData() {
         <div class="container">
           <div class="row align-items-center">
             <div class="col-md-8">
-              <h1 class="display-5 fw-bold mb-5 text-white">{{ location.name }}</h1>
+              <h1 class="display-5 fw-bold mb-5 text-dark">{{ location.name }}</h1>
               <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-light text-dark">{{ location.type }}</span>
+                <span class="badge text-dark">{{ location.type }}</span>
                 <!-- <span class="text-muted">
                   <i class="bi bi-geo-alt me-1"></i>
                   ID: {{ location.id }}
@@ -483,11 +483,11 @@ async function refreshData() {
 }
 
 .location-header {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: white;
 }
 
 .debug-panel {
-  background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+  background: white;
 }
 
 .card {
