@@ -1,6 +1,7 @@
 <script setup>
 import { useAuthStore } from '~/stores/auth'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
@@ -273,6 +274,10 @@ async function refreshData() {
 </script>
 
 <template>
+<Breadcrumbs
+    parent="Flying Locations"
+    :title="location?.name"
+/>
   <div class="location-page">
 
 

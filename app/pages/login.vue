@@ -1,5 +1,5 @@
 <template>
-  <Breadcrumbs />
+<Breadcrumbs title="Login" />
   <ClientOnly>
     <div class="login-page">
       <div class="container py-5">

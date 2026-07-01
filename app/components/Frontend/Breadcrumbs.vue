@@ -28,10 +28,10 @@
                                         :to="crumb.path" 
                                         class="breadcrumb-link"
                                     >
-                                        {{ crumb.label }}
+                                     {{ decodeURIComponent(crumb.label) }}
                                     </NuxtLink>
                                     <span v-else class="breadcrumb-text">
-                                        {{ crumb.label }}
+                                     {{ decodeURIComponent(crumb.label) }}
                                     </span>
                                 </li>
                             </template>
@@ -51,310 +51,445 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from '#imports';
+import { computed } from 'vue'
+import { useRoute } from '#imports'
 
-const route = useRoute();
+const route = useRoute()
 
-// Props for customization
 const props = defineProps({
-  backgroundImage: {
-    type: String,
-    default: '/assets/images/bg/inner-banner-bg.png'
-  },
-  title: {
+  parent: {
     type: String,
     default: ''
-  },
-  subtitle: {
-    type: String,
-    default: ''
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  height: {
-    type: String,
-    default: '260px'
-  },
-  showVector: {
-    type: Boolean,
-    default: true
-  },
-  showOverlay: {
-    type: Boolean,
-    default: false
-  },
-  overlayOpacity: {
-    type: Number,
-    default: 0.5
-  },
-  showCta: {
-    type: Boolean,
-    default: false
-  },
-  ctaButtons: {
-    type: Array,
-    default: () => []
-  },
-  contentWidth: {
-    type: String,
-    default: 'col-xl-12 col-md-12 col-sm-12',
-    validator: (value) => {
-      const validClasses = [
-        'col-xl-6', 'col-xl-8', 'col-xl-10', 'col-lg-8', 
-        'col-md-10', 'col-sm-12', 'col-12'
-      ];
-      return value.split(' ').every(cls => validClasses.includes(cls));
+},
+
+    backgroundImage: {
+        type: String,
+        default: '/assets/images/bg/inner-banner-bg.png'
+    },
+    title: {
+        type: String,
+        default: ''
+    },
+    subtitle: {
+        type: String,
+        default: ''
+    },
+    description: {
+        type: String,
+        default: ''
+    },
+    height: {
+        type: String,
+        default: '260px'
+    },
+    showVector: {
+        type: Boolean,
+        default: true
+    },
+    showOverlay: {
+        type: Boolean,
+        default: false
+    },
+    overlayOpacity: {
+        type: Number,
+        default: 0.5
+    },
+    showCta: {
+        type: Boolean,
+        default: false
+    },
+    ctaButtons: {
+        type: Array,
+        default: () => []
+    },
+    contentWidth: {
+        type: String,
+        default: 'col-xl-12 col-md-12 col-sm-12'
+    },
+    alignment: {
+        type: String,
+        default: 'center'
+    },
+    showBreadcrumb: {
+        type: Boolean,
+        default: true
+    },
+    showStats: {
+        type: Boolean,
+        default: false
+    },
+    stats: {
+        type: Array,
+        default: () => []
+    },
+    iconClass: {
+        type: String,
+        default: ''
+    },
+    showScrollIndicator: {
+        type: Boolean,
+        default: false
+    },
+    gradientOverlay: {
+        type: Boolean,
+        default: true
+    },
+    gradientDirection: {
+        type: String,
+        default: 'to bottom'
     }
-  },
-  alignment: {
-    type: String,
-    default: 'center',
-    validator: (value) => ['left', 'center', 'right'].includes(value)
-  },
-  showBreadcrumb: {
-    type: Boolean,
-    default: true
-  },
-  showStats: {
-    type: Boolean,
-    default: false
-  },
-  stats: {
-    type: Array,
-    default: () => []
-  },
-  iconClass: {
-    type: String,
-    default: ''
-  },
-  showScrollIndicator: {
-    type: Boolean,
-    default: false
-  },
-  gradientOverlay: {
-    type: Boolean,
-    default: true
-  },
-  gradientDirection: {
-    type: String,
-    default: 'to bottom',
-    validator: (value) => ['to bottom', 'to top', 'to left', 'to right', 'diagonal'].includes(value)
-  }
-});
+})
 
-// Page-specific data mapping
 const pageData = {
-  '/': {
-    title: 'Home',
-    subtitle: 'Welcome to',
-    description: '',
-    icon: 'bi bi-house-heart'
-  },
-  '/about': {
-    title: 'About',
-    subtitle: 'Who We Are',
-    description: 'Learn more about our organization, mission, and values that drive us forward in the aviation sports industry.',
-    icon: 'bi bi-info-circle'
-  },
-  '/locations': {
-    title: 'Flying Locations',
-    subtitle: 'Explore Our Sites',
-    description: 'Discover the best flying locations across the country with detailed information and guidelines.',
-    icon: 'bi bi-geo-alt'
-  },
-  '/sports': {
-    title: 'Sports',
-    subtitle: 'Aviation Sports',
-    description: 'Explore various aviation sports we promote and support including paragliding, hang gliding, and more.',
-    icon: 'bi bi-airplane'
-  },
-  '/regulations': {
-    title: 'Regulations',
-    subtitle: 'Guidelines & Rules',
-    description: 'Important regulations and safety guidelines for all aviation sports activities.',
-    icon: 'bi bi-shield-check'
-  },
-  '/clubs': {
-    title: 'Clubs',
-    subtitle: 'Join Our Network',
-    description: 'Find and connect with aviation sports clubs and communities across the country.',
-    icon: 'bi bi-people'
-  },
-  '/events': {
-    title: 'Events',
-    subtitle: 'Upcoming Activities',
-    description: 'Stay updated with upcoming events, competitions, and gatherings in the aviation sports community.',
-    icon: 'bi bi-calendar-event'
-  },
-  '/gallery': {
-    title: 'Gallery',
-    subtitle: 'Our Gallery',
-    description: 'Browse through our collection of best images and videos from aviation sports events.',
-    icon: 'bi bi-images'
-  },
-  '/news': {
-    title: 'News',
-    subtitle: 'Latest News',
-    description: 'Latest news, articles, and updates from the aviation sports world.',
-    icon: 'bi bi-newspaper'
-  },
-  '/contact': {
-    title: 'Contact',
-    subtitle: 'Get in Touch',
-    description: 'Reach out to us for inquiries, partnerships, membership, or any other information.',
-    icon: 'bi bi-envelope'
-  }
-};
 
-// Get page-specific data
+    '/': {
+        title: 'Home',
+        subtitle: 'Welcome',
+        icon: 'bi bi-house'
+    },
+
+    '/about': {
+        title: 'About Us',
+        subtitle: 'About LASF',
+        icon: 'bi bi-info-circle'
+    },
+
+    '/location': {
+        title: 'Flying Locations',
+        subtitle: 'Flying Locations',
+        icon: 'bi bi-geo-alt'
+    },
+
+    '/sports': {
+        title: 'Sports',
+        subtitle: 'Sports',
+        icon: 'bi bi-airplane'
+    },
+
+    '/events': {
+        title: 'Events',
+        subtitle: 'Events',
+        icon: 'bi bi-calendar-event'
+    },
+
+    '/gallery': {
+        title: 'Gallery',
+        subtitle: 'Gallery',
+        icon: 'bi bi-images'
+    },
+
+    '/news': {
+        title: 'News',
+        subtitle: 'News',
+        icon: 'bi bi-newspaper'
+    },
+
+    '/contact': {
+        title: 'Contact Us',
+        subtitle: 'Contact',
+        icon: 'bi bi-envelope'
+    }
+
+}
+
+const menuMap = {
+
+    home: 'Home',
+
+    about: 'About Us',
+
+    location: 'Flying Locations',
+
+    locations: 'Flying Locations',
+
+    sports: 'Sports',
+
+    regulations: 'Regulations',
+
+    clubs: 'Clubs',
+
+    events: 'Events',
+
+    gallery: 'Gallery',
+
+    news: 'News',
+
+    contact: 'Contact Us',
+
+    login: 'Login',
+
+    register: 'Register',
+
+    account: 'My Account',
+
+    admin: 'Dashboard'
+
+}
+
+const toStartCase = (text) => {
+
+    if (!text) return ''
+
+    return text
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+
+}
+
 const pageInfo = computed(() => {
-  const currentPath = route.path;
-  const data = pageData[currentPath] || {};
-  
-  return {
-    title: props.title || data.title || getMenuName(currentPath),
-    subtitle: props.subtitle || data.subtitle || '',
-    description: props.description || data.description || breadcrumbDescription.value,
-    iconClass: props.iconClass || data.icon || ''
-  };
-});
 
-// Helper function to get menu name
-const getMenuName = (path) => {
-  const menuMap = {
-    '/about': 'About LASF',
-    '/locations': 'Flying Locations',
-    '/sports': 'Sports',
-    '/regulations': 'Regulations',
-    '/clubs': 'Clubs',
-    '/events': 'Events',
-    '/gallery': 'Gallery',
-    '/news': 'News',
-    '/contact': 'Contact'
-  };
-  
-  return menuMap[path] || toStartCase(path.replace('/', ''));
-};
+    const firstSegment =
+        '/' + (route.path.split('/').filter(Boolean)[0] || '')
 
-// Helper function to convert to start case
-const toStartCase = (str) => {
-  if (!str) return '';
-  return str.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-};
+    const page = pageData[firstSegment] || {}
 
-// Get page description
-const breadcrumbDescription = computed(() => {
-  if (props.description) return props.description;
-  
-  const currentPath = route.path;
-  const descriptions = {
-    '/about': 'Learn more about our organization, mission, and values that drive us forward.',
-    '/locations': 'Explore flying locations with detailed information and guidelines.',
-    '/sports': 'Discover various aviation sports we promote and support.',
-    '/regulations': 'Important regulations and safety guidelines for aviation sports.',
-    '/clubs': 'Find and connect with aviation sports clubs and communities.',
-    '/events': 'Stay updated with upcoming events and competitions.',
-    '/gallery': 'Browse our collection of images and videos from aviation sports.',
-    '/news': 'Latest news, articles, and updates from aviation sports.',
-    '/contact': 'Reach out to us for inquiries, partnerships, or information.'
-  };
-  
-  return descriptions[currentPath] || 'Explore our content and services.';
-});
+    return {
 
-// Breadcrumbs computation
+        title:
+            props.title ||
+            page.title ||
+            'LASF',
+
+        subtitle:
+            props.subtitle ||
+            page.subtitle ||
+            '',
+
+        description:
+            props.description ||
+            '',
+
+        iconClass:
+            props.iconClass ||
+            page.icon ||
+            ''
+
+    }
+
+})
+
 const breadcrumbs = computed(() => {
-  const pathSegments = route.fullPath.split('/').filter(Boolean);
-  
-  const trail = pathSegments.reduce((acc, segment, index) => {
-    const path = '/' + pathSegments.slice(0, index + 1).join('/');
-    const label = getMenuName(path);
-    
-    acc.push({
-      label: label,
-      path: path,
-    });
-    return acc;
-  }, []);
-  
-  return trail;
-});
 
+    const items = []
+
+    items.push({
+        label: 'Home',
+        path: '/'
+    })
+
+    if (props.parent) {
+
+        items.push({
+            label: props.parent,
+            path: '/' + route.path.split('/')[1]
+        })
+
+    }
+
+    if (props.title) {
+
+        items.push({
+            label: props.title,
+            path: route.path
+        })
+
+        return items
+
+    }
+
+    const segments = route.path.split('/').filter(Boolean)
+
+    segments.forEach((segment, index) => {
+
+        items.push({
+
+            label: menuMap[segment] || toStartCase(segment),
+
+            path:
+                '/' +
+                segments.slice(0, index + 1).join('/')
+
+        })
+
+    })
+
+    return items
+
+})
 // Dynamic content column classes
 const contentColumnClasses = computed(() => {
-  const baseClasses = props.contentWidth.split(' ');
-  const alignmentClass = `text-${props.alignment}`;
-  return [...baseClasses, alignmentClass];
-});
 
-// Stats column class based on number of stats
+    const baseClasses = props.contentWidth.split(' ')
+
+    return [
+        ...baseClasses,
+        `text-${props.alignment}`
+    ]
+
+})
+
+// Stats column
 const statColumnClass = computed(() => {
-  const count = props.stats.length;
-  if (count <= 2) return 'col-md-6 col-6';
-  if (count <= 4) return 'col-md-3 col-6';
-  return 'col-md-2 col-6';
-});
 
-// Background style with gradient
+    const count = props.stats.length
+
+    if (count <= 2) return 'col-md-6 col-6'
+
+    if (count <= 4) return 'col-md-3 col-6'
+
+    return 'col-md-2 col-6'
+
+})
+
+// Description
+const breadcrumbDescription = computed(() => {
+
+    if (props.description) {
+
+        return props.description
+
+    }
+
+    const descriptions = {
+
+        '/about':
+            'Learn more about our organization and mission.',
+
+        '/location':
+            'Explore our flying locations.',
+
+        '/sports':
+            'Discover aviation sports.',
+
+        '/events':
+            'Upcoming events and competitions.',
+
+        '/gallery':
+            'Browse our image gallery.',
+
+        '/news':
+            'Latest aviation news.',
+
+        '/contact':
+            'Get in touch with LASF.'
+
+    }
+
+    const firstSegment =
+        '/' + (route.path.split('/').filter(Boolean)[0] || '')
+
+    return descriptions[firstSegment] || ''
+
+})
+
+// Background
 const backgroundStyle = computed(() => {
-  const gradient = props.gradientOverlay 
-    ? getGradientStyle(props.gradientDirection)
-    : '';
-  
-  return {
-    backgroundImage: `${gradient}url('${props.backgroundImage}')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    height: props.height,
-    minHeight: props.height
-  };
-});
 
-// Container style
-const containerStyle = computed(() => {
-  return {
+    const gradient = props.gradientOverlay
+        ? getGradientStyle(props.gradientDirection)
+        : ''
+
+    return {
+
+        backgroundImage:
+            `${gradient}url('${props.backgroundImage}')`,
+
+        backgroundSize: 'cover',
+
+        backgroundPosition: 'center',
+
+        backgroundRepeat: 'no-repeat',
+
+        height: props.height,
+
+        minHeight: props.height
+
+    }
+
+})
+
+// Container
+const containerStyle = computed(() => ({
+
     minHeight: props.height,
+
     display: 'flex',
-    alignItems: props.alignment === 'center' ? 'center' : 'flex-start',
-    justifyContent: props.alignment === 'center' ? 'center' : props.alignment === 'right' ? 'flex-end' : 'flex-start'
-  };
-});
 
-// Helper function for gradient direction
+    alignItems:
+        props.alignment === 'center'
+            ? 'center'
+            : 'flex-start',
+
+    justifyContent:
+        props.alignment === 'center'
+            ? 'center'
+            : props.alignment === 'right'
+                ? 'flex-end'
+                : 'flex-start'
+
+}))
+
+// Gradient helper
 const getGradientStyle = (direction) => {
-  const gradients = {
-    'to bottom': 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
-    'to top': 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
-    'to left': 'linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
-    'to right': 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
-    'diagonal': 'linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)'
-  };
-  return gradients[direction] || gradients['to bottom'];
-};
 
-// Emits for custom events
-const emit = defineEmits(['cta-click', 'scroll-to-content']);
+    const gradients = {
 
-// Methods
+        'to bottom':
+            'linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.15)),',
+
+        'to top':
+            'linear-gradient(to top, rgba(0,0,0,.45), rgba(0,0,0,.15)),',
+
+        'to left':
+            'linear-gradient(to left, rgba(0,0,0,.45), rgba(0,0,0,.15)),',
+
+        'to right':
+            'linear-gradient(to right, rgba(0,0,0,.45), rgba(0,0,0,.15)),',
+
+        diagonal:
+            'linear-gradient(135deg, rgba(0,0,0,.45), rgba(0,0,0,.15)),'
+    }
+
+    return gradients[direction] || gradients['to bottom']
+
+}
+
+const emit = defineEmits([
+    'cta-click',
+    'scroll-to-content'
+])
+
 const scrollToContent = () => {
-  emit('scroll-to-content');
-  const contentElement = document.querySelector('.main-content') || document.querySelector('main');
-  if (contentElement) {
-    contentElement.scrollIntoView({ behavior: 'smooth' });
-  }
-};
 
-// Handle CTA button click
+    emit('scroll-to-content')
+
+    const target =
+        document.querySelector('.main-content') ||
+        document.querySelector('main')
+
+    if (target) {
+
+        target.scrollIntoView({
+
+            behavior: 'smooth'
+
+        })
+
+    }
+
+}
+
 const handleCtaClick = (action) => {
-  if (typeof action === 'function') {
-    action();
-  }
-  emit('cta-click');
-};
+
+    if (typeof action === 'function') {
+
+        action()
+
+    }
+
+    emit('cta-click')
+
+}
 </script>
 
 <style scoped>

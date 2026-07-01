@@ -348,21 +348,6 @@ const dashboardStats = computed(() => [
     background:
       'linear-gradient(135deg,#fdecec,#ffffff)'
   },
-
-  {
-    id: 4,
-    // value: locations.value.reduce(
-    //   (sum, l) => sum + (l.active_sessions_count || 0),
-    //   0
-    // ),
-    // label: 'Live Pilots',
-    icon: 'bi-airplane-fill',
-    color: '#0d6efd',
-    iconBg: 'rgba(13,110,253,.15)',
-    background:
-      'linear-gradient(135deg,#eef5ff,#ffffff)'
-  }
-
 ])
 
 const filterOptions = [

@@ -5,7 +5,7 @@ import LocationsStatus from '~/components/Frontend/LocationsStatus.vue';
 </script>
 
 <template>
-  <Breadcrumbs />
+<Breadcrumbs title="Flying Locations" />
   <div class="locations-page">
 
     <div class="container py-5">
