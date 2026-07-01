@@ -157,151 +157,162 @@
 
 <script setup>
 
-import { ref,onMounted,onUnmounted } from 'vue'
-
-import L from 'leaflet'
-
+import { ref, onMounted, onUnmounted } from 'vue'
 import 'leaflet/dist/leaflet.css'
-
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
-
-layout:'admin'
-
+    layout: 'admin'
 })
 
 const config = useRuntimeConfig()
-
 const authStore = useAuthStore()
 
-const locations=ref([])
+// Leaflet (loaded only on client)
+let L = null
+let map = null
+let airplaneIcon = null
 
-const pilots=ref([])
+const locations = ref([])
+const pilots = ref([])
+const selectedLocation = ref('')
 
-const selectedLocation=ref('')
+let markers = []
+let refreshTimer = null
 
-let map=null
+onMounted(async () => {
 
-let markers=[]
+    if (!process.client) return
 
-let refreshTimer=null
+    // Load Leaflet only in browser
+// Load Leaflet only on the client
+const leaflet = await import('leaflet')
+L = leaflet.default
 
-const airplaneIcon=L.icon({
+if (!L) {
+    console.error('Leaflet failed to load')
+    return
+}
 
-iconUrl:'/images/airplane-marker.png',
+// Fix Leaflet default marker icons
+delete L.Icon.Default.prototype._getIconUrl
 
-iconSize:[52,52],
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl:
+        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl:
+        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl:
+        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+})
 
-iconAnchor:[26,52],
+// Airplane marker
+airplaneIcon = L.divIcon({
+    html: `
+        <div class="airplane-marker">
+            <i class="bi bi-airplane-fill"></i>
+        </div>
+    `,
+    className: 'custom-airplane-icon',
+    iconSize: [44, 44],
+iconAnchor: [24,24],
+popupAnchor: [0,-24],
+})
 
-popupAnchor:[0,-48]
+    // Create map
+    map = L.map('map', {
+        zoomControl: true
+    }).setView([33.8547, 35.8623], 8)
+
+    // Same style as Flying Locations page
+    L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        {
+            maxZoom: 20,
+            attribution: '&copy; OpenStreetMap & CARTO'
+        }
+    ).addTo(map)
+
+setTimeout(() => {
+    map.invalidateSize()
+}, 200)
+
+    await loadLocations()
+
+    refreshTimer = setInterval(() => {
+        if (selectedLocation.value) {
+            loadPilots()
+        }
+    }, 10000)
 
 })
 
-onMounted(async()=>{
+onUnmounted(() => {
 
-map=L.map('map',{
+    if (refreshTimer) {
+        clearInterval(refreshTimer)
+    }
 
-zoomControl:true
+    clearMarkers()
 
-}).setView([33.8547,35.8623],8)
+    if (map) {
+        map.remove()
+        map = null
+    }
 
-/*
-Same light map used in Flying Locations
-*/
-
-L.tileLayer(
-
-'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-
-{
-
-maxZoom:20,
-
-attribution:'© CARTO'
-
-}
-
-).addTo(map)
-
-await loadLocations()
-
-refreshTimer=setInterval(()=>{
-
-if(selectedLocation.value){
-
-loadPilots()
-
-}
-
-},10000)
+    L = null
 
 })
 
-onUnmounted(()=>{
+function getSelectedLocationName() {
 
-if(refreshTimer){
+    const loc = locations.value.find(
+        l => l.id == selectedLocation.value
+    )
 
-clearInterval(refreshTimer)
-
-}
-
-})
-
-function getSelectedLocationName(){
-
-const loc=locations.value.find(
-
-l=>l.id==selectedLocation.value
-
-)
-
-return loc?.name || ''
+    return loc?.name || ''
 
 }
 
-async function loadLocations(){
+async function loadLocations() {
 
-try{
+    try {
 
-const response=await $fetch(
+        const response = await $fetch(
+            `${config.public.apiBase}/admin/flying-locations`,
+            {
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
+            }
+        )
 
-`${config.public.apiBase}/admin/flying-locations`,
+        locations.value = response.data || response
 
-{
+    } catch (e) {
 
-headers:{
+        console.error(e)
 
-Authorization:`Bearer ${authStore.token}`
-
-}
-
-}
-
-)
-
-locations.value=response.data||response
-
-}catch(e){
-
-console.error(e)
+    }
 
 }
 
+function clearMarkers() {
+
+    if (!map) return
+
+    markers.forEach(marker => {
+
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker)
+        }
+
+    })
+
+    markers = []
+
 }
 
-function clearMarkers(){
-
-markers.forEach(marker=>{
-
-map.removeLayer(marker)
-
-})
-
-markers=[]
-
-}
 async function loadPilots(){
 
     if(!selectedLocation.value) return
@@ -320,7 +331,11 @@ async function loadPilots(){
         pilots.value=response
 
         clearMarkers()
-
+if (!Array.isArray(response)) {
+    pilots.value = []
+    return
+}
+    if (!map) return
         response.forEach(session=>{
 
             const gps=session.locations?.[0]
@@ -341,7 +356,9 @@ async function loadPilots(){
 
             const mapsUrl=`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
 
-            const marker=L.marker(
+        
+
+const marker = L.marker(
                 [
                     Number(gps.latitude),
                     Number(gps.longitude)
@@ -356,9 +373,9 @@ async function loadPilots(){
 
     <div class="popup-header">
 
-        <div class="popup-icon">
-            ✈️
-        </div>
+ <div class="popup-icon">
+    <i class="bi bi-airplane-fill"></i>
+</div>
 
         <div>
 
@@ -420,11 +437,26 @@ async function loadPilots(){
 </div>
 `)
 
-            markers.push(marker)
+marker.on('click', () => {
+
+    map.flyTo(
+        [
+            Number(gps.latitude),
+            Number(gps.longitude)
+        ],
+        16,
+        {
+            animate: true,
+            duration: 1
+        }
+    )
+
+})
+markers.push(marker)
 
         })
 
-        if(markers.length){
+     if (map && markers.length) {
 
             const group=L.featureGroup(markers)
 
@@ -641,5 +673,26 @@ gap:15px;
 }
 
 }
+:deep(.custom-airplane-icon){
+    background: transparent !important;
+    border:none !important;
+}
 
+:deep(.airplane-marker){
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:#0d6efd;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    border:3px solid #fff;
+    box-shadow:0 10px 20px rgba(0,0,0,.25);
+}
+
+:deep(.airplane-marker i){
+    font-size:22px;
+    color:#fff;
+}
 </style>
