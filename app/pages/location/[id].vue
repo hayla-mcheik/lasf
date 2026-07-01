@@ -303,7 +303,7 @@ async function refreshData() {
     <!-- Main content -->
     <div v-else-if="location" class="location-content">
       <!-- Header -->
-      <div class="location-header py-5 bg-dark text-white">
+      <div class="location-header py-5 ">
         <div class="container">
           <div class="row align-items-center">
             <div class="col-md-8">
@@ -482,13 +482,6 @@ async function refreshData() {
   background-color: #f8f9fa;
 }
 
-.location-header {
-  background: white;
-}
-
-.debug-panel {
-  background: white;
-}
 
 .card {
   border: none;
