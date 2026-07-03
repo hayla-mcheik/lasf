@@ -184,7 +184,60 @@
                     <div v-if="errors.instagram_url" class="invalid-feedback">{{ Array.isArray(errors.instagram_url) ? errors.instagram_url[0] : errors.instagram_url }}</div>
                   </div>
                 </div>
+<!-- License Attachment -->
+<h5 class="text-success border-bottom pb-2 mb-3 mt-4">
+    <i class="bi bi-file-earmark-pdf me-2"></i>
+    Pilot License
+</h5>
 
+<div class="row g-3">
+
+    <div class="col-12">
+
+        <div class="mb-3">
+
+            <label class="form-label fw-bold small">
+                Current License
+            </label>
+
+            <div v-if="currentLicense">
+
+                <a
+                    :href="currentLicense"
+                    target="_blank"
+                    class="btn btn-outline-success btn-sm"
+                >
+                    <i class="bi bi-eye"></i>
+                    View Current License
+                </a>
+
+            </div>
+
+            <div v-else class="text-muted">
+                No license uploaded.
+            </div>
+
+        </div>
+
+        <label class="form-label fw-bold small">
+            Upload New License
+        </label>
+
+        <input
+            ref="licenseInput"
+            type="file"
+            class="form-control"
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            @change="onLicenseChange"
+        >
+
+        <small class="text-muted">
+            PDF, JPG, PNG or WEBP (Max 5MB)
+        </small>
+
+    </div>
+
+</div>
                 <!-- Profile Image -->
                 <h5 class="text-success border-bottom pb-2 mb-3 mt-4">
                   <i class="bi bi-image me-2"></i> Profile Image
@@ -258,13 +311,14 @@ useHead({
 const config = useRuntimeConfig()
 const authStore = useAuthStore()
 const router = useRouter()
-
+const licenseInput = ref(null)
+const currentLicense = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const errors = ref({})
 const globalError = ref(null)
 const imageFile = ref(null)
-
+const licenseFile = ref(null)
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 const form = ref({
@@ -276,7 +330,8 @@ const form = ref({
   facebook_url: '',
   instagram_url: '',
   date_of_birth: '',
-  image: null
+  image: null,
+  license_attachment: null
 })
 
 // Field labels for error display
@@ -341,6 +396,11 @@ const fetchMembership = async () => {
     if (user.pilot_profile?.image) {
       currentImage.value = getAvatarUrl(user.pilot_profile.image)
     }
+    if (user.pilot_profile?.licenses_attachments) {
+    currentLicense.value = getAvatarUrl(
+        user.pilot_profile.licenses_attachments
+    )
+}
 
   } catch (err) {
     console.error('Failed to load membership:', err)
@@ -351,30 +411,52 @@ const fetchMembership = async () => {
 }
 
 const onFileChange = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    // Validate file size
+
+    const file = event.target.files[0]
+
+    if (!file) return
+
     if (file.size > 2 * 1024 * 1024) {
-      errors.value.image = 'File size must be less than 2MB'
-      return
+        errors.value.image = 'File size must be less than 2MB'
+        return
     }
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+
+    const validTypes = ['image/jpeg','image/png','image/webp']
+
     if (!validTypes.includes(file.type)) {
-      errors.value.image = 'File must be JPG, PNG, or WEBP format'
-      return
+        errors.value.image = 'File must be JPG, PNG or WEBP'
+        return
     }
-    // Clear any previous image errors
+
     delete errors.value.image
-    
+
     imageFile.value = file
-    // Preview the image
+
     const reader = new FileReader()
-    reader.onload = (e) => {
-      currentImage.value = e.target.result
+
+    reader.onload = e => {
+        currentImage.value = e.target.result
     }
+
     reader.readAsDataURL(file)
-  }
+
+}
+const onLicenseChange = (event) => {
+
+    const file = event.target.files[0]
+
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+        errors.value.license_attachment =
+            'License must be smaller than 5MB.'
+        return
+    }
+
+    delete errors.value.license_attachment
+
+    licenseFile.value = file
+
 }
 
 const saveMembership = async () => {
@@ -429,7 +511,12 @@ const saveMembership = async () => {
     if (imageFile.value) {
       formData.append('image', imageFile.value)
     }
-
+if (licenseFile.value) {
+    formData.append(
+        'license_attachment',
+        licenseFile.value
+    )
+}
     // Add method spoofing for PUT
     formData.append('_method', 'PUT')
 
@@ -445,9 +532,13 @@ const saveMembership = async () => {
     )
 
     // Success - show message and redirect
-    alert('Membership updated successfully!')
-    router.push('/account')
+ alert('Membership updated successfully!')
+licenseFile.value = null
+if (licenseInput.value) {
+    licenseInput.value.value = ''
+}
 
+router.push('/account')
   } catch (err) {
     console.error('Update failed:', err)
     

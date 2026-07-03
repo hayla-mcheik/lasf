@@ -62,12 +62,21 @@
               to="/admin/news"
             />
             <NavItem 
-    :active="$route.path.startsWith('/admin/weather')"
-    :collapsed="sidebarCollapsed"
-    icon="bi-cloud-sun"
-    label="Weather Reports"
-    to="/admin/weather"
-  />
+<NavItem
+  :active="$route.path.startsWith('/admin/weather')"
+  :collapsed="sidebarCollapsed"
+  icon="bi-cloud-sun"
+  label="Weather Reports"
+  to="/admin/weather"
+/>
+
+<NavItem
+  :active="$route.path.startsWith('/admin/pilot-safety-message')"
+  :collapsed="sidebarCollapsed"
+  icon="bi-exclamation-triangle-fill"
+  label="Pilot Safety"
+  to="/admin/pilot-safety-message"
+/>
             <NavItem 
               :active="$route.path.startsWith('/admin/pilots')"
               :collapsed="sidebarCollapsed"
@@ -183,6 +192,7 @@ const pageTitle = computed(() => {
     '/admin/pilots': 'Pilots',
     '/admin/sports': 'Sports',
     '/admin/about': 'About LASF Page',
+    '/admin/pilot-safety-message': 'Pilot Safety Message',
     '/admin/regulations': 'Safety & Regulations',
     '/admin/testimonials': 'Testimonials',
     '/admin/gallery': 'Gallery'

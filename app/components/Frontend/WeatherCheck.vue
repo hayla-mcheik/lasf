@@ -6,7 +6,18 @@
           <div class="live-pulse me-3"></div>
           <div v-if="weatherData">
             <span class="x-small fw-bold tracking-widest d-block opacity-75">STATION: {{ currentSiteName }}</span>
-            <span class="fw-black h5 mb-0">{{ safetyStatusLabel }}</span>
+    <div>
+    <span class="fw-black h5 mb-1 d-block">
+        {{ safetyStatusLabel }}
+    </span>
+
+    <small
+        v-if="safetyDescription"
+        class="opacity-75 fw-semibold"
+    >
+        {{ safetyDescription }}
+    </small>
+</div>
           </div>
           <div v-else class="placeholder-glow">
             <span class="placeholder col-12 bg-light opacity-50" style="width: 150px;"></span>
@@ -107,6 +118,7 @@ const props = defineProps({
 
 const API_KEY = '5408a1b07f159206390e3ffcd506319e'
 const weatherData = ref(null)
+const safetyMessage = ref(null)
 const activeLayer = ref('wind')
 let refreshInterval = null
 
@@ -130,11 +142,31 @@ const cloudBaseFt = computed(() => {
 
 // Safety Status Logic
 const safetyStatusLabel = computed(() => {
-  if (currentWindKt.value > 15 || currentGustKt.value > 22) return 'DANGEROUS: GROUNDED'
-  if (currentWindKt.value > 12) return 'CAUTION: STRONG WIND'
-  return 'FLYABLE: GOOD CONDITIONS'
-})
 
+  if (currentWindKt.value > 15 || currentGustKt.value > 22) {
+    return 'DANGEROUS: GROUNDED'
+  }
+
+  if (currentWindKt.value > 12) {
+    return 'CAUTION: STRONG WIND'
+  }
+
+  return safetyMessage.value?.title || 'FLYABLE: GOOD CONDITIONS'
+
+})
+const safetyDescription = computed(() => {
+
+  if (currentWindKt.value > 15 || currentGustKt.value > 22) {
+    return 'Flying is not recommended because of dangerous wind conditions.'
+  }
+
+  if (currentWindKt.value > 12) {
+    return 'Wind conditions require extra caution before takeoff.'
+  }
+
+  return safetyMessage.value?.message || ''
+
+})
 const safetyThemeClass = computed(() => {
   if (!weatherData.value) return 'bg-secondary text-white'
   if (currentWindKt.value > 15) return 'bg-danger text-white'
@@ -165,11 +197,33 @@ const fetchWeatherData = async () => {
   }
 }
 
+const fetchSafetyMessage = async () => {
+  try {
+    const res = await $fetch(
+      `${config.public.apiBase}/pilot-safety-message`
+    )
+
+    if (res.success) {
+      safetyMessage.value = res.data
+    }
+
+  } catch (err) {
+    console.error('Safety message error:', err)
+  }
+}
 // Lifecycle Hooks
-onMounted(() => {
-  fetchWeatherData()
-  // Refresh weather data every 10 minutes
-  refreshInterval = setInterval(fetchWeatherData, 600000)
+onMounted(async () => {
+
+  await Promise.all([
+    fetchWeatherData(),
+    fetchSafetyMessage()
+  ])
+
+  refreshInterval = setInterval(async () => {
+    await fetchWeatherData()
+    await fetchSafetyMessage()
+  }, 600000)
+
 })
 
 onUnmounted(() => {
