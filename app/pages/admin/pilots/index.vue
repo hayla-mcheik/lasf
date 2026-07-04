@@ -460,12 +460,7 @@
     View
 </a>
 
-<a
-    :href="file.download"
-    class="btn btn-success btn-sm"
->
-    Download
-</a>
+
                     </div>
 
                 </div>
