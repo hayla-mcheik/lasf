@@ -145,7 +145,12 @@
   >
     <i class="bi bi-trash"></i>
   </button>
-
+<button
+    class="btn btn-sm btn-outline-secondary"
+    @click="viewLicenses(pilot)"
+>
+    <i class="bi bi-file-earmark-pdf"></i>
+</button>
 </div>
                 </td>
               </tr>
@@ -412,6 +417,64 @@
       </div>
     </div>
   </div>
+  <div
+    v-if="showLicensesModal"
+    class="modal fade show d-block"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>License Attachments</h5>
+
+                <button
+                    class="btn-close"
+                    @click="showLicensesModal=false"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div
+                    v-if="!pilotLicenses.length"
+                    class="text-muted"
+                >
+                    No attachments.
+                </div>
+
+                <div
+                    v-for="file in pilotLicenses"
+                    :key="file.index"
+                    class="d-flex justify-content-between align-items-center border rounded p-2 mb-2"
+                >
+
+                    <span>{{ file.name }}</span>
+
+                    <div>
+
+                 <a
+    :href="file.view"
+    target="_blank"
+    class="btn btn-primary btn-sm me-2"
+>
+    View
+</a>
+
+<a
+    :href="file.download"
+    class="btn btn-success btn-sm"
+>
+    Download
+</a>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
 </template>
 
 <script setup>
@@ -419,7 +482,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ layout: 'admin' })
+const showLicensesModal = ref(false)
 
+const pilotLicenses = ref([])
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 
@@ -507,6 +572,7 @@ const syncClubFields = () => {
     form.club_code = ''
   }
 }
+
 
 const fetchPilots = async () => {
   loading.value = true
@@ -697,6 +763,31 @@ const importPilots = async (event) => {
   }
 }
 
+const viewLicenses = async (pilot) => {
+
+    try {
+
+        pilotLicenses.value = await $fetch(
+
+            `${config.public.apiBase}/admin/pilots/${pilot.id}/licenses`,
+
+            {
+                headers:{
+                    Authorization:`Bearer ${authStore.token}`
+                }
+            }
+
+        )
+
+        showLicensesModal.value = true
+
+    } catch(err){
+
+        alert('Unable to load licenses.')
+
+    }
+
+}
 const generateCardView = (pilot) => { activeCardPilot.value = pilot }
 const printMembershipCard = () => { window.print() }
 

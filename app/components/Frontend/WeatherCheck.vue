@@ -120,6 +120,7 @@ const API_KEY = '5408a1b07f159206390e3ffcd506319e'
 const weatherData = ref(null)
 const safetyMessage = ref(null)
 const activeLayer = ref('wind')
+const config = useRuntimeConfig()
 let refreshInterval = null
 
 // Calculations (Knots, KMH, Cloud Base)
