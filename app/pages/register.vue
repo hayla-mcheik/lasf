@@ -707,23 +707,29 @@ const registerPilot = async () => {
       navigateTo('/')
     }, 2000)
 
-  } catch (err) {
+  } 
+  catch (err) {
 
-    if (err?.data?.errors) {
+  console.log(err)
+  console.log(err.data)
 
-      error.value = Object.values(
-        err.data.errors
-      ).flat().join('\n')
+  if (err?.data?.errors) {
 
-    } else {
+    error.value = Object.values(err.data.errors)
+      .flat()
+      .join('\n')
 
-      error.value =
-        err?.data?.message ||
-        'Registration failed.'
+  } else {
 
-    }
+    error.value =
+      err?.data?.message ||
+      err?.message ||
+      'Registration failed.'
 
-  } finally {
+  }
+
+}
+   finally {
 
     loading.value = false
 
