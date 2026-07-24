@@ -33,7 +33,128 @@
           </div>
         </div>
       </div>
+<div class="row mb-4">
 
+    <!-- Calendar -->
+
+    <div class="col-lg-7">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body">
+
+     <PermissionCalendar
+    :selectedDate="selectedDate"
+    @dateSelected="onDateSelected"
+/>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Information -->
+
+    <div class="col-lg-5">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-4">
+
+                    Selected Date
+
+                </h5>
+
+                <h3 class="text-primary">
+
+                    {{ formattedSelectedDate }}
+
+                </h3>
+
+                <hr>
+
+                <div class="row text-center mt-4">
+
+                    <div class="col-4">
+
+                        <div class="bg-success text-white rounded p-3">
+
+                            <h3>{{ openCount }}</h3>
+
+                            <small>Open</small>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-4">
+
+                        <div class="bg-warning rounded p-3">
+
+                            <h3>{{ pendingCount }}</h3>
+
+                            <small>Pending</small>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-4">
+
+                        <div class="bg-danger text-white rounded p-3">
+
+                            <h3>{{ closedCount }}</h3>
+
+                            <small>Closed</small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="card border-0 shadow-sm mb-4">
+
+    <div class="card-header bg-white">
+
+        <h4 class="mb-0">
+            Daily Airspace Permissions
+        </h4>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div
+                v-for="location in locations"
+                :key="location.id"
+                class="col-lg-6 mb-4"
+            >
+
+                <PermissionCard
+                    :location="location"
+                    @save="savePermission"
+                />
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
       <div class="card border-0 shadow-sm">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
@@ -71,6 +192,7 @@
                     {{ getCurrentStatus(location).label }}
                   </span>
                 </td>
+
                 <td class="text-center">
                   <button v-if="location.qr_code" class="btn btn-sm btn-success shadow-sm" @click="showQRCode(location)">
                     <i class="bi bi-qr-code"></i> View QR
@@ -96,6 +218,7 @@
       </div>
     </div>
 
+
     <div v-if="showCreateModal" class="modal fade show d-block" @click.self="closeModal">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -105,6 +228,15 @@
           </div>
           <form @submit.prevent="saveLocation">
             <div class="modal-body custom-scrollbar" style="max-height: 70vh; overflow-y: auto;">
+                  <div class="alert alert-info mb-3">
+
+    <strong>
+        Editing permission for:
+    </strong>
+
+    {{ form.permission_date }}
+
+</div>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Name</label>
@@ -175,6 +307,49 @@
 </option>
                   </select>
                 </div>
+                <!-- Permission Date -->
+
+<div class="col-md-6">
+
+    <label class="form-label fw-bold">
+        Permission Date
+    </label>
+
+<input
+    type="date"
+    class="form-control"
+    :class="{
+        'is-invalid': validationErrors.permission_date
+    }"
+    v-model="form.permission_date"
+    required
+>
+
+<div
+    v-if="validationErrors.permission_date"
+    class="invalid-feedback"
+>
+    {{ validationErrors.permission_date[0] }}
+</div>
+
+</div>
+
+<!-- Reason -->
+
+<div class="col-12">
+
+    <label class="form-label fw-bold">
+        Reason
+    </label>
+
+    <textarea
+        class="form-control"
+        rows="3"
+        v-model="form.reason"
+        placeholder="Optional reason..."
+    ></textarea>
+
+</div>
               </div>
             </div>
             <div class="modal-footer">
@@ -215,11 +390,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import {
+    ref,
+    reactive,
+    onMounted,
+    nextTick,
+    computed
+} from 'vue'
 import QRCode from 'qrcode'
 import { useAuthStore } from '~/stores/auth'
 import { useDebounceFn } from '@vueuse/core'
-
+import PermissionCalendar from '~/components/admin/PermissionCalendar.vue'
+import PermissionCard from '~/components/admin/PermissionCard.vue'
 definePageMeta({ layout: 'admin' })
 
 const authStore = useAuthStore()
@@ -240,14 +422,118 @@ const qrCodeRef = ref(null)
 const searchQuery = ref('')
 const generatingId = ref(null)
 const pagination = reactive({ total: 0 })
+const selectedDate = ref(
+  new Date().toISOString().split('T')[0]
+)
+const savePermission = async (data) => {
 
+    try {
+
+        await $fetch(
+            `${config.public.apiBase}/admin/clearance-statuses`,
+            {
+                method: 'POST',
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+
+                body: {
+                    flying_location_id: data.location.id,
+                    permission_date: selectedDate.value,
+                    status: data.status,
+                    reason: data.reason
+                }
+            }
+        )
+
+        await fetchLocations()
+
+        alert('Permission updated successfully.')
+
+    } catch (error) {
+
+        console.error(error)
+
+        alert('Unable to update permission.')
+    }
+
+}
 const form = reactive({
-  name: '', type: '', takeoff_kato: '', takeoff_nazim: '',
-  landing_kato: '', landing_nazim: '', max_altitude: '',
-  clearance_status: 'green', is_enabled: true,
-  sports: [] 
+
+    name: '',
+
+    type: '',
+
+    takeoff_kato: '',
+
+    takeoff_nazim: '',
+
+    landing_kato: '',
+
+    landing_nazim: '',
+
+    max_altitude: '',
+
+    clearance_status: 'green',
+
+    permission_date: '',
+reason: '',
+    is_enabled: true,
+
+    sports: []
+
+})
+const onDateSelected = (date) => {
+
+    selectedDate.value = date
+
+    fetchLocations()
+
+}
+const formattedSelectedDate = computed(() => {
+
+    return new Date(selectedDate.value).toLocaleDateString(
+        'en-US',
+        {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }
+    )
+
 })
 
+const openCount = computed(() =>
+
+    locations.value.filter(location =>
+
+        getCurrentStatus(location).status === 'green'
+
+    ).length
+
+)
+
+const pendingCount = computed(() =>
+
+    locations.value.filter(location =>
+
+        getCurrentStatus(location).status === 'yellow'
+
+    ).length
+
+)
+
+const closedCount = computed(() =>
+
+    locations.value.filter(location =>
+
+        getCurrentStatus(location).status === 'red'
+
+    ).length
+
+)
 // --- ROBUST NOTIFICATION HELPER ---
 const notify = (type, message) => {
   if (process.client) {
@@ -276,19 +562,51 @@ const fetchSports = async () => {
 }
 
 const fetchLocations = async () => {
-  loading.value = true
-  try {
-    // ✅ FIXED: Using public route instead of admin route
-    const res = await $fetch(`${config.public.apiBase}/flying-locations?search=${searchQuery.value}`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
-    locations.value = res.data || res
-    pagination.total = locations.value.length
-  } catch (err) {
-    notify('error', 'Failed to load locations')
-  } finally {
-    loading.value = false
-  }
+
+    loading.value = true
+
+    try {
+
+        const res = await $fetch(
+
+            `${config.public.apiBase}/flying-locations`,
+
+            {
+
+                query: {
+
+                    date: selectedDate.value,
+
+                    search: searchQuery.value
+
+                },
+
+                headers: {
+
+                    Authorization: `Bearer ${authStore.token}`
+
+                }
+
+            }
+
+        )
+
+        locations.value = res.data
+
+        pagination.total = res.data.length
+
+    } catch (e) {
+
+        notify('error','Failed to load locations')
+
+    }
+
+    finally {
+
+        loading.value = false
+
+    }
+
 }
 
 const validateForm = () => {
@@ -309,7 +627,13 @@ const validateForm = () => {
  if (!['green', 'yellow', 'red'].includes(form.clearance_status)){
     validationErrors.value.clearance_status = ['Invalid status']
   }
+if (!form.permission_date) {
 
+    validationErrors.value.permission_date = [
+        'Permission date is required'
+    ]
+
+}
   if (
     form.max_altitude &&
     form.max_altitude.length > 255
@@ -325,74 +649,114 @@ const validateForm = () => {
 const saveLocation = async () => {
     validationErrors.value = {}
 
-  if (!validateForm()) {
-    notify('error', 'Please fix validation errors')
-    return
-  }
-  saving.value = true
+    if (!validateForm()) {
+        notify('error', 'Please fix validation errors')
+        return
+    }
 
-  
-  const isEditing = !!editingLocation.value
-  const url = isEditing 
-    ? `${config.public.apiBase}/admin/flying-locations/${editingLocation.value.id}`
-    : `${config.public.apiBase}/admin/flying-locations`
+    saving.value = true
 
-  try {
-    const result = await $fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
-      headers: { 
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form)
-    })
+    const isEditing = !!editingLocation.value
 
-    const updatedData = result.data || result
-    
-    if (isEditing) {
-      const index = locations.value.findIndex(l => l.id === editingLocation.value.id)
-      if (index !== -1) {
-        locations.value[index] = { 
-          ...locations.value[index], 
-          ...updatedData,
-          clearance_statuses: [{ status: form.clearance_status }] 
+    try {
+
+        // ---------------------------------
+        // 1. Save Location
+        // ---------------------------------
+
+        const locationUrl = isEditing
+            ? `${config.public.apiBase}/admin/flying-locations/${editingLocation.value.id}`
+            : `${config.public.apiBase}/admin/flying-locations`
+
+        const locationResponse = await $fetch(locationUrl, {
+            method: isEditing ? 'PUT' : 'POST',
+            headers: {
+                Authorization: `Bearer ${authStore.token}`
+            },
+            body: form
+        })
+
+        const location =
+            locationResponse.data || locationResponse
+
+        // ---------------------------------
+        // 2. Save Daily Permission
+        // ---------------------------------
+
+        await $fetch(
+            `${config.public.apiBase}/admin/clearance-statuses`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+                body: {
+                    flying_location_id: location.id,
+                    permission_date: form.permission_date,
+                    status: form.clearance_status,
+                    reason: form.reason
+                }
+            }
+        )
+
+        notify('success', 'Location saved successfully')
+
+        closeModal()
+
+        await fetchLocations()
+
+    } catch (error) {
+
+        console.error(error)
+
+        if (error.status === 422) {
+            validationErrors.value = error.data?.errors || {}
         }
-      }
-    } else {
-      locations.value = [updatedData, ...locations.value]
-      pagination.total++
+
+        notify(
+            'error',
+            error.data?.message || 'Server Error'
+        )
+
+    } finally {
+
+        saving.value = false
+
     }
-    
-    notify('success', 'Location saved successfully')
-    closeModal()
-  } catch (error) {
-    console.error('Error saving:', error)
-    if (error.status === 422) {
-      validationErrors.value = error.data?.errors || {}
-      notify('error', 'Please fix validation errors')
-    } else {
-      notify('error', error.data?.message || 'Server error occurred')
-    }
-  } finally {
-    saving.value = false
-  }
 }
 
 // --- UI HANDLERS ---
 const openCreateModal = () => {
   editingLocation.value = null
   resetForm()
+  form.permission_date = selectedDate.value
   validationErrors.value = {}
   showCreateModal.value = true
 }
 
 const editLocation = (location) => {
-  editingLocation.value = location
-  validationErrors.value = {}
-  Object.assign(form, location)
-  form.sports = location.sports ? location.sports.map(s => s.id) : []
-  form.clearance_status = location.clearance_statuses?.[0]?.status || 'green'
-  showCreateModal.value = true
+
+    editingLocation.value = location
+
+    validationErrors.value = {}
+
+    Object.assign(form, {
+
+        ...location,
+
+        sports: location.sports.map(s => s.id),
+
+        permission_date: selectedDate.value,
+
+        clearance_status:
+            location.today_clearance_status?.status ?? 'red',
+
+        reason:
+            location.today_clearance_status?.reason ?? ''
+
+    })
+
+    showCreateModal.value = true
 }
 
 const closeModal = () => {
@@ -402,13 +766,34 @@ const closeModal = () => {
 }
 
 const resetForm = () => {
-  Object.assign(form, {
-    name: '', type: '', takeoff_kato: '', takeoff_nazim: '',
-    landing_kato: '', landing_nazim: '', max_altitude: '',
-    clearance_status: 'green', is_enabled: true, sports: []
-  })
-}
 
+    Object.assign(form, {
+
+        name: '',
+
+        type: '',
+
+        takeoff_kato: '',
+
+        takeoff_nazim: '',
+
+        landing_kato: '',
+
+        landing_nazim: '',
+
+        max_altitude: '',
+
+        clearance_status: 'green',
+reason: '',
+        permission_date: selectedDate.value,
+
+        is_enabled: true,
+
+        sports: []
+
+    })
+
+}
 const showQRCode = async (location) => {
   selectedLocation.value = location
   showQRModal.value = true
@@ -452,8 +837,14 @@ const downloadQR = () => {
 const handleSearch = useDebounceFn(() => fetchLocations(), 500)
 const getCurrentStatus = (location) => {
 
-    const status =
-        location.clearance_statuses?.[0]?.status || 'green'
+    const permission =
+        location.clearance_statuses
+            ?.sort((a, b) =>
+                new Date(b.permission_date) -
+                new Date(a.permission_date)
+            )[0]
+
+    const status = permission?.status ?? 'red'
 
     switch (status) {
 
@@ -469,16 +860,10 @@ const getCurrentStatus = (location) => {
                 label: 'Pending'
             }
 
-        case 'red':
+        default:
             return {
                 status: 'red',
                 label: 'Closed'
-            }
-
-        default:
-            return {
-                status: 'green',
-                label: 'Open'
             }
     }
 }

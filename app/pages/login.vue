@@ -210,55 +210,156 @@ const handleLogin = async () => {
 
   error.value = ''
 
+
   const payload =
+
     loginType.value === 'pilot'
+
       ? {
-          license_number: identifier.value,
-          phone: securityValue.value
+
+          license_number:
+            identifier.value,
+
+          phone:
+            securityValue.value
+
         }
+
       : {
-          email: identifier.value,
-          password: securityValue.value
+
+          email:
+            identifier.value,
+
+          password:
+            securityValue.value
+
         }
 
-  const result = await authStore.login(payload)
 
-  if (result.success) {
+  const result =
+    await authStore.login(payload)
 
-    const redirectPath = route.query.redirect
-    const pendingSlug = localStorage.getItem('pending_location_slug')
 
-    if (redirectPath) {
-
-      navigateTo(redirectPath)
-
-    } else if (pendingSlug) {
-
-      localStorage.removeItem('pending_location_slug')
-
-      navigateTo(
-        `/location/${pendingSlug}?auto_checkin=true`
-      )
-
-    } else if (authStore.isAdmin) {
-
-      navigateTo('/admin/dashboard')
-
-    } else if (authStore.isArmy) {
-
-      navigateTo('/admin/locations')
-
-    } else {
-
-      navigateTo('/account')
-
-    }
-
-  } else {
+  if (!result.success) {
 
     error.value = result.message
 
+    return
+
   }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | REDIRECT QUERY
+  |--------------------------------------------------------------------------
+  */
+
+  const redirectPath =
+    route.query.redirect
+
+
+  if (redirectPath) {
+
+    await navigateTo(redirectPath)
+
+    return
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | QR PILOT REDIRECTION
+  |--------------------------------------------------------------------------
+  */
+
+  const pendingSlug = import.meta.client
+
+    ? localStorage.getItem(
+        'pending_location_slug'
+      )
+
+    : null
+
+
+  if (pendingSlug) {
+
+    localStorage.removeItem(
+      'pending_location_slug'
+    )
+
+
+    await navigateTo(
+
+      `/location/${pendingSlug}?auto_checkin=true`
+
+    )
+
+
+    return
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | ADMIN
+  |--------------------------------------------------------------------------
+  */
+
+  if (authStore.isAdmin) {
+
+    await navigateTo(
+      '/admin/dashboard'
+    )
+
+    return
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | ARMY
+  |--------------------------------------------------------------------------
+  */
+
+  if (authStore.isArmy) {
+
+    await navigateTo(
+      '/admin/dashboard'
+    )
+
+    return
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | WATCHER
+  |--------------------------------------------------------------------------
+  */
+
+  if (authStore.isWatcher) {
+
+    await navigateTo(
+      '/admin/dashboard'
+    )
+
+    return
+
+  }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | PILOT
+  |--------------------------------------------------------------------------
+  */
+
+  await navigateTo('/account')
 
 }
 </script>

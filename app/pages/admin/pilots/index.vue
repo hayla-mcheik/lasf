@@ -99,19 +99,51 @@
 </td>
 
 <td>
-  <span
-    v-if="pilot.is_approved"
-    class="badge bg-success"
-  >
-    Approved
-  </span>
 
-  <span
-    v-else
-    class="badge bg-warning text-dark"
-  >
-    Pending Approval
-  </span>
+    <!-- Pending -->
+    <span
+        v-if="!pilot.is_approved"
+        class="badge bg-warning text-dark"
+    >
+        Pending Approval
+    </span>
+
+    <!-- Approved + Active -->
+    <span
+        v-else-if="!pilot.pilot_profile?.is_banned"
+        class="badge bg-success"
+    >
+        Approved
+    </span>
+
+    <!-- Banned -->
+    <div
+        v-else
+        class="d-flex flex-column gap-1"
+    >
+
+        <span class="badge bg-danger">
+            Banned
+        </span>
+
+        <small class="text-danger fw-bold">
+
+            Until
+
+            {{ formatDate(pilot.pilot_profile.ban_until) }}
+
+        </small>
+        <small
+    v-if="pilot.pilot_profile?.ban_reason"
+    class="text-muted"
+>
+
+    {{ pilot.pilot_profile.ban_reason }}
+
+</small>
+
+    </div>
+
 </td>
 
 <td class="text-center">
@@ -273,6 +305,69 @@
 
               <div class="row g-3 bg-white p-3 rounded shadow-sm border">
                 <h6 class="text-primary fw-bold border-bottom pb-2 mb-2"><i class="bi bi-folder-symlink"></i> Media Vault Assets</h6>
+                <div class="row g-3 bg-white p-3 rounded shadow-sm border mt-3">
+
+    <h6 class="text-danger fw-bold border-bottom pb-2 mb-2">
+        <i class="bi bi-shield-lock"></i>
+        Pilot Restrictions
+    </h6>
+
+    <div class="col-md-12">
+
+        <div class="form-check form-switch">
+
+            <input
+                class="form-check-input"
+                type="checkbox"
+                id="isBanned"
+                v-model="form.is_banned"
+            >
+
+            <label
+                class="form-check-label fw-bold"
+                for="isBanned"
+            >
+                Ban this Pilot
+            </label>
+
+        </div>
+
+    </div>
+
+    <template v-if="form.is_banned">
+
+        <div class="col-md-6">
+
+            <label class="form-label fw-bold">
+                Ban Until
+            </label>
+
+            <input
+                type="date"
+                class="form-control"
+                v-model="form.ban_until"
+            >
+
+        </div>
+
+        <div class="col-md-12">
+
+            <label class="form-label fw-bold">
+                Ban Reason
+            </label>
+
+            <textarea
+                class="form-control"
+                rows="4"
+                v-model="form.ban_reason"
+                placeholder="Explain why this pilot is banned..."
+            ></textarea>
+
+        </div>
+
+    </template>
+
+</div>
                 <div class="col-md-6">
                   <label class="form-label fw-bold small">Primary Avatar Picture</label>
                   <input type="file" @change="handleFileUpload" class="form-control" accept="image/*">
@@ -517,11 +612,39 @@ const selectedClubIndex = ref('')
 const allowedRatingsOptions = ref([])
 
 const form = reactive({
-  name: '', email: '', phone: '', blood_type: 'O+',
-  club_name: '', club_code: '', insurance_provider: '',
-  insurance_number: '', facebook_url: '', instagram_url: '',
-  designation: 'Professional Pilot', disciplines: [], ratings: [],
-  valid_until: '2027-05-19', image: ''
+
+  name: '',
+  email: '',
+  phone: '',
+
+  blood_type: 'O+',
+
+  club_name: '',
+  club_code: '',
+
+  insurance_provider: '',
+  insurance_number: '',
+
+  facebook_url: '',
+  instagram_url: '',
+
+  designation: 'Professional Pilot',
+
+  disciplines: [],
+
+  ratings: [],
+
+  valid_until: '2027-05-19',
+
+  image: '',
+
+  date_of_birth: '',
+
+  // NEW
+  is_banned: false,
+  ban_until: '',
+  ban_reason: ''
+
 })
 
 const getAvatarUrl = (imagePath) => {
@@ -602,6 +725,20 @@ const savePilot = async () => {
   'date_of_birth',
   form.date_of_birth || ''
 )
+formData.append(
+    'is_banned',
+    form.is_banned ? 1 : 0
+)
+
+formData.append(
+    'ban_until',
+    form.ban_until || ''
+)
+
+formData.append(
+    'ban_reason',
+    form.ban_reason || ''
+)
   formData.append('blood_type', form.blood_type)
   formData.append('club_name', form.club_name)
   formData.append('club_code', form.club_code)
@@ -671,6 +808,14 @@ const editPilot = (p) => {
   prof?.date_of_birth
     ? prof.date_of_birth.substring(0,10)
     : ''
+    form.is_banned = prof?.is_banned ?? false
+
+form.ban_until =
+    prof?.ban_until
+        ? prof.ban_until.substring(0,10)
+        : ''
+
+form.ban_reason = prof?.ban_reason ?? ''
   form.disciplines = prof?.disciplines ? prof.disciplines.map(d => d.id) : []
   form.ratings = prof?.ratings ? prof.ratings.split(' | ') : []
 
@@ -803,13 +948,47 @@ const handleMultipleLicenses = (e) => licensesFileList.value = e.target.files
 const openCreateModal = () => { resetForm(); showCreateModal.value = true }
 const closeModal = () => { showCreateModal.value = false; editingPilot.value = null; imageFile.value = null; licensesFileList.value = []; fieldErrors.value = {} }
 const resetForm = () => {
+
   selectedClubIndex.value = ''
+
   allowedRatingsOptions.value = []
+
   Object.assign(form, {
-    name: '', email: '', phone: '', blood_type: 'O+', club_name: '', club_code: '',
-    insurance_provider: '', insurance_number: '', facebook_url: '', instagram_url: '',
-    designation: 'Professional Pilot', disciplines: [], ratings: [], valid_until: '2027-05-19', image: '',date_of_birth:'',
+
+    name: '',
+    email: '',
+    phone: '',
+
+    blood_type: 'O+',
+
+    club_name: '',
+    club_code: '',
+
+    insurance_provider: '',
+    insurance_number: '',
+
+    facebook_url: '',
+    instagram_url: '',
+
+    designation: 'Professional Pilot',
+
+    disciplines: [],
+
+    ratings: [],
+
+    valid_until: '2027-05-19',
+
+    image: '',
+
+    date_of_birth: '',
+
+    // NEW
+    is_banned: false,
+    ban_until: '',
+    ban_reason: ''
+
   })
+
 }
 
 onMounted(fetchPilots)

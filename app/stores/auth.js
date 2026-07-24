@@ -1,90 +1,491 @@
 import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', {
+
   state: () => ({
+
     user: null,
+
     token: null,
-    activeSession: null, 
+
+    activeSession: null,
+
     loading: false
+
   }),
+
+
   persist: {
+
     key: 'auth',
+
     storage: persistedState.cookiesWithOptions({
+
       sameSite: 'lax',
+
       path: '/',
-      maxAge: 604800 
+
+      maxAge: 604800
+
     }),
+
   },
+
+
   getters: {
-    isAuthenticated: (state) => !!state.token,
-    // Super Admin Getter
-    isAdmin: (state) => state.user?.is_admin === true || state.user?.is_admin == 1,
-    // ✅ Lebanese Army Role Getter
-    isArmy: (state) => state.user?.role === 'army',
-    // Helper for display name
-    userFullName: (state) => state.user?.name || 'User'
+
+    /*
+    |--------------------------------------------------------------------------
+    | AUTHENTICATION
+    |--------------------------------------------------------------------------
+    */
+
+    isAuthenticated: (state) => {
+      return !!state.token
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUPER ADMIN
+    |--------------------------------------------------------------------------
+    */
+
+    isAdmin: (state) => {
+
+      return (
+        state.user?.is_admin === true ||
+        state.user?.is_admin == 1
+      )
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ARMY
+    |--------------------------------------------------------------------------
+    */
+
+    isArmy: (state) => {
+
+      return state.user?.role === 'army'
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | WATCHER
+    |--------------------------------------------------------------------------
+    */
+
+    isWatcher: (state) => {
+
+      return state.user?.role === 'watcher'
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PILOT / NORMAL USER
+    |--------------------------------------------------------------------------
+    */
+
+    isPilot() {
+
+      return (
+        this.isAuthenticated &&
+        !this.isAdmin &&
+        !this.isArmy &&
+        !this.isWatcher
+      )
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD ACCESS
+    |--------------------------------------------------------------------------
+    |
+    | Admin
+    | Army
+    | Watcher
+    |
+    */
+
+    canAccessDashboard() {
+
+      return (
+        this.isAdmin ||
+        this.isArmy ||
+        this.isWatcher
+      )
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LIVE TRACKING ACCESS
+    |--------------------------------------------------------------------------
+    */
+
+    canViewLiveTracking() {
+
+      return this.canAccessDashboard
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOCATION MANAGEMENT
+    |--------------------------------------------------------------------------
+    |
+    | Admin + Army
+    |
+    */
+
+    canManageLocations() {
+
+      return (
+        this.isAdmin ||
+        this.isArmy
+      )
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PILOTS VIEWING
+    |--------------------------------------------------------------------------
+    |
+    | Admin + Army
+    |
+    */
+
+    canViewPilots() {
+
+      return (
+        this.isAdmin ||
+        this.isArmy
+      )
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PILOT MANAGEMENT
+    |--------------------------------------------------------------------------
+    |
+    | Admin only
+    |
+    */
+
+    canManagePilots() {
+
+      return this.isAdmin
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CMS MANAGEMENT
+    |--------------------------------------------------------------------------
+    |
+    | Admin only
+    |
+    */
+
+    canManageCms() {
+
+      return this.isAdmin
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DISPLAY NAME
+    |--------------------------------------------------------------------------
+    */
+
+    userFullName: (state) => {
+
+      return state.user?.name || 'User'
+
+    }
+
   },
+
+
   actions: {
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN
+    |--------------------------------------------------------------------------
+    */
+
     async login(credentials) {
+
       this.loading = true
-      const route = useRoute() 
 
       try {
+
         const config = useRuntimeConfig()
-        const response = await $fetch(`${config.public.apiBase}/login`, {
-          method: 'POST',
-          body: credentials,
-        })
-        
+
+        const response = await $fetch(
+          `${config.public.apiBase}/login`,
+          {
+            method: 'POST',
+
+            body: credentials,
+          }
+        )
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE AUTH DATA
+        |--------------------------------------------------------------------------
+        */
+
         this.user = response.user
+
         this.token = response.token
 
-        // --- TARGET REDIRECTION LOGIC ---
-        let redirectTo = route.query.redirect
 
-        if (!redirectTo) {
-          if (this.isAdmin) {
-            redirectTo = '/admin/dashboard'
-          } else if (this.isArmy) {
-            // ✅ Matches your folder structure: pages/admin/locations/index.vue
-            console.log('Army user detected, redirecting to admin locations');
-            redirectTo = '/admin/locations'
-          } else {
-            redirectTo = '/account'
-          }
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN SUCCESS
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | We do NOT navigate here anymore.
+        |
+        | The login page already handles:
+        |
+        | 1. QR redirect
+        | 2. redirect query
+        | 3. Admin redirect
+        | 4. Army redirect
+        | 5. Watcher redirect
+        | 6. Pilot redirect
+        |
+        | This prevents double navigateTo() calls.
+        |
+        */
+
+        return {
+          success: true
         }
 
-        await navigateTo(redirectTo)
-        return { success: true }
       } catch (error) {
-        return { success: false, message: error.data?.message || 'Login failed' }
+
+        console.error(
+          'Login error:',
+          error
+        )
+
+
+        return {
+
+          success: false,
+
+          message:
+            error?.data?.message ||
+            'Login failed'
+
+        }
+
       } finally {
+
         this.loading = false
+
       }
+
     },
 
-    // ✅ Action to refresh user data and verify token on page load
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK AUTH
+    |--------------------------------------------------------------------------
+    */
+
     async checkAuth() {
-      if (!this.token) return false
-      try {
-        const config = useRuntimeConfig()
-        const data = await $fetch(`${config.public.apiBase}/user`, {
-          headers: { Authorization: `Bearer ${this.token}` }
-        })
-        this.user = data
-        return true
-      } catch (err) {
-        this.logout()
+
+      if (!this.token) {
+
         return false
+
       }
+
+
+      try {
+
+        const config = useRuntimeConfig()
+
+
+        const data = await $fetch(
+          `${config.public.apiBase}/user`,
+          {
+
+            headers: {
+
+              Authorization:
+                `Bearer ${this.token}`
+
+            }
+
+          }
+        )
+
+
+        this.user = data
+
+
+        return true
+
+      } catch (error) {
+
+        console.error(
+          'Check auth error:',
+          error
+        )
+
+
+        await this.logout()
+
+
+        return false
+
+      }
+
     },
 
-    logout() {
-      this.user = null
-      this.token = null
+
+    /*
+    |--------------------------------------------------------------------------
+    | SET ACTIVE SESSION
+    |--------------------------------------------------------------------------
+    */
+
+    setActiveSession(session) {
+
+      this.activeSession = session
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLEAR ACTIVE SESSION
+    |--------------------------------------------------------------------------
+    */
+
+    clearActiveSession() {
+
       this.activeSession = null
-      localStorage.removeItem('pending_location_slug')
-      navigateTo('/login')
+
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOGOUT
+    |--------------------------------------------------------------------------
+    */
+
+    async logout() {
+
+      /*
+      |--------------------------------------------------------------------------
+      | CALL BACKEND LOGOUT WHEN POSSIBLE
+      |--------------------------------------------------------------------------
+      */
+
+      if (this.token) {
+
+        try {
+
+          const config = useRuntimeConfig()
+
+
+          await $fetch(
+            `${config.public.apiBase}/logout`,
+            {
+
+              method: 'POST',
+
+              headers: {
+
+                Authorization:
+                  `Bearer ${this.token}`
+
+              }
+
+            }
+          )
+
+        } catch (error) {
+
+          console.error(
+            'Backend logout failed:',
+            error
+          )
+
+        }
+
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | CLEAR AUTH DATA
+      |--------------------------------------------------------------------------
+      */
+
+      this.user = null
+
+      this.token = null
+
+      this.activeSession = null
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | CLEAR PENDING QR LOCATION
+      |--------------------------------------------------------------------------
+      */
+
+      if (import.meta.client) {
+
+        localStorage.removeItem(
+          'pending_location_slug'
+        )
+
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | REDIRECT
+      |--------------------------------------------------------------------------
+      */
+
+      await navigateTo('/login')
+
     }
+
   }
+
 })

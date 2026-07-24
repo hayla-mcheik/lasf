@@ -29,29 +29,81 @@
     <div v-else>
       <!-- Quick Stats Cards -->
       <div class="row mb-5">
-        <div class="col-xl-3 col-md-6 mb-4">
-          <div class="card stat-card border-primary">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="text-uppercase text-muted mb-0">Active Locations</h6>
-                  <h2 class="fw-bold mb-0">{{ stats.activeLocations || 0 }}</h2>
-                </div>
-                <div class="stat-icon bg-primary">
-                  <i class="bi bi-geo-alt"></i>
-                </div>
-              </div>
-              <div class="mt-3">
-                <small class="text-muted">
-                  <span class="text-success">
-                    <i class="bi bi-check-circle me-1"></i>
-                    {{ locationStatus.cleared }} cleared
-                  </span>
-                </small>
-              </div>
-            </div>
-          </div>
+  <div class="col-xl-3 col-md-6 mb-4">
+  <div class="card stat-card border-success">
+
+    <div class="card-body">
+
+      <div
+        class="d-flex justify-content-between align-items-center"
+      >
+
+        <div>
+
+          <h6 class="text-uppercase text-muted mb-0">
+            Active Pilots
+          </h6>
+
+          <h2 class="fw-bold mb-1">
+            {{ stats.activeSessions || 0 }}
+          </h2>
+
         </div>
+
+        <div class="stat-icon bg-success">
+          <i class="bi bi-people"></i>
+        </div>
+
+      </div>
+
+      <hr>
+
+      <div
+        v-if="
+          stats.activePilotsByLocation &&
+          stats.activePilotsByLocation.length
+        "
+      >
+
+        <div
+          v-for="location in stats.activePilotsByLocation"
+          :key="location.location_id"
+          class="d-flex justify-content-between mb-2"
+        >
+
+          <span>
+
+            <i
+              class="bi bi-geo-alt-fill text-success me-1"
+            ></i>
+
+            {{ location.location_name }}
+
+          </span>
+
+          <span class="badge bg-success">
+
+            {{ location.total }}
+
+          </span>
+
+        </div>
+
+      </div>
+
+      <div
+        v-else
+        class="text-muted small"
+      >
+
+        No pilots currently flying.
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
 
         <div class="col-xl-3 col-md-6 mb-4">
           <div class="card stat-card border-success">
