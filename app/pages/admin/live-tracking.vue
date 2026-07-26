@@ -326,7 +326,7 @@ async function loadPilots(){
             }
         })
         pilots.value=response
-
+console.log(response)
         clearMarkers()
 if (!Array.isArray(response)) {
     pilots.value = []
@@ -335,7 +335,7 @@ if (!Array.isArray(response)) {
     if (!map) return
         response.forEach(session=>{
 
-            const gps=session.locations?.[0]
+         const gps = session.gps
 
             if(!gps) return
 
