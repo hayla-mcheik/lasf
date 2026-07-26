@@ -329,6 +329,12 @@ async function refreshData() {
           <div class="col-lg-12">
             <div class="card shadow border-0 rounded-4">
               <div class="card-body p-5">
+              <div class="alert alert-info text-start">
+  <p><strong>Current Location ID:</strong> {{ location?.id }}</p>
+  <p><strong>Session Location ID:</strong> {{ authStore.activeSession?.flying_location_id }}</p>
+  <p><strong>Session Location Relation:</strong> {{ authStore.activeSession?.location?.id }}</p>
+  <p><strong>isFlyingHere:</strong> {{ isFlyingHere }}</p>
+</div>
                 <!-- Loading check-in state -->
                 <div v-if="checkingIn" class="text-center py-4">
                   <div class="spinner-border text-success" style="width: 4rem; height: 4rem;" role="status">
