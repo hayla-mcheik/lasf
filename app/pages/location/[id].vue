@@ -332,6 +332,7 @@ async function refreshData() {
               <div class="alert alert-info text-start">
   <p><strong>Current Location ID:</strong> {{ location?.id }}</p>
   <p><strong>Session Location ID:</strong> {{ authStore.activeSession?.flying_location_id }}</p>
+  <pre>{{ JSON.stringify(authStore.activeSession, null, 2) }}</pre>
   <p><strong>Session Location Relation:</strong> {{ authStore.activeSession?.location?.id }}</p>
   <p><strong>isFlyingHere:</strong> {{ isFlyingHere }}</p>
 </div>
