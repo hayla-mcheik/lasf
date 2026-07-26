@@ -64,21 +64,17 @@ async function handleCheckIn(token) {
 
   try {
 
-    const session = await $fetch(`${API_BASE}/airspace-sessions`, {
-
-      method: 'POST',
-
-      headers: {
+   const response = await $fetch(`${API_BASE}/airspace-sessions`, {
+    method: 'POST',
+    headers: {
         Authorization: `Bearer ${authStore.token}`
-      },
-
-      body: {
+    },
+    body: {
         token
-      }
+    }
+})
 
-    })
-
-    authStore.activeSession = session
+authStore.activeSession = response.session
 
     // remove token from url
     window.history.replaceState({}, '', `/location/${location.value.slug}`)

@@ -43,7 +43,7 @@
               </button>
             </div>
 
-            <div v-else-if="authStore.isPilotFlying" class="elsewhere-session">
+ <div v-else-if="authStore.activeSession && !isFlyingHere" class="elsewhere-session">
               <div class="alert alert-warning border-0 shadow-sm mb-4 p-4">
                 <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2"></i>
                 You are currently active at <strong>{{ authStore.activeSession.location?.name || 'another location' }}</strong>.
@@ -124,7 +124,7 @@ const location = ref(null)
 const fetchData = async () => {
   try {
     const res = await $fetch(`${config.public.apiBase}/qr/${route.params.token}`)
-    location.value = res
+  location.value = res.location
   } catch (e) {
     console.error("QR Validation Failed")
   } finally {
@@ -154,8 +154,13 @@ const handleCheckIn = async () => {
       body: { token: route.params.token } 
     })
     
-    authStore.activeSession = res
-  
+ authStore.activeSession = res.session
+  console.log('Session from API:', res.session)
+console.log('Stored session:', authStore.activeSession)
+console.log('Current location:', location.value)
+console.log('Session location id:', authStore.activeSession.flying_location_id)
+console.log('Current location id:', location.value.id)
+console.log('isFlyingHere:', isFlyingHere.value)
     // Direct redirect to the full location details page
     navigateTo(`/location/${location.value.slug}`)
   } catch (err) {
