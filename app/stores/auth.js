@@ -385,25 +385,31 @@ async loadActiveSession() {
 
         const config = useRuntimeConfig()
 
-        const response = await $fetch(
+        const session = await $fetch(
 
-            `${config.public.apiBase}/airspace-sessions/active`,
+            `${config.public.apiBase}/airspace-sessions/active-pilot`,
 
             {
+
                 headers: {
+
                     Authorization: `Bearer ${this.token}`
+
                 }
+
             }
 
         )
 
-        this.activeSession = response.session || null
+        this.activeSession = session || null
 
         return this.activeSession
 
     }
 
     catch (error) {
+
+        console.error('Unable to restore active session', error)
 
         this.activeSession = null
 
@@ -418,25 +424,23 @@ async loadActiveSession() {
     |--------------------------------------------------------------------------
     */
 
-    setActiveSession(session) {
+setActiveSession(session) {
 
-      this.activeSession = session
+    this.activeSession = session
 
-    },
+},
 
+clearActiveSession() {
 
-    /*
-    |--------------------------------------------------------------------------
-    | CLEAR ACTIVE SESSION
-    |--------------------------------------------------------------------------
-    */
+    this.activeSession = null
 
-    clearActiveSession() {
+},
 
-      this.activeSession = null
+async refreshFlightState() {
 
-    },
+    await this.loadActiveSession()
 
+},
 
     /*
     |--------------------------------------------------------------------------
