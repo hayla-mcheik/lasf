@@ -386,26 +386,20 @@
 
 <script setup>
 import FlightMap from '~/components/CrossCountry/FlightMap.vue'
+import { useAuthStore } from '~/stores/auth'
+definePageMeta({ layout: 'admin' })
+
+const authStore = useAuthStore()
 
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
 
 const loading = ref(true)
 
 const request = ref(null)
 
 const track = ref([])
-
-const headers = {
-
-    Authorization: `Bearer ${token.value}`,
-
-    Accept: 'application/json'
-
-}
 
 /*
 |--------------------------------------------------------------------------
@@ -499,7 +493,11 @@ const loadRequest = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${route.params.id}`,
 
             {
-                headers
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
+
             }
 
         )
@@ -507,7 +505,9 @@ const loadRequest = async () => {
         request.value = response.request
 
         if (request.value?.session) {
+
             await loadTrack()
+
         }
 
     } catch (error) {
@@ -526,7 +526,7 @@ const loadRequest = async () => {
 
 /*
 |--------------------------------------------------------------------------
-| Track
+| Load Track
 |--------------------------------------------------------------------------
 */
 
@@ -546,7 +546,9 @@ const loadTrack = async () => {
 
             {
 
-                headers
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
 
             }
 
@@ -566,14 +568,16 @@ const loadTrack = async () => {
 
 /*
 |--------------------------------------------------------------------------
-| Approve
+| Approve Request
 |--------------------------------------------------------------------------
 */
 
 const approve = async () => {
 
     if (!confirm('Approve this Cross Country request?')) {
+
         return
+
     }
 
     try {
@@ -583,11 +587,19 @@ const approve = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.value.id}/status`,
 
             {
+
                 method: 'PATCH',
-                headers,
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+
                 body: {
+
                     status: 'open'
+
                 }
+
             }
 
         )
@@ -608,14 +620,16 @@ const approve = async () => {
 
 /*
 |--------------------------------------------------------------------------
-| Reject
+| Reject Request
 |--------------------------------------------------------------------------
 */
 
 const reject = async () => {
 
     if (!confirm('Reject this Cross Country request?')) {
+
         return
+
     }
 
     try {
@@ -625,11 +639,19 @@ const reject = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.value.id}/status`,
 
             {
+
                 method: 'PATCH',
-                headers,
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+
                 body: {
+
                     status: 'closed'
+
                 }
+
             }
 
         )
@@ -647,6 +669,12 @@ const reject = async () => {
     }
 
 }
+
+/*
+|--------------------------------------------------------------------------
+| Lifecycle
+|--------------------------------------------------------------------------
+*/
 
 onMounted(() => {
 

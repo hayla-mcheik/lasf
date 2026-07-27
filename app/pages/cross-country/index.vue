@@ -443,12 +443,18 @@
 </template>
 <script setup>
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 
 const store = useCrossCountryStore()
 
 const config = useRuntimeConfig()
 
-const token = useCookie('token')
+const headers = computed(() => ({
+    Authorization: `Bearer ${authStore.token}`,
+    Accept: 'application/json'
+}))
 
 await store.loadRequest()
 
@@ -457,15 +463,11 @@ const loading = computed(() => store.loading)
 const request = computed(() => {
 
     if (!store.request) {
-
         return null
-
     }
 
     if (store.request.requests) {
-
         return store.request.requests[0] || null
-
     }
 
     return store.request
@@ -535,9 +537,7 @@ const estimatedDuration = computed(() => {
         !request.value?.takeoff_time ||
         !request.value?.estimated_landing_time
     ) {
-
         return '--'
-
     }
 
     return `${request.value.takeoff_time} → ${request.value.estimated_landing_time}`
@@ -555,9 +555,7 @@ const cancelling = ref(false)
 const cancelRequest = async () => {
 
     if (cancelling.value) {
-
         return
-
     }
 
     const confirmed = confirm(
@@ -565,9 +563,7 @@ const cancelRequest = async () => {
     )
 
     if (!confirmed) {
-
         return
-
     }
 
     cancelling.value = true
@@ -575,46 +571,27 @@ const cancelRequest = async () => {
     try {
 
         await $fetch(
-
             `${config.public.apiBase}/cross-country-requests/${request.value.id}/cancel`,
-
             {
-
                 method: 'PATCH',
-
-                headers: {
-
-                    Authorization: `Bearer ${token.value}`,
-
-                    Accept: 'application/json'
-
-                }
-
+                headers: headers.value
             }
-
         )
 
         await store.loadRequest()
 
         alert('Request cancelled successfully.')
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 
         alert(
-
             error?.data?.message ||
-
             'Unable to cancel this request.'
-
         )
 
-    }
-
-    finally {
+    } finally {
 
         cancelling.value = false
 
@@ -655,9 +632,7 @@ const isCancelled = computed(() => request.value?.status === 'cancelled')
 */
 
 useHead({
-
     title: 'Cross Country Flight'
-
 })
 </script>
 <style scoped>

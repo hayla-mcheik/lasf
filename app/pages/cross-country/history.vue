@@ -155,19 +155,20 @@
 
 <script setup>
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
 
 const loading = ref(true)
 
 const requests = ref([])
 
-const headers = {
-    Authorization: `Bearer ${token.value}`,
+const headers = computed(() => ({
+    Authorization: `Bearer ${authStore.token}`,
     Accept: 'application/json'
-}
+}))
 
 /*
 |--------------------------------------------------------------------------
@@ -202,7 +203,7 @@ const loadHistory = async () => {
             `${config.public.apiBase}/cross-country-requests/history`,
 
             {
-                headers
+                headers: headers.value
             }
 
         )
@@ -215,7 +216,10 @@ const loadHistory = async () => {
 
         console.error(error)
 
-        alert(error?.data?.message || 'Unable to load flight history.')
+        alert(
+            error?.data?.message ||
+            'Unable to load flight history.'
+        )
 
     }
 

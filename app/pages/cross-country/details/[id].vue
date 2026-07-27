@@ -291,12 +291,13 @@
 
 <script setup>
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 
 const route = useRoute()
 
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
 
 const loading = ref(true)
 
@@ -314,13 +315,10 @@ const statistics = ref({
 
 const track = ref([])
 
-const headers = {
-
-    Authorization: `Bearer ${token.value}`,
-
+const headers = computed(() => ({
+    Authorization: `Bearer ${authStore.token}`,
     Accept: 'application/json'
-
-}
+}))
 
 /*
 |--------------------------------------------------------------------------
@@ -365,7 +363,7 @@ const loadFlight = async () => {
 
         {
 
-            headers
+            headers: headers.value
 
         }
 
@@ -389,7 +387,7 @@ const loadStatistics = async () => {
 
         {
 
-            headers
+            headers: headers.value
 
         }
 
@@ -423,7 +421,7 @@ const loadTrack = async () => {
 
         {
 
-            headers
+            headers: headers.value
 
         }
 

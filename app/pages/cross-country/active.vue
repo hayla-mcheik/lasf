@@ -250,16 +250,16 @@
     </div>
 
 </template>
-
 <script setup>
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import FlightMap from '~/components/CrossCountry/FlightMap.vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 
 const route = useRoute()
 
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
 
 const loading = ref(true)
 const starting = ref(false)
@@ -274,10 +274,10 @@ const duration = ref('00:00:00')
 let timer = null
 let gpsTimer = null
 
-const headers = {
-    Authorization: `Bearer ${token.value}`,
+const headers = computed(() => ({
+    Authorization: `Bearer ${authStore.token}`,
     Accept: 'application/json'
-}
+}))
 
 /*
 |--------------------------------------------------------------------------
@@ -317,7 +317,7 @@ const loadRequest = async () => {
             `${config.public.apiBase}/cross-country-requests/${route.query.id}`,
 
             {
-                headers
+                headers: headers.value
             }
 
         )
@@ -330,9 +330,17 @@ const loadRequest = async () => {
 
             updateDuration()
 
+            if (timer) {
+                clearInterval(timer)
+            }
+
             timer = setInterval(updateDuration, 1000)
 
             await loadTrack()
+
+            if (gpsTimer) {
+                clearInterval(gpsTimer)
+            }
 
             gpsTimer = setInterval(loadTrack, 10000)
 
@@ -365,9 +373,7 @@ const loadRequest = async () => {
 const loadTrack = async () => {
 
     if (!session.value) {
-
         return
-
     }
 
     try {
@@ -377,7 +383,7 @@ const loadTrack = async () => {
             `${config.public.apiBase}/cross-country-sessions/${session.value.id}/track`,
 
             {
-                headers
+                headers: headers.value
             }
 
         )
@@ -403,13 +409,10 @@ const loadTrack = async () => {
 const updateDuration = () => {
 
     if (!session.value?.started_at) {
-
         return
-
     }
 
     const started = new Date(session.value.started_at)
-
     const now = new Date()
 
     const diff = Math.floor((now - started) / 1000)
@@ -442,19 +445,29 @@ const startFlight = async () => {
 
                 method: 'POST',
 
-                headers
+                headers: headers.value
 
             }
 
         )
 
         session.value = response.session
-await loadRequest()
+
+        await loadRequest()
+
         updateDuration()
+
+        if (timer) {
+            clearInterval(timer)
+        }
 
         timer = setInterval(updateDuration, 1000)
 
         await loadTrack()
+
+        if (gpsTimer) {
+            clearInterval(gpsTimer)
+        }
 
         gpsTimer = setInterval(loadTrack, 10000)
 
@@ -496,7 +509,7 @@ const finishFlight = async () => {
 
                 method: 'POST',
 
-                headers
+                headers: headers.value
 
             }
 
@@ -537,15 +550,11 @@ onMounted(async () => {
 onUnmounted(() => {
 
     if (timer) {
-
         clearInterval(timer)
-
     }
 
     if (gpsTimer) {
-
         clearInterval(gpsTimer)
-
     }
 
 })

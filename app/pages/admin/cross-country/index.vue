@@ -295,10 +295,12 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '~/stores/auth'
+definePageMeta({ layout: 'admin' })
+
+const authStore = useAuthStore()
 
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
 
 const loading = ref(true)
 
@@ -308,13 +310,6 @@ const search = ref('')
 
 const statusFilter = ref('')
 
-const headers = {
-
-    Authorization: `Bearer ${token.value}`,
-
-    Accept: 'application/json'
-
-}
 const pendingCount = computed(() =>
     requests.value.filter(r => r.status === 'pending').length
 )
@@ -330,6 +325,13 @@ const activeCount = computed(() =>
 const completedCount = computed(() =>
     requests.value.filter(r => r.status === 'closed').length
 )
+
+/*
+|--------------------------------------------------------------------------
+| Load Requests
+|--------------------------------------------------------------------------
+*/
+
 const loadRequests = async () => {
 
     loading.value = true
@@ -342,7 +344,9 @@ const loadRequests = async () => {
 
             {
 
-                headers
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
 
             }
 
@@ -367,6 +371,13 @@ const loadRequests = async () => {
     }
 
 }
+
+/*
+|--------------------------------------------------------------------------
+| Approve Request
+|--------------------------------------------------------------------------
+*/
+
 const approve = async (request) => {
 
     if (!confirm('Approve this request?')) return
@@ -378,26 +389,40 @@ const approve = async (request) => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.id}/status`,
 
             {
+
                 method: 'PATCH',
 
-                headers,
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
 
                 body: {
                     status: 'open'
                 }
+
             }
 
         )
 
-await loadRequests()
+        await loadRequests()
 
-    } catch (error) {
+    }
+
+    catch (error) {
+
+        console.error(error)
 
         alert(error?.data?.message || 'Unable to approve request.')
 
     }
 
 }
+
+/*
+|--------------------------------------------------------------------------
+| Reject Request
+|--------------------------------------------------------------------------
+*/
 
 const reject = async (request) => {
 
@@ -410,20 +435,28 @@ const reject = async (request) => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.id}/status`,
 
             {
+
                 method: 'PATCH',
 
-                headers,
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
 
                 body: {
                     status: 'closed'
                 }
+
             }
 
         )
 
-  await loadRequests()
+        await loadRequests()
 
-    } catch (error) {
+    }
+
+    catch (error) {
+
+        console.error(error)
 
         alert(error?.data?.message || 'Unable to reject request.')
 
@@ -431,7 +464,23 @@ const reject = async (request) => {
 
 }
 
-onMounted(loadRequests)
+/*
+|--------------------------------------------------------------------------
+| Lifecycle
+|--------------------------------------------------------------------------
+*/
+
+onMounted(() => {
+
+    loadRequests()
+
+})
+
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
 
 const filteredRequests = computed(() => {
 
@@ -442,9 +491,7 @@ const filteredRequests = computed(() => {
             !search.value ||
 
             request.pilot?.name
-
                 ?.toLowerCase()
-
                 .includes(search.value.toLowerCase())
 
         const matchesStatus =
@@ -459,36 +506,35 @@ const filteredRequests = computed(() => {
 
 })
 
+/*
+|--------------------------------------------------------------------------
+| Badge Color
+|--------------------------------------------------------------------------
+*/
+
 const badgeClass = (status) => {
 
     switch (status) {
 
         case 'pending':
-
             return 'bg-warning text-dark'
 
         case 'open':
-
             return 'bg-success'
 
         case 'closed':
-
             return 'bg-secondary'
 
         case 'cancelled':
-
             return 'bg-danger'
 
         default:
-
             return 'bg-primary'
 
     }
 
 }
-
 </script>
-
 <style scoped>
 
 .card{

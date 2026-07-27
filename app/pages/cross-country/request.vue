@@ -118,23 +118,24 @@
 
                   </div>
 
-                  <select
-                    v-model="form.locations[index]"
-                    class="form-select"
-                    required
-                  >
+            <select
+    v-model="form.locations[index]"
+    class="form-select"
+    style="color:#000"
+>
 
                     <option value="">
                       Select Flying Location
                     </option>
 
-                    <option
-                      v-for="item in locations"
-                      :key="item.id"
-                      :value="item.id"
-                    >
-                      {{ item.name }}
-                    </option>
+             <option
+    v-for="item in locations"
+    :key="item.id"
+    :value="item.id"
+    style="color:#000"
+>
+    {{ item.name }}
+</option>
 
                   </select>
 
@@ -197,41 +198,30 @@
 
 <script setup>
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import { useAuthStore } from '~/stores/auth'
 
 const router = useRouter()
-
 const config = useRuntimeConfig()
-
-const token = useCookie('token')
+const authStore = useAuthStore()
 
 const loading = ref(false)
-
 const locations = ref([])
 
 const form = reactive({
-
     flight_date: '',
-
     takeoff_time: '',
-
     estimated_landing_time: '',
-
     notes: '',
-
     locations: [
         '',
         ''
     ]
-
 })
 
-const headers = {
-
-    Authorization: `Bearer ${token.value}`,
-
+const headers = computed(() => ({
+    Authorization: `Bearer ${authStore.token}`,
     Accept: 'application/json'
-
-}
+}))
 
 /*
 |--------------------------------------------------------------------------
@@ -244,29 +234,30 @@ const loadLocations = async () => {
     try {
 
         const response = await $fetch(
-
             `${config.public.apiBase}/flying-locations`,
-
             {
-
-                headers
-
+                headers: headers.value
             }
-
         )
 
-        // Supports both API formats:
+        // Supports:
         // { locations: [...] }
-        // or [...]
-        locations.value = response.locations || response
+        // { data: [...] }
+        // [...]
 
-    }
+        locations.value =
+            response.locations ||
+            response.data ||
+            response
 
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 
-        alert(error?.data?.message || 'Unable to load flying locations.')
+        alert(
+            error?.data?.message ||
+            'Unable to load flying locations.'
+        )
 
     }
 
@@ -287,9 +278,7 @@ const addLocation = () => {
 const removeLocation = (index) => {
 
     if (form.locations.length <= 2) {
-
         return
-
     }
 
     form.locations.splice(index, 1)
@@ -317,40 +306,26 @@ const submit = async () => {
     try {
 
         await $fetch(
-
             `${config.public.apiBase}/cross-country-requests`,
-
             {
-
                 method: 'POST',
-
-                headers,
-
+                headers: headers.value,
                 body: form
-
             }
-
         )
 
         await navigateTo('/cross-country')
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 
         alert(
-
             error?.data?.message ||
-
             'Unable to create request.'
-
         )
 
-    }
-
-    finally {
+    } finally {
 
         loading.value = false
 
@@ -364,9 +339,17 @@ const submit = async () => {
 |--------------------------------------------------------------------------
 */
 
-onMounted(() => {
+onMounted(async () => {
 
-    loadLocations()
+    if (!authStore.isAuthenticated) {
+
+        await navigateTo('/login')
+
+        return
+
+    }
+
+    await loadLocations()
 
 })
 </script>
