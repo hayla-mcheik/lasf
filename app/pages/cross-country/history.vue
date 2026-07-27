@@ -200,7 +200,7 @@ const loadHistory = async () => {
 
         const response = await $fetch(
 
-            `${config.public.apiBase}/cross-country-requests/history`,
+            `${config.public.apiBase}/cross-country/history`,
 
             {
                 headers: headers.value
