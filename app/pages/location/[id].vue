@@ -1,272 +1,483 @@
 <script setup>
-import { useAuthStore } from '~/stores/auth'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRoute } from '#app'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import { useAuthStore } from '~/stores/auth'
+import { useCrossCountryStore } from '~/stores/crossCountry'
+
+/*
+|--------------------------------------------------------------------------
+| Stores
+|--------------------------------------------------------------------------
+*/
 
 const authStore = useAuthStore()
+const crossCountryStore = useCrossCountryStore()
+
 const config = useRuntimeConfig()
 const route = useRoute()
 
-const API_BASE = 'https://lasf.info/api'
+/*
+|--------------------------------------------------------------------------
+| Load Location
+|--------------------------------------------------------------------------
+*/
 
 const {
-  data: location,
-  pending,
-  error: locationError,
-  refresh: refreshLocation
+    data: location,
+    pending,
+    error: locationError,
+    refresh: refreshLocation
 } = await useFetch(
-  () => `${API_BASE}/flying-locations/${route.params.slug || route.params.id}`,
-  {
-    key: `location-${route.params.slug || route.params.id}`,
-    immediate: true,
-    transform: (res) => res.data || res,
-  }
+
+    () => `${config.public.apiBase}/flying-locations/${route.params.slug || route.params.id}`,
+
+    {
+
+        key: `location-${route.params.slug || route.params.id}`,
+
+        immediate: true,
+
+        transform: (response) => response.data || response
+
+    }
+
 )
+
+/*
+|--------------------------------------------------------------------------
+| Load Cross Country
+|--------------------------------------------------------------------------
+*/
+
+await crossCountryStore.loadCurrentRequest()
+
+/*
+|--------------------------------------------------------------------------
+| State
+|--------------------------------------------------------------------------
+*/
 
 const checkingIn = ref(false)
 
-onMounted(() => {
+const currentRequest = computed(() => crossCountryStore.currentRequest)
 
-  console.log('Component Loaded')
+const crossCountrySession = computed(() => crossCountryStore.activeSession)
 
-  if (!location.value)
-    return
+const hasCrossCountry = computed(() => crossCountryStore.hasRequest)
 
-  console.log('Location:', location.value.name)
+const isPending = computed(() => crossCountryStore.isPending)
 
-  // NO AUTO CHECK-IN ANYMORE
+const isApproved = computed(() => crossCountryStore.isApproved)
 
-})
+const isClosed = computed(() => crossCountryStore.isClosed)
+
+const isCancelled = computed(() => crossCountryStore.isCancelled)
+
+/*
+|--------------------------------------------------------------------------
+| Airspace Session
+|--------------------------------------------------------------------------
+*/
+
+const activeSession = computed(() => authStore.activeSession)
+
+/*
+|--------------------------------------------------------------------------
+| Flying Here
+|--------------------------------------------------------------------------
+*/
 
 const isFlyingHere = computed(() => {
 
-  const sessionLocationId =
-    authStore.activeSession?.flying_location_id ||
-    authStore.activeSession?.location?.id
+    if (!location.value)
+        return false
 
-  return sessionLocationId === location.value?.id
+    const sessionLocationId =
+
+        activeSession.value?.flying_location_id ||
+
+        activeSession.value?.location?.id ||
+
+        null
+
+    return Number(sessionLocationId) === Number(location.value.id)
 
 })
 
-async function handleCheckIn(token) {
+/*
+|--------------------------------------------------------------------------
+| Cross Country Helpers
+|--------------------------------------------------------------------------
+*/
 
-  if (!token) {
-    alert('QR token missing.')
-    return
-  }
+const canCreateCrossCountry = computed(() => {
 
-  if (isFlyingHere.value) {
-    alert('You are already flying here.')
-    return
-  }
+    return (
 
-  checkingIn.value = true
+        !hasCrossCountry.value ||
 
-  try {
+        isClosed.value ||
 
-   const response = await $fetch(`${API_BASE}/airspace-sessions`, {
-    method: 'POST',
-    headers: {
-        Authorization: `Bearer ${authStore.token}`
-    },
-    body: {
-        token
-    }
+        isCancelled.value
+
+    )
+
 })
 
-authStore.activeSession = response.session
+const canStartCrossCountry = computed(() => {
 
-    // remove token from url
-    window.history.replaceState({}, '', `/location/${location.value.slug}`)
+    return (
 
-    alert('Successfully checked in.')
+        hasCrossCountry.value &&
 
-    navigateTo(`/location/${location.value.slug}`)
+        isApproved.value &&
 
-  } catch (error) {
+        !crossCountrySession.value
 
-    console.error(error)
+    )
 
-    alert(error?.data?.message || 'Check-in failed.')
+})
 
-  } finally {
+const canContinueCrossCountry = computed(() => {
 
-    checkingIn.value = false
+    return !!crossCountrySession.value
 
-  }
+})
+
+/*
+|--------------------------------------------------------------------------
+| Refresh Everything
+|--------------------------------------------------------------------------
+*/
+
+const refreshEverything = async () => {
+
+    await Promise.allSettled([
+
+        refreshLocation(),
+
+        crossCountryStore.refresh()
+
+    ])
 
 }
 
-let watchId = null
+/*
+|--------------------------------------------------------------------------
+| Mounted
+|--------------------------------------------------------------------------
+*/
 
-watch(
+onMounted(async () => {
 
-  () => isFlyingHere.value,
+    console.log('Location Page Loaded')
 
-  (active) => {
+    await refreshEverything()
 
-    if (active && !watchId) {
+})
+/*
+|--------------------------------------------------------------------------
+| Check In
+|--------------------------------------------------------------------------
+*/
 
-      startTracking()
+async function handleCheckIn(token) {
+
+    if (!token) {
+
+        alert('QR token missing.')
+
+        return
 
     }
 
-  },
+    if (isFlyingHere.value) {
 
-  {
-    immediate: true
-  }
+        alert('You are already flying here.')
 
-)
+        return
+
+    }
+
+    checkingIn.value = true
+
+    try {
+
+        const response = await $fetch(
+
+            `${config.public.apiBase}/airspace-sessions`,
+
+            {
+
+                method: 'POST',
+
+                headers: {
+
+                    Authorization: `Bearer ${authStore.token}`
+
+                },
+
+                body: {
+
+                    token
+
+                }
+
+            }
+
+        )
+
+        authStore.activeSession = response.session
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh Cross Country
+        |--------------------------------------------------------------------------
+        */
+
+        await crossCountryStore.refresh()
+
+        window.history.replaceState(
+
+            {},
+
+            '',
+
+            `/location/${location.value.slug}`
+
+        )
+
+        startTracking()
+
+        alert('Successfully checked in.')
+
+        await refreshEverything()
+
+    }
+
+    catch (error) {
+
+        console.error(error)
+
+        alert(
+
+            error?.data?.message ||
+
+            'Check-in failed.'
+
+        )
+
+    }
+
+    finally {
+
+        checkingIn.value = false
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| GPS Tracking
+|--------------------------------------------------------------------------
+*/
+
+let watchId = null
 
 function startTracking() {
 
-  if (!process.client)
-    return
+    if (!process.client)
+        return
 
-  if (!navigator.geolocation)
-    return
+    if (!navigator.geolocation)
+        return
 
-  watchId = navigator.geolocation.watchPosition(
+    if (watchId)
+        return
 
-    async (position) => {
+    watchId = navigator.geolocation.watchPosition(
 
-      try {
+        async (position) => {
 
-        await $fetch(`${config.public.apiBase}/gps/update`, {
+            try {
 
-          method: 'POST',
+                await $fetch(
 
-          headers: {
-            Authorization: `Bearer ${authStore.token}`
-          },
+                    `${config.public.apiBase}/gps/update`,
 
-          body: {
+                    {
 
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
+                        method: 'POST',
 
-          }
+                        headers: {
 
-        })
+                            Authorization: `Bearer ${authStore.token}`
 
-      } catch (e) {
+                        },
 
-        console.error(e)
+                        body: {
 
-      }
+                            latitude: position.coords.latitude,
 
-    },
+                            longitude: position.coords.longitude,
 
-    (error) => {
+                            accuracy: position.coords.accuracy
 
-      console.error(error)
+                        }
+
+                    }
+
+                )
+
+            }
+
+            catch (error) {
+
+                console.error(error)
+
+            }
+
+        },
+
+        (error) => {
+
+            console.error(error)
+
+        },
+
+        {
+
+            enableHighAccuracy: true,
+
+            maximumAge: 5000,
+
+            timeout: 10000
+
+        }
+
+    )
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Auto Start Tracking
+|--------------------------------------------------------------------------
+*/
+
+watch(
+
+    isFlyingHere,
+
+    (flying) => {
+
+        if (flying) {
+
+            startTracking()
+
+        }
 
     },
 
     {
 
-      enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 10000
+        immediate: true
 
     }
 
-  )
+)
 
-}
+/*
+|--------------------------------------------------------------------------
+| Check Out
+|--------------------------------------------------------------------------
+*/
 
 async function handleCheckOut() {
 
-  if (!authStore.activeSession)
-    return
+    if (!activeSession.value)
+        return
 
-  if (!confirm('Are you sure you landed?'))
-    return
+    if (!confirm('Are you sure you landed?'))
+        return
 
-  try {
+    try {
 
-    const sessionId = authStore.activeSession.id
+        await $fetch(
 
-    const response = await $fetch(
+            `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/checkout`,
 
-      `${API_BASE}/airspace-sessions/${sessionId}/checkout`,
+            {
 
-      {
+                method: 'POST',
 
-        method: 'POST',
+                headers: {
 
-        headers: {
+                    Authorization: `Bearer ${authStore.token}`
 
-          Authorization: `Bearer ${authStore.token}`
+                }
+
+            }
+
+        )
+
+        if (watchId) {
+
+            navigator.geolocation.clearWatch(watchId)
+
+            watchId = null
 
         }
 
-      }
+        authStore.activeSession = null
 
-    )
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh Cross Country
+        |--------------------------------------------------------------------------
+        */
 
-    console.log(response)
+        await crossCountryStore.refresh()
 
-    if (watchId) {
+        await refreshEverything()
 
-      navigator.geolocation.clearWatch(watchId)
-
-      watchId = null
+        alert('Successfully checked out.')
 
     }
 
-    authStore.activeSession = null
+    catch (error) {
 
-    alert('Successfully checked out.')
+        console.error(error)
 
-  } catch (error) {
+        alert(
 
-    console.error(error)
+            error?.data?.message ||
 
-    alert(error?.data?.message || 'Checkout failed.')
+            'Checkout failed.'
 
-  }
+        )
+
+    }
 
 }
+
+/*
+|--------------------------------------------------------------------------
+| Cleanup
+|--------------------------------------------------------------------------
+*/
 
 onUnmounted(() => {
 
-  if (watchId) {
+    if (watchId) {
 
-    navigator.geolocation.clearWatch(watchId)
+        navigator.geolocation.clearWatch(watchId)
 
-  }
+    }
 
 })
-
-function formatTime(dateString) {
-
-  if (!dateString)
-    return 'N/A'
-
-  const date = new Date(
-    dateString.includes('Z')
-      ? dateString
-      : dateString + 'Z'
-  )
-
-  return date.toLocaleTimeString('en-US', {
-
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-
-  })
-
-}
-
-async function refreshData() {
-
-  await refreshLocation()
-
-}
 </script>
 
 <template>
@@ -362,68 +573,208 @@ async function refreshData() {
                 </div>
 
                 <!-- Already flying here -->
-                <div v-else-if="isFlyingHere" class="text-center py-4">
-                  <div class="alert alert-success border-0 rounded-3">
-                    <div class="d-flex align-items-center justify-content-center mb-3">
-                      <i class="bi bi-airplane-fill display-4 me-3"></i>
-                      <div class="text-start">
-                        <h3 class="fw-bold mb-1">You're Flying!</h3>
-                        <p class="mb-0">Active at {{ location.name }}</p>
-                      </div>
+           <!-- Already Flying Here -->
+<div
+    v-else-if="isFlyingHere"
+    class="text-center py-4"
+>
+
+    <div class="alert alert-success border-0 rounded-3">
+
+        <div class="d-flex align-items-center justify-content-center mb-3">
+
+            <i class="bi bi-airplane-fill display-4 me-3"></i>
+
+            <div class="text-start">
+
+                <h3 class="fw-bold mb-1">
+
+                    You're Flying!
+
+                </h3>
+
+                <p class="mb-0">
+
+                    Active at {{ location.name }}
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="session-info bg-white bg-opacity-25 rounded-3 p-3 mb-4">
+
+            <div class="row text-center">
+
+                <div class="col">
+
+                    <div class="fw-bold">
+
+                        Checked In
+
                     </div>
-                    
-                    <div class="session-info bg-white bg-opacity-25 rounded-2 p-3 mb-4">
-                      <div class="row text-center">
-                        <div class="col">
-                          <div class="fw-bold">Checked In</div>
-                          <div class="text-muted small">
-                            {{ formatTime(authStore.activeSession?.checked_in_at) }}
-                          </div>
-                        </div>
-                        <div class="col">
-                          <div class="fw-bold">Expires</div>
-                          <div class="text-muted small">
-                            {{ formatTime(authStore.activeSession?.expires_at) }}
-                          </div>
-                        </div>
-                      </div>
+
+                    <div class="text-muted small">
+
+                        {{ formatTime(activeSession?.checked_in_at) }}
+
                     </div>
-                    
- <div class="d-flex justify-content-center gap-3 flex-wrap">
 
-  <button
-    @click="handleCheckOut"
-    class="btn btn-danger btn-lg px-4 rounded-pill"
-  >
-    <i class="bi bi-box-arrow-right me-2"></i>
-    Confirm Landing
-  </button>
-
-  <button
-    @click="navigateTo('/cross-country/request')"
-    class="btn btn-primary btn-lg px-4 rounded-pill"
-  >
-    <i class="bi bi-airplane-engines me-2"></i>
-    Start Cross Country
-  </button>
-
-</div>
-<div class="alert alert-info mt-4">
-
-    <strong>Need to fly to another location?</strong>
-
-    <br>
-
-    Start a Cross Country request before taking off.
-
-</div>
-                    
-                    <p class="mt-3 text-muted small">
-                      Click when you've landed to free up the airspace
-                    </p>
-                  </div>
                 </div>
 
+                <div class="col">
+
+                    <div class="fw-bold">
+
+                        Expires
+
+                    </div>
+
+                    <div class="text-muted small">
+
+                        {{ formatTime(activeSession?.expires_at) }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+
+            <!-- ================================================= -->
+            <!-- ACTIVE CROSS COUNTRY -->
+            <!-- ================================================= -->
+
+            <NuxtLink
+
+                v-if="canContinueCrossCountry"
+
+                :to="`/cross-country/active?id=${currentRequest.id}`"
+
+                class="btn btn-success btn-lg"
+
+            >
+
+                <i class="bi bi-airplane-engines me-2"></i>
+
+                Continue Cross Country
+
+            </NuxtLink>
+
+            <!-- ================================================= -->
+            <!-- APPROVED -->
+            <!-- ================================================= -->
+
+            <NuxtLink
+
+                v-else-if="canStartCrossCountry"
+
+                :to="`/cross-country/active?id=${currentRequest.id}`"
+
+                class="btn btn-primary btn-lg"
+
+            >
+
+                <i class="bi bi-play-circle me-2"></i>
+
+                Start Cross Country Flight
+
+            </NuxtLink>
+
+            <!-- ================================================= -->
+            <!-- PENDING -->
+            <!-- ================================================= -->
+
+            <button
+
+                v-else-if="isPending"
+
+                disabled
+
+                class="btn btn-warning btn-lg"
+
+            >
+
+                <i class="bi bi-hourglass-split me-2"></i>
+
+                Waiting For Approval
+
+            </button>
+
+            <!-- ================================================= -->
+            <!-- CREATE REQUEST -->
+            <!-- ================================================= -->
+
+            <NuxtLink
+
+                v-else-if="canCreateCrossCountry"
+
+                to="/cross-country/request"
+
+                class="btn btn-primary btn-lg"
+
+            >
+
+                <i class="bi bi-plus-circle me-2"></i>
+
+                Create Cross Country Request
+
+            </NuxtLink>
+
+            <button
+
+                @click="handleCheckOut"
+
+                class="btn btn-danger btn-lg"
+
+            >
+
+                <i class="bi bi-box-arrow-right me-2"></i>
+
+                Confirm Landing
+
+            </button>
+
+        </div>
+
+        <div class="mt-4">
+
+            <div
+                v-if="isPending"
+                class="alert alert-warning"
+            >
+
+                Your Cross Country request is waiting for approval.
+
+            </div>
+
+            <div
+                v-else-if="isApproved"
+                class="alert alert-success"
+            >
+
+                Your request has been approved.
+
+            </div>
+
+            <div
+                v-else-if="canContinueCrossCountry"
+                class="alert alert-primary"
+            >
+
+                Your Cross Country flight is currently active.
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
                 <!-- Flying elsewhere -->
                 <div v-else-if="authStore.activeSession" class="text-center py-4">
                   <div class="alert alert-warning border-0 rounded-3">

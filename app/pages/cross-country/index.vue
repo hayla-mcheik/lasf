@@ -442,37 +442,49 @@
 
 </template>
 <script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
+import { useCrossCountryStore } from '~/stores/crossCountry'
+
+/*
+|--------------------------------------------------------------------------
+| Stores
+|--------------------------------------------------------------------------
+*/
 
 const authStore = useAuthStore()
-
 const store = useCrossCountryStore()
 
-const config = useRuntimeConfig()
+/*
+|--------------------------------------------------------------------------
+| Load Current Request
+|--------------------------------------------------------------------------
+*/
 
-const headers = computed(() => ({
-    Authorization: `Bearer ${authStore.token}`,
-    Accept: 'application/json'
-}))
+await store.loadCurrentRequest()
 
-await store.loadRequest()
+/*
+|--------------------------------------------------------------------------
+| State
+|--------------------------------------------------------------------------
+*/
 
 const loading = computed(() => store.loading)
 
-const request = computed(() => {
+const request = computed(() => store.currentRequest)
 
-    if (!store.request) {
-        return null
-    }
+const hasRequest = computed(() => store.hasRequest)
 
-    if (store.request.requests) {
-        return store.request.requests[0] || null
-    }
+const activeSession = computed(() => store.activeSession)
 
-    return store.request
+const isPending = computed(() => store.isPending)
 
-})
+const isOpen = computed(() => store.isApproved)
+
+const isClosed = computed(() => store.isClosed)
+
+const isCancelled = computed(() => store.isCancelled)
 
 /*
 |--------------------------------------------------------------------------
@@ -511,17 +523,23 @@ const badgeClass = computed(() => {
 
 const takeoff = computed(() => {
 
-    return request.value?.locations?.length
-        ? request.value.locations[0]
-        : null
+    if (!request.value?.locations?.length) {
+        return null
+    }
+
+    return request.value.locations[0]
 
 })
 
 const landing = computed(() => {
 
-    return request.value?.locations?.length
-        ? request.value.locations[request.value.locations.length - 1]
-        : null
+    if (!request.value?.locations?.length) {
+        return null
+    }
+
+    return request.value.locations[
+        request.value.locations.length - 1
+    ]
 
 })
 
@@ -537,13 +555,26 @@ const estimatedDuration = computed(() => {
         !request.value?.takeoff_time ||
         !request.value?.estimated_landing_time
     ) {
+
         return '--'
+
     }
 
     return `${request.value.takeoff_time} → ${request.value.estimated_landing_time}`
 
 })
 
+/*
+|--------------------------------------------------------------------------
+| Refresh Current Request
+|--------------------------------------------------------------------------
+*/
+
+const refreshRequest = async () => {
+
+    await store.refresh()
+
+}
 /*
 |--------------------------------------------------------------------------
 | Cancel Request
@@ -554,31 +585,20 @@ const cancelling = ref(false)
 
 const cancelRequest = async () => {
 
-    if (cancelling.value) {
+    if (cancelling.value)
         return
-    }
 
-    const confirmed = confirm(
-        'Are you sure you want to cancel this Cross Country request?'
-    )
-
-    if (!confirmed) {
+    if (!request.value)
         return
-    }
+
+    if (!confirm('Are you sure you want to cancel this Cross Country request?'))
+        return
 
     cancelling.value = true
 
     try {
 
-        await $fetch(
-            `${config.public.apiBase}/cross-country-requests/${request.value.id}/cancel`,
-            {
-                method: 'PATCH',
-                headers: headers.value
-            }
-        )
-
-        await store.loadRequest()
+        await store.cancelRequest(request.value.id)
 
         alert('Request cancelled successfully.')
 
@@ -601,29 +621,137 @@ const cancelRequest = async () => {
 
 /*
 |--------------------------------------------------------------------------
-| Refresh
+| Auto Refresh While Pending
 |--------------------------------------------------------------------------
 */
 
-const refreshRequest = async () => {
+const refreshInterval = ref(null)
 
-    await store.loadRequest()
+watch(
 
-}
+    () => request.value?.status,
+
+    (status) => {
+
+        if (refreshInterval.value) {
+
+            clearInterval(refreshInterval.value)
+
+            refreshInterval.value = null
+
+        }
+
+        if (status === 'pending') {
+
+            refreshInterval.value = setInterval(async () => {
+
+                try {
+
+                    await store.loadCurrentRequest()
+
+                } catch (error) {
+
+                    console.error(error)
+
+                }
+
+            }, 5000)
+
+        }
+
+    },
+
+    {
+        immediate: true
+    }
+
+)
 
 /*
 |--------------------------------------------------------------------------
-| Status Helpers
+| Watch Active Session
 |--------------------------------------------------------------------------
 */
 
-const isPending = computed(() => request.value?.status === 'pending')
+watch(
 
-const isOpen = computed(() => request.value?.status === 'open')
+    activeSession,
 
-const isClosed = computed(() => request.value?.status === 'closed')
+    (session) => {
 
-const isCancelled = computed(() => request.value?.status === 'cancelled')
+        if (session) {
+
+            console.log('Flight is active.')
+
+        }
+
+    }
+
+)
+
+/*
+|--------------------------------------------------------------------------
+| Watch Request
+|--------------------------------------------------------------------------
+*/
+
+watch(
+
+    request,
+
+    (newRequest) => {
+
+        if (!newRequest)
+            return
+
+        console.log(
+            'Current request updated:',
+            newRequest.id
+        )
+
+    },
+
+    {
+        deep: true
+    }
+
+)
+
+/*
+|--------------------------------------------------------------------------
+| Mounted
+|--------------------------------------------------------------------------
+*/
+
+onMounted(async () => {
+
+    try {
+
+        await store.refresh()
+
+    } catch (error) {
+
+        console.error(error)
+
+    }
+
+})
+
+/*
+|--------------------------------------------------------------------------
+| Before Leave
+|--------------------------------------------------------------------------
+*/
+
+onUnmounted(() => {
+
+    if (refreshInterval.value) {
+
+        clearInterval(refreshInterval.value)
+
+    }
+
+})
 
 /*
 |--------------------------------------------------------------------------
@@ -632,9 +760,12 @@ const isCancelled = computed(() => request.value?.status === 'cancelled')
 */
 
 useHead({
+
     title: 'Cross Country Flight'
+
 })
 </script>
+
 <style scoped>
 
 .cross-country-page{

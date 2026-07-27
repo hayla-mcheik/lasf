@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from '~/stores/auth'
 
 export const useCrossCountryStore = defineStore('crossCountry', {
 
@@ -10,83 +11,75 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
         requests: [],
 
+        session: null,
+
+        track: [],
+
         statistics: {
 
             total_flights: 0,
-
             total_hours: 0,
-
             longest_flight: 0
 
-        },
-
-        session: null,
-
-        track: []
+        }
 
     }),
 
     getters: {
 
-        /*
-        |--------------------------------------------------------------------------
-        | CURRENT REQUEST
-        |--------------------------------------------------------------------------
-        */
-
         currentRequest: (state) => {
 
-            if (!state.request) {
-
+            if (!state.request)
                 return null
 
-            }
-
-            if (state.request.requests) {
-
-                return state.request.requests[0] || null
-
-            }
+            if (Array.isArray(state.request.requests))
+                return state.request.requests[0] ?? null
 
             return state.request
 
         },
 
-        /*
-        |--------------------------------------------------------------------------
-        | STATUS
-        |--------------------------------------------------------------------------
-        */
+        hasRequest() {
 
-        isPending() {
-
-            return this.currentRequest?.status === 'pending'
+            return !!this.currentRequest
 
         },
 
-        isOpen() {
+        status() {
 
-            return this.currentRequest?.status === 'open'
+            return this.currentRequest?.status ?? null
+
+        },
+
+        isPending() {
+
+            return this.status === 'pending'
+
+        },
+
+        isApproved() {
+
+            return this.status === 'open'
+
+        },
+
+        isFlying() {
+
+            return !!this.activeSession
 
         },
 
         isClosed() {
 
-            return this.currentRequest?.status === 'closed'
+            return this.status === 'closed'
 
         },
 
         isCancelled() {
 
-            return this.currentRequest?.status === 'cancelled'
+            return this.status === 'cancelled'
 
         },
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVE SESSION
-        |--------------------------------------------------------------------------
-        */
 
         activeSession() {
 
@@ -94,11 +87,25 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 this.session ||
 
-                this.currentRequest?.activeSession ||
-
                 this.currentRequest?.session ||
 
+                this.currentRequest?.activeSession ||
+
                 null
+
+            )
+
+        },
+
+        canCreateRequest() {
+
+            return (
+
+                !this.currentRequest ||
+
+                this.isClosed ||
+
+                this.isCancelled
 
             )
 
@@ -108,19 +115,13 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
     actions: {
 
-        /*
-        |--------------------------------------------------------------------------
-        | REQUEST HEADERS
-        |--------------------------------------------------------------------------
-        */
-
         getHeaders() {
 
-            const token = useCookie('token')
+            const authStore = useAuthStore()
 
             return {
 
-                Authorization: `Bearer ${token.value}`,
+                Authorization: `Bearer ${authStore.token}`,
 
                 Accept: 'application/json'
 
@@ -128,11 +129,23 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
         },
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD CURRENT REQUEST
-        |--------------------------------------------------------------------------
-        */
+        async refresh() {
+
+            try {
+
+                await this.loadCurrentRequest()
+
+            }
+
+            catch {
+
+                this.request = null
+
+                this.session = null
+
+            }
+
+        },
 
         async loadCurrentRequest() {
 
@@ -144,7 +157,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 const response = await $fetch(
 
-                    `${config.public.apiBase}/cross-country-requests/current`,
+                    `${config.public.apiBase}/cross-country-requests`,
 
                     {
 
@@ -154,13 +167,49 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 )
 
-                this.request = response.request || response
+                /*
+                 API may return:
+
+                 {
+                    requests:[]
+                 }
+
+                 or
+
+                 {
+                    request:{}
+                 }
+
+                 or
+
+                 {}
+                */
+
+                if (response.requests) {
+
+                    this.request = response.requests.length
+                        ? response.requests[0]
+                        : null
+
+                }
+
+                else if (response.request) {
+
+                    this.request = response.request
+
+                }
+
+                else {
+
+                    this.request = response
+
+                }
 
                 this.session =
 
-                    this.request?.activeSession ||
-
                     this.request?.session ||
+
+                    this.request?.activeSession ||
 
                     null
 
@@ -176,7 +225,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 this.session = null
 
-                throw error
+                return null
 
             }
 
@@ -188,13 +237,13 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
         },
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOAD REQUEST BY ID
-        |--------------------------------------------------------------------------
-        */
+        async loadRequest(id = null) {
 
-        async loadRequest(id) {
+            if (!id) {
+
+                return await this.loadCurrentRequest()
+
+            }
 
             this.loading = true
 
@@ -214,25 +263,17 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 )
 
-                this.request = response.request
+                this.request = response.request || response
 
                 this.session =
 
-                    response.request?.activeSession ||
+                    this.request?.session ||
 
-                    response.request?.session ||
+                    this.request?.activeSession ||
 
                     null
 
-                return response.request
-
-            }
-
-            catch (error) {
-
-                console.error(error)
-
-                throw error
+                return this.request
 
             }
 
@@ -243,11 +284,6 @@ export const useCrossCountryStore = defineStore('crossCountry', {
             }
 
         },
-                /*
-        |--------------------------------------------------------------------------
-        | CREATE REQUEST
-        |--------------------------------------------------------------------------
-        */
 
         async createRequest(data) {
 
@@ -273,25 +309,14 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 )
 
-                this.request = response.request || response
+                /*
+                 Always reload after creating.
+                 Prevents "No Active Flight"
+                */
 
-                this.session =
-
-                    this.request?.activeSession ||
-
-                    this.request?.session ||
-
-                    null
+                await this.loadCurrentRequest()
 
                 return response
-
-            }
-
-            catch (error) {
-
-                console.error(error)
-
-                throw error
 
             }
 
@@ -303,12 +328,6 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
         },
 
-        /*
-        |--------------------------------------------------------------------------
-        | CANCEL REQUEST
-        |--------------------------------------------------------------------------
-        */
-
         async cancelRequest(id) {
 
             this.loading = true
@@ -317,7 +336,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 const config = useRuntimeConfig()
 
-                const response = await $fetch(
+                await $fetch(
 
                     `${config.public.apiBase}/cross-country-requests/${id}/cancel`,
 
@@ -333,16 +352,6 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 await this.loadCurrentRequest()
 
-                return response
-
-            }
-
-            catch (error) {
-
-                console.error(error)
-
-                throw error
-
             }
 
             finally {
@@ -352,8 +361,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
             }
 
         },
-
-        /*
+                /*
         |--------------------------------------------------------------------------
         | LOAD HISTORY
         |--------------------------------------------------------------------------
@@ -369,17 +377,15 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 const response = await $fetch(
 
-                    `${config.public.apiBase}/cross-country-requests/history`,
+                    `${config.public.apiBase}/cross-country/history`,
 
                     {
-
                         headers: this.getHeaders()
-
                     }
 
                 )
 
-                this.requests = response.requests || []
+                this.requests = response.requests || response.data || []
 
                 return this.requests
 
@@ -391,7 +397,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 this.requests = []
 
-                throw error
+                return []
 
             }
 
@@ -420,18 +426,12 @@ export const useCrossCountryStore = defineStore('crossCountry', {
                     `${config.public.apiBase}/cross-country/statistics`,
 
                     {
-
                         headers: this.getHeaders()
-
                     }
 
                 )
 
-                this.statistics =
-
-                    response.statistics ||
-
-                    response
+                this.statistics = response.statistics || response
 
                 return this.statistics
 
@@ -441,18 +441,27 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 console.error(error)
 
-                throw error
+                return this.statistics
 
             }
 
         },
-                /*
+
+        /*
         |--------------------------------------------------------------------------
-        | LOAD TRACK
+        | LOAD FLIGHT TRACK
         |--------------------------------------------------------------------------
         */
 
         async loadTrack(sessionId) {
+
+            if (!sessionId) {
+
+                this.track = []
+
+                return []
+
+            }
 
             try {
 
@@ -463,9 +472,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
                     `${config.public.apiBase}/cross-country-sessions/${sessionId}/track`,
 
                     {
-
                         headers: this.getHeaders()
-
                     }
 
                 )
@@ -482,7 +489,7 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 this.track = []
 
-                throw error
+                return []
 
             }
 
@@ -517,6 +524,11 @@ export const useCrossCountryStore = defineStore('crossCountry', {
                 )
 
                 this.session = response.session || response
+
+                /*
+                 Reload request after starting.
+                 This keeps every page synchronized.
+                */
 
                 await this.loadRequest(requestId)
 
@@ -572,6 +584,14 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
                 this.track = []
 
+                /*
+                 Reload request after finishing.
+                 The pilot should immediately see
+                 the request as Closed.
+                */
+
+                await this.loadCurrentRequest()
+
                 return response
 
             }
@@ -594,11 +614,33 @@ export const useCrossCountryStore = defineStore('crossCountry', {
 
         /*
         |--------------------------------------------------------------------------
+        | REFRESH EVERYTHING
+        |--------------------------------------------------------------------------
+        */
+
+        async refreshEverything() {
+
+            await Promise.allSettled([
+
+                this.loadCurrentRequest(),
+
+                this.loadHistory(),
+
+                this.loadStatistics()
+
+            ])
+
+        },
+
+        /*
+        |--------------------------------------------------------------------------
         | CLEAR STORE
         |--------------------------------------------------------------------------
         */
 
         clearStore() {
+
+            this.loading = false
 
             this.request = null
 
@@ -617,8 +659,6 @@ export const useCrossCountryStore = defineStore('crossCountry', {
                 longest_flight: 0
 
             }
-
-            this.loading = false
 
         }
 
