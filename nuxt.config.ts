@@ -56,7 +56,7 @@ debug:true,
   modules: [
    '@pinia/nuxt',
     '@pinia-plugin-persistedstate/nuxt',
-    'nuxt-auth-utils', // Move this to the bottom of the list
+    // 'nuxt-auth-utils', // Move this to the bottom of the list
   ],
 
   // Pinia configuration

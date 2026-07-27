@@ -50,7 +50,6 @@ const {
 |--------------------------------------------------------------------------
 */
 
-await crossCountryStore.loadCurrentRequest()
 
 /*
 |--------------------------------------------------------------------------
@@ -170,12 +169,13 @@ const refreshEverything = async () => {
 */
 
 onMounted(async () => {
-
-    console.log('Location Page Loaded')
     await authStore.loadActiveSession()
 
-    await refreshEverything()
+    if (authStore.isAuthenticated) {
+        await crossCountryStore.loadCurrentRequest()
+    }
 
+    await refreshEverything()
 })
 /*
 |--------------------------------------------------------------------------
