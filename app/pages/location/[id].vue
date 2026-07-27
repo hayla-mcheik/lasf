@@ -478,7 +478,16 @@ async function handleCheckOut() {
 | Cleanup
 |--------------------------------------------------------------------------
 */
+function formatTime(date) {
 
+    if (!date) return '-'
+
+    return new Date(date).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    })
+
+}
 onUnmounted(() => {
 
     if (watchId) {
@@ -626,8 +635,8 @@ onUnmounted(() => {
                     </div>
 
                     <div class="text-muted small">
+{{ activeSession?.checked_in_at }}
 
-                        {{ formatTime(activeSession?.checked_in_at) }}
 
                     </div>
 
@@ -643,7 +652,7 @@ onUnmounted(() => {
 
                     <div class="text-muted small">
 
-                        {{ formatTime(activeSession?.expires_at) }}
+                        {{ (activeSession?.expires_at) }}
 
                     </div>
 
