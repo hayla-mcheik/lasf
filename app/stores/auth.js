@@ -372,7 +372,46 @@ export const useAuthStore = defineStore('auth', {
 
     },
 
+async loadActiveSession() {
 
+    if (!this.token) {
+
+        this.activeSession = null
+        return null
+
+    }
+
+    try {
+
+        const config = useRuntimeConfig()
+
+        const response = await $fetch(
+
+            `${config.public.apiBase}/airspace-sessions/active`,
+
+            {
+                headers: {
+                    Authorization: `Bearer ${this.token}`
+                }
+            }
+
+        )
+
+        this.activeSession = response.session || null
+
+        return this.activeSession
+
+    }
+
+    catch (error) {
+
+        this.activeSession = null
+
+        return null
+
+    }
+
+},
     /*
     |--------------------------------------------------------------------------
     | SET ACTIVE SESSION

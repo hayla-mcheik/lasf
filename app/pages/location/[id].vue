@@ -172,6 +172,7 @@ const refreshEverything = async () => {
 onMounted(async () => {
 
     console.log('Location Page Loaded')
+    await authStore.loadActiveSession()
 
     await refreshEverything()
 
@@ -256,20 +257,29 @@ async function handleCheckIn(token) {
 
     }
 
-    catch (error) {
+catch (error) {
 
-        console.error(error)
+    console.error(error)
 
-        alert(
+    if (
+        error?.status === 422 &&
+        error?.data?.active_session
+    ) {
 
-            error?.data?.message ||
+        authStore.activeSession = error.data.active_session
 
-            'Check-in failed.'
+        await refreshEverything()
 
-        )
+        alert('You already have an active flying session.')
 
+        return
     }
 
+    alert(
+        error?.data?.message ||
+        'Check-in failed.'
+    )
+}
     finally {
 
         checkingIn.value = false
