@@ -389,13 +389,34 @@ async function refreshData() {
                       </div>
                     </div>
                     
-                    <button 
-                      @click="handleCheckOut" 
-                      class="btn btn-danger btn-lg px-5 rounded-pill"
-                    >
-                      <i class="bi bi-box-arrow-right me-2"></i>
-                      Confirm Landing
-                    </button>
+ <div class="d-flex justify-content-center gap-3 flex-wrap">
+
+  <button
+    @click="handleCheckOut"
+    class="btn btn-danger btn-lg px-4 rounded-pill"
+  >
+    <i class="bi bi-box-arrow-right me-2"></i>
+    Confirm Landing
+  </button>
+
+  <button
+    @click="navigateTo('/cross-country/request')"
+    class="btn btn-primary btn-lg px-4 rounded-pill"
+  >
+    <i class="bi bi-airplane-engines me-2"></i>
+    Start Cross Country
+  </button>
+
+</div>
+<div class="alert alert-info mt-4">
+
+    <strong>Need to fly to another location?</strong>
+
+    <br>
+
+    Start a Cross Country request before taking off.
+
+</div>
                     
                     <p class="mt-3 text-muted small">
                       Click when you've landed to free up the airspace

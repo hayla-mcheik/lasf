@@ -390,17 +390,20 @@
                     class="col-md-4"
                   >
 
-                    <NuxtLink
-                      :to="`/cross-country/active?id=${request.id}`"
-                      class="btn btn-success w-100"
-                    >
+     <NuxtLink
+    :to="`/cross-country/active?id=${request.id}`"
+    class="btn btn-success w-100"
+>
+    <i
+        :class="request.session
+            ? 'bi bi-play-fill'
+            : 'bi bi-airplane-engines'"
+        class="me-2"
+    ></i>
 
-                      <i class="bi bi-airplane me-2"></i>
+    {{ request.session ? 'Continue Flight' : 'Start Flight' }}
 
-                      Continue Flight
-
-                    </NuxtLink>
-
+</NuxtLink>
                   </div>
 
                   <div

@@ -299,6 +299,52 @@
 
                 </div>
 
+<div class="card shadow-sm mb-4">
+
+    <div class="card-header">
+        Flight Status
+    </div>
+
+    <div class="card-body">
+
+        <div
+            v-if="request.session"
+            class="alert alert-primary mb-0"
+        >
+            ✈️ Flight is currently active.
+        </div>
+
+        <div
+            v-else-if="request.status=='pending'"
+            class="alert alert-warning mb-0"
+        >
+            ⏳ Waiting for administrator approval.
+        </div>
+
+        <div
+            v-else-if="request.status=='open'"
+            class="alert alert-success mb-0"
+        >
+            ✅ Approved. Pilot can now start the Cross Country flight.
+        </div>
+
+        <div
+            v-else-if="request.status=='closed'"
+            class="alert alert-secondary mb-0"
+        >
+            🏁 Flight completed successfully.
+        </div>
+
+        <div
+            v-else
+            class="alert alert-danger mb-0"
+        >
+            ❌ Flight cancelled.
+        </div>
+
+    </div>
+
+</div>
                 <!-- Actions -->
 
                 <div
@@ -453,9 +499,7 @@ const loadRequest = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${route.params.id}`,
 
             {
-
                 headers
-
             }
 
         )
@@ -463,22 +507,16 @@ const loadRequest = async () => {
         request.value = response.request
 
         if (request.value?.session) {
-
             await loadTrack()
-
         }
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 
         alert(error?.data?.message || 'Unable to load request.')
 
-    }
-
-    finally {
+    } finally {
 
         loading.value = false
 
@@ -535,9 +573,7 @@ const loadTrack = async () => {
 const approve = async () => {
 
     if (!confirm('Approve this Cross Country request?')) {
-
         return
-
     }
 
     try {
@@ -547,28 +583,20 @@ const approve = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.value.id}/status`,
 
             {
-
                 method: 'PATCH',
-
                 headers,
-
                 body: {
-
                     status: 'open'
-
                 }
-
             }
 
         )
 
-        request.value = response.request
+        await loadRequest()
 
         alert(response.message)
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 
@@ -587,9 +615,7 @@ const approve = async () => {
 const reject = async () => {
 
     if (!confirm('Reject this Cross Country request?')) {
-
         return
-
     }
 
     try {
@@ -599,28 +625,20 @@ const reject = async () => {
             `${config.public.apiBase}/admin/cross-country-requests/${request.value.id}/status`,
 
             {
-
                 method: 'PATCH',
-
                 headers,
-
                 body: {
-
                     status: 'closed'
-
                 }
-
             }
 
         )
 
-        request.value = response.request
+        await loadRequest()
 
         alert(response.message)
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error)
 

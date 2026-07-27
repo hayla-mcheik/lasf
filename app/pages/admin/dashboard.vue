@@ -41,7 +41,7 @@
         <div>
 
           <h6 class="text-uppercase text-muted mb-0">
-            Active Pilots
+       Pilots Currently Flying
           </h6>
 
           <h2 class="fw-bold mb-1">
@@ -110,7 +110,7 @@
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="text-uppercase text-muted mb-0">Active Pilots</h6>
+                  <h6 class="text-uppercase text-muted mb-0">Registered Pilots</h6>
                   <h2 class="fw-bold mb-0">{{ stats.activePilots || 0 }}</h2>
                 </div>
                 <div class="stat-icon bg-success">
@@ -413,7 +413,11 @@ const formatTime = (time) => {
   const diffMs = now - date
   const diffMins = Math.floor(diffMs / 60000)
   
-  if (diffMins < 60) return `${diffMins} mins ago`
+ if (diffMins <= 1)
+    return 'Just now'
+
+if (diffMins < 60)
+    return `${diffMins} mins ago`
   if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`
   return `${Math.floor(diffMins / 1440)} days ago`
 }

@@ -79,6 +79,57 @@
             </div>
 
         </div>
+        <div class="row mb-4">
+
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm text-center p-3">
+
+            <h2 class="text-warning">{{ pendingCount }}</h2>
+
+            <small>Pending</small>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm text-center p-3">
+
+            <h2 class="text-success">{{ approvedCount }}</h2>
+
+            <small>Approved</small>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm text-center p-3">
+
+            <h2 class="text-primary">{{ activeCount }}</h2>
+
+            <small>Flying</small>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm text-center p-3">
+
+            <h2 class="text-secondary">{{ completedCount }}</h2>
+
+            <small>Completed</small>
+
+        </div>
+
+    </div>
+
+</div>
 
         <!-- Table -->
 
@@ -143,10 +194,16 @@
 
                         <tbody>
 
-                            <tr
-                                v-for="request in filteredRequests"
-                                :key="request.id"
-                            >
+                    <tr
+    v-for="request in filteredRequests"
+    :key="request.id"
+    :class="{
+        'table-warning': request.status === 'pending',
+        'table-success': request.status === 'open',
+        'table-secondary': request.status === 'closed',
+        'table-danger': request.status === 'cancelled'
+    }"
+>
 
                                 <td>
 
@@ -193,17 +250,32 @@
 
                                 <td class="text-center">
 
-                                    <NuxtLink
-                                        :to="`/admin/cross-country/${request.id}`"
-                                        class="btn btn-success btn-sm"
-                                    >
+                      <div class="d-flex gap-2 justify-content-center">
 
-                                        <i class="bi bi-eye me-1"></i>
+    <button
+        v-if="request.status==='pending'"
+        class="btn btn-success btn-sm"
+        @click="approve(request)"
+    >
+        <i class="bi bi-check"></i>
+    </button>
 
-                                        View
+    <button
+        v-if="request.status==='pending'"
+        class="btn btn-danger btn-sm"
+        @click="reject(request)"
+    >
+        <i class="bi bi-x"></i>
+    </button>
 
-                                    </NuxtLink>
+    <NuxtLink
+        :to="`/admin/cross-country/${request.id}`"
+        class="btn btn-primary btn-sm"
+    >
+        <i class="bi bi-eye"></i>
+    </NuxtLink>
 
+</div>
                                 </td>
 
                             </tr>
@@ -243,7 +315,21 @@ const headers = {
     Accept: 'application/json'
 
 }
+const pendingCount = computed(() =>
+    requests.value.filter(r => r.status === 'pending').length
+)
 
+const approvedCount = computed(() =>
+    requests.value.filter(r => r.status === 'open').length
+)
+
+const activeCount = computed(() =>
+    requests.value.filter(r => r.session).length
+)
+
+const completedCount = computed(() =>
+    requests.value.filter(r => r.status === 'closed').length
+)
 const loadRequests = async () => {
 
     loading.value = true
@@ -277,6 +363,69 @@ const loadRequests = async () => {
     finally {
 
         loading.value = false
+
+    }
+
+}
+const approve = async (request) => {
+
+    if (!confirm('Approve this request?')) return
+
+    try {
+
+        await $fetch(
+
+            `${config.public.apiBase}/admin/cross-country-requests/${request.id}/status`,
+
+            {
+                method: 'PATCH',
+
+                headers,
+
+                body: {
+                    status: 'open'
+                }
+            }
+
+        )
+
+await loadRequests()
+
+    } catch (error) {
+
+        alert(error?.data?.message || 'Unable to approve request.')
+
+    }
+
+}
+
+const reject = async (request) => {
+
+    if (!confirm('Reject this request?')) return
+
+    try {
+
+        await $fetch(
+
+            `${config.public.apiBase}/admin/cross-country-requests/${request.id}/status`,
+
+            {
+                method: 'PATCH',
+
+                headers,
+
+                body: {
+                    status: 'closed'
+                }
+            }
+
+        )
+
+  await loadRequests()
+
+    } catch (error) {
+
+        alert(error?.data?.message || 'Unable to reject request.')
 
     }
 

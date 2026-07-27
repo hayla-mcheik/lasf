@@ -24,7 +24,7 @@
         </div>
 
         <!-- Enhanced Status Summary -->
-     <LocationsStatus :limit="3" />
+     <LocationsStatus  />
       </div>
     </section>
 

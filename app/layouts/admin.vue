@@ -47,6 +47,13 @@
 />
           </template>
           <template v-if="authStore.user?.is_admin">
+            <NavItem
+    :active="$route.path.startsWith('/admin/cross-country')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-airplane-engines"
+    label="Cross Country"
+    to="/admin/cross-country"
+/>
             <NavItem 
               :active="$route.path.startsWith('/admin/newscategories')"
               :collapsed="sidebarCollapsed"
@@ -187,6 +194,7 @@ const pageTitle = computed(() => {
     '/admin/dashboard': 'Dashboard',
       '/admin/live-tracking': 'Live Tracking',
     '/admin/locations': 'Locations',
+    '/admin/cross-country': 'Cross Country',
     '/admin/news': 'News',
     '/admin/events': 'Events',
     '/admin/pilots': 'Pilots',

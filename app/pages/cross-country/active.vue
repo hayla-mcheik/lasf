@@ -449,7 +449,7 @@ const startFlight = async () => {
         )
 
         session.value = response.session
-
+await loadRequest()
         updateDuration()
 
         timer = setInterval(updateDuration, 1000)
