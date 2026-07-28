@@ -375,10 +375,8 @@ export const useAuthStore = defineStore('auth', {
 async loadActiveSession() {
 
     if (!this.token) {
-
         this.activeSession = null
         return null
-
     }
 
     try {
@@ -386,37 +384,31 @@ async loadActiveSession() {
         const config = useRuntimeConfig()
 
         const session = await $fetch(
-
             `${config.public.apiBase}/airspace-sessions/active-pilot`,
-
             {
-
                 headers: {
-
                     Authorization: `Bearer ${this.token}`
-
                 }
-
             }
-
         )
 
-        this.activeSession = session || null
+        console.log('ACTIVE SESSION RESPONSE:', session)
+        console.log('TYPE:', typeof session)
+        console.log('KEYS:', Object.keys(session || {}))
+
+        this.activeSession =
+            session && Object.keys(session).length > 0
+                ? session
+                : null
 
         return this.activeSession
 
-    }
-
-    catch (error) {
-
-        console.error('Unable to restore active session', error)
+    } catch (error) {
 
         this.activeSession = null
-
         return null
 
     }
-
 },
     /*
     |--------------------------------------------------------------------------
@@ -426,7 +418,10 @@ async loadActiveSession() {
 
 setActiveSession(session) {
 
-    this.activeSession = session
+this.activeSession =
+    session && session.id
+        ? session
+        : null
 
 },
 

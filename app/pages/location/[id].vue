@@ -143,7 +143,9 @@ const canContinueCrossCountry = computed(() => {
     return !!crossCountrySession.value
 
 })
-
+const canCheckIn = computed(() => {
+    return location.value?.today_status === 'green'
+})
 /*
 |--------------------------------------------------------------------------
 | Refresh Everything
@@ -156,7 +158,9 @@ const refreshEverything = async () => {
 
         refreshLocation(),
 
-        crossCountryStore.refresh()
+        crossCountryStore.refresh(),
+
+        authStore.loadActiveSession(),
 
     ])
 
@@ -185,22 +189,22 @@ onMounted(async () => {
 
 async function handleCheckIn(token) {
 
+      console.log('1. handleCheckIn called');
+    console.log('2. token =', token);
+    console.log('3. isFlyingHere =', isFlyingHere.value);
+    console.log('4. activeSession =', authStore.activeSession);
+
     if (!token) {
-
-        alert('QR token missing.')
-
-        return
-
+        console.log('STOP: No token');
+        return;
     }
 
     if (isFlyingHere.value) {
-
-        alert('You are already flying here.')
-
-        return
-
+        console.log('STOP: Already flying here');
+        return;
     }
 
+    console.log('5. Sending POST request...');
     checkingIn.value = true
 
     try {
@@ -795,7 +799,10 @@ onUnmounted(() => {
 
 </div>
                 <!-- Flying elsewhere -->
-                <div v-else-if="authStore.activeSession" class="text-center py-4">
+             <div
+    v-else-if="authStore.activeSession?.id"
+    class="text-center py-4"
+>
                   <div class="alert alert-warning border-0 rounded-3">
                     <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
                     <h3 class="fw-bold mb-3">Already Active Elsewhere</h3>
@@ -828,13 +835,19 @@ onUnmounted(() => {
                         QR Code detected - Ready for check-in
                       </div>
                       
-                      <button 
-                        @click="handleCheckIn(route.query.token)" 
-                        class="btn btn-success btn-lg px-5 rounded-pill shadow"
-                      >
-                        <i class="bi bi-check-circle me-2"></i>
-                        Start Flight Session
-                      </button>
+              <button
+    v-if="canCheckIn"
+    @click="handleCheckIn(route.query.token)"
+>
+    Start Flight Session
+</button>
+
+<div
+    v-else
+    class="alert alert-danger"
+>
+    This flying location is closed today.
+</div>
                     </div>
                     
                     <!-- No QR token -->
