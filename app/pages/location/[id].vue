@@ -144,7 +144,7 @@ const canContinueCrossCountry = computed(() => {
 
 })
 const canCheckIn = computed(() => {
-    return location.value?.today_status === 'green'
+    return location.value?.status_label === 'green'
 })
 /*
 |--------------------------------------------------------------------------
