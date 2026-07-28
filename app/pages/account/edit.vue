@@ -91,16 +91,16 @@
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label fw-bold small">
-                      Date of Birth <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      v-model="form.date_of_birth"
-                      type="date"
-                      class="form-control"
-                      :class="{ 'is-invalid': errors.date_of_birth }"
-                      required
-                    >
+              <label class="form-label fw-bold small">
+  Date of Birth
+  <small class="text-muted">(Optional)</small>
+</label>
+         <input
+  v-model="form.date_of_birth"
+  type="date"
+  class="form-control"
+  :class="{ 'is-invalid': errors.date_of_birth }"
+>
                     <div v-if="errors.date_of_birth" class="invalid-feedback">{{ Array.isArray(errors.date_of_birth) ? errors.date_of_birth[0] : errors.date_of_birth }}</div>
                   </div>
 
@@ -476,11 +476,7 @@ const saveMembership = async () => {
       saving.value = false
       return
     }
-    if (!form.value.date_of_birth) {
-      errors.value.date_of_birth = 'Date of birth is required'
-      saving.value = false
-      return
-    }
+
     if (!form.value.blood_type) {
       errors.value.blood_type = 'Blood type is required'
       saving.value = false
