@@ -308,7 +308,7 @@
     <div class="card-body">
 
         <div
-            v-if="request.session"
+       v-if="request.session?.is_active"
             class="alert alert-primary mb-0"
         >
             ✈️ Flight is currently active.

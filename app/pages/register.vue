@@ -85,16 +85,16 @@
 
                     <!-- DOB -->
                     <div class="col-md-6 mb-3">
-                      <label class="form-label fw-semibold">
-                        Date of Birth
-                      </label>
+              <label class="form-label">
+    Date of Birth
+    <small class="text-muted">(Optional)</small>
+</label>
 
-                      <input
-                        v-model="form.date_of_birth"
-                        type="date"
-                        class="form-control"
-                        required
-                      >
+<input
+    type="date"
+    class="form-control"
+    v-model="form.date_of_birth"
+/>
                     </div>
 
                     <!-- Blood -->
