@@ -20,9 +20,15 @@ const form = ref({
 
 const fetchLocations = async () => {
     try {
-        locations.value = await $fetch('/flying-locations', {
+
+        const response = await $fetch('/flying-locations', {
             baseURL: config.public.apiBase
         })
+
+        console.log(response)
+
+        locations.value = response.data
+
     } catch (e) {
         console.error(e)
     }
