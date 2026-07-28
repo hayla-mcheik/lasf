@@ -47,13 +47,14 @@
 />
           </template>
           <template v-if="authStore.user?.is_admin">
-            <NavItem
+<NavItem
     :active="$route.path.startsWith('/admin/cross-country')"
     :collapsed="sidebarCollapsed"
     icon="bi-airplane-engines"
     label="Cross Country"
     to="/admin/cross-country"
 />
+
             <NavItem 
               :active="$route.path.startsWith('/admin/newscategories')"
               :collapsed="sidebarCollapsed"
@@ -133,6 +134,14 @@
               label="Regulations"
               to="/admin/regulations"
             />
+
+            <NavItem
+    :active="$route.path.startsWith('/admin/feedback')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-chat-square-text"
+    label="Feedback"
+    to="/admin/feedback"
+/>
           </template>
 
         </div>
@@ -195,6 +204,7 @@ const pageTitle = computed(() => {
       '/admin/live-tracking': 'Live Tracking',
     '/admin/locations': 'Locations',
     '/admin/cross-country': 'Cross Country',
+    
     '/admin/news': 'News',
     '/admin/events': 'Events',
     '/admin/pilots': 'Pilots',
@@ -202,6 +212,7 @@ const pageTitle = computed(() => {
     '/admin/about': 'About LASF Page',
     '/admin/pilot-safety-message': 'Pilot Safety Message',
     '/admin/regulations': 'Safety & Regulations',
+    '/admin/feedback': 'Feedback & Complaints',
     '/admin/testimonials': 'Testimonials',
     '/admin/gallery': 'Gallery'
   }

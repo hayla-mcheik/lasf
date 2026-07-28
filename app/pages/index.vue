@@ -32,7 +32,94 @@
       <Pilot />
     </section>
     
-      <Testimonials />
+<Testimonials />
+
+<!-- Feedback & Complaints CTA -->
+<section class="feedback-section py-6">
+  <div class="container">
+    <div class="feedback-card">
+
+      <div class="row align-items-center">
+
+        <div class="col-lg-8">
+
+          <div class="d-flex align-items-center mb-3">
+            <div class="feedback-icon me-3">
+              <i class="bi bi-shield-exclamation"></i>
+            </div>
+
+            <div>
+              <h2 class="mb-1">Help Us Keep Flying Safe</h2>
+              <p class="mb-0 text-muted">
+                Your feedback helps improve safety, regulations and the flying
+                experience across Lebanon.
+              </p>
+            </div>
+          </div>
+
+          <div class="row mt-4">
+
+            <div class="col-md-6 mb-3">
+
+              <div class="feature-box">
+
+                <i class="bi bi-chat-left-text text-primary"></i>
+
+                <div>
+                  <h6>General Feedback</h6>
+                  <small>
+                    Share ideas or suggestions to improve LASF services.
+                  </small>
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="col-md-6 mb-3">
+
+              <div class="feature-box">
+
+                <i class="bi bi-exclamation-triangle text-warning"></i>
+
+                <div>
+                  <h6>Report Violations</h6>
+                  <small>
+                    Report unsafe flying or incidents anonymously.
+                  </small>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="col-lg-4 text-center">
+
+          <NuxtLink
+            to="/feedback"
+            class="btn btn-danger btn-lg px-5">
+
+            <i class="bi bi-send-fill me-2"></i>
+
+            Send Anonymous Report
+
+          </NuxtLink>
+
+          <p class="small text-muted mt-3 mb-0">
+            No registration required • Completely anonymous
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
 
   </div>
 </template>
@@ -213,5 +300,64 @@ import WeatherCheckTwo from '~/components/Frontend/WeatherCheckTwo.vue'
     flex-direction: column;
     text-align: center;
   }
+}
+.feedback-section{
+    background:#f8fafc;
+}
+
+.feedback-card{
+    background:#fff;
+    border-radius:20px;
+    padding:50px;
+    box-shadow:0 10px 35px rgba(0,0,0,.08);
+}
+
+.feedback-icon{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    background:#dc3545;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2rem;
+}
+
+.feature-box{
+    display:flex;
+    gap:15px;
+    align-items:flex-start;
+    padding:15px;
+    border-radius:12px;
+    background:#f8f9fa;
+    height:100%;
+}
+
+.feature-box i{
+    font-size:1.8rem;
+}
+
+.feature-box h6{
+    margin-bottom:5px;
+    font-weight:700;
+}
+
+.feedback-card .btn{
+    border-radius:50px;
+    padding:14px 30px;
+}
+
+@media(max-width:991px){
+
+    .feedback-card{
+        padding:30px;
+    }
+
+    .feedback-card .btn{
+        margin-top:25px;
+        width:100%;
+    }
+
 }
 </style>
