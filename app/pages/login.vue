@@ -9,13 +9,15 @@
               <!-- Card Header with Mode Selection -->
             <div
   class="card-header text-white text-center py-4"
-  :class="[
-    loginType === 'pilot'
-      ? 'bg-success text-white'
-      : loginType === 'army'
-        ? 'bg-warning text-dark'
+:class="[
+  loginType === 'pilot'
+    ? 'bg-success text-white'
+    : loginType === 'army'
+      ? 'bg-warning text-dark'
+      : loginType === 'watcher'
+        ? 'bg-info text-white'
         : 'bg-primary text-white'
-  ]"
+]"
 >
 
   <h2 class="mb-0">
@@ -29,7 +31,10 @@
       <i class="bi bi-shield-lock"></i>
       Army Login
     </template>
-
+<template v-else-if="loginType === 'watcher'">
+  <i class="bi bi-eye"></i>
+  Watcher Login
+</template>
     <template v-else>
       <i class="bi bi-person-badge"></i>
       Admin Login
@@ -64,6 +69,16 @@
     >
       Army
     </button>
+    <button
+  type="button"
+  class="btn flex-fill"
+  :class="loginType === 'watcher'
+    ? 'btn-info'
+    : 'btn-outline-info'"
+  @click="loginType = 'watcher'"
+>
+  Watcher
+</button>
 
     <button
       type="button"
@@ -146,22 +161,26 @@
     <button
       type="submit"
       class="btn btn-lg w-100 py-3 text-white"
-      :class="
-        loginType === 'pilot'
-          ? 'bg-success'
-          : loginType === 'army'
-            ? 'bg-warning'
-            : 'bg-primary'
-      "
+:class="
+  loginType === 'pilot'
+    ? 'bg-success'
+    : loginType === 'army'
+      ? 'bg-warning'
+      : loginType === 'watcher'
+        ? 'bg-info'
+        : 'bg-primary'
+"
     >
 
-      {{
-        loginType === 'pilot'
-          ? 'Pilot Login'
-          : loginType === 'army'
-            ? 'Army Login'
-            : 'Admin Login'
-      }}
+{{
+  loginType === 'pilot'
+    ? 'Pilot Login'
+    : loginType === 'army'
+      ? 'Army Login'
+      : loginType === 'watcher'
+        ? 'Watcher Login'
+        : 'Admin Login'
+}}
 
     </button>
 

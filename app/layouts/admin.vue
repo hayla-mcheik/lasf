@@ -30,23 +30,59 @@
         <div class="nav-section">
           <div class="nav-label" v-if="!sidebarCollapsed">Management</div>
           
-          <NavItem 
-            :active="$route.path.startsWith('/admin/locations')"
-            :collapsed="sidebarCollapsed"
-            icon="bi-geo-alt"
-            label="Locations"
-            to="/admin/locations"
-          />
-          <template v-if="authStore.user?.is_admin || authStore.user?.role === 'army'">
-            <NavItem
-  :active="$route.path.startsWith('/admin/live-tracking')"
-  :collapsed="sidebarCollapsed"
-  icon="bi-crosshair"
-  label="Live Tracking"
-  to="/admin/live-tracking"
-/>
-          </template>
-          <template v-if="authStore.user?.is_admin">
+        
+  <!-- ============================= -->
+  <!-- LOCATIONS (Admin + Army) -->
+  <!-- ============================= -->
+
+  <template v-if="authStore.canManageLocations">
+
+    <NavItem
+      :active="$route.path.startsWith('/admin/locations')"
+      :collapsed="sidebarCollapsed"
+      icon="bi-geo-alt"
+      label="Locations"
+      to="/admin/locations"
+    />
+
+  </template>
+
+  <!-- ============================= -->
+  <!-- LIVE TRACKING (Admin + Army + Watcher) -->
+  <!-- ============================= -->
+
+  <template v-if="authStore.canViewLiveTracking">
+
+    <NavItem
+      :active="$route.path.startsWith('/admin/live-tracking')"
+      :collapsed="sidebarCollapsed"
+      icon="bi-crosshair"
+      label="Live Tracking"
+      to="/admin/live-tracking"
+    />
+
+  </template>
+
+  <!-- ============================= -->
+  <!-- PILOTS (Admin + Army) -->
+  <!-- ============================= -->
+
+  <template v-if="authStore.canViewPilots">
+
+    <NavItem
+      :active="$route.path.startsWith('/admin/pilots')"
+      :collapsed="sidebarCollapsed"
+      icon="bi-people"
+      label="Pilots"
+      to="/admin/pilots"
+    />
+
+  </template>
+
+  <!-- ============================= -->
+  <!-- ADMIN ONLY -->
+  <!-- ============================= -->
+    <template v-if="authStore.isAdmin">
 <NavItem
     :active="$route.path.startsWith('/admin/cross-country')"
     :collapsed="sidebarCollapsed"
@@ -69,7 +105,6 @@
               label="News"
               to="/admin/news"
             />
-            <NavItem 
 <NavItem
   :active="$route.path.startsWith('/admin/weather')"
   :collapsed="sidebarCollapsed"
@@ -77,7 +112,6 @@
   label="Weather Reports"
   to="/admin/weather"
 />
-
 <NavItem
   :active="$route.path.startsWith('/admin/pilot-safety-message')"
   :collapsed="sidebarCollapsed"
@@ -85,13 +119,7 @@
   label="Pilot Safety"
   to="/admin/pilot-safety-message"
 />
-            <NavItem 
-              :active="$route.path.startsWith('/admin/pilots')"
-              :collapsed="sidebarCollapsed"
-              icon="bi-people"
-              label="Pilots"
-              to="/admin/pilots"
-            />
+
             <NavItem 
               :active="$route.path.startsWith('/admin/sports')"
               :collapsed="sidebarCollapsed"
@@ -158,9 +186,17 @@
                 {{ authStore.user?.name || 'User' }}
               </p>
             </div>
-            <div class="user-role">
-              {{ authStore.user?.is_admin ? 'Administrator' : 'Lebanese Army' }}
-            </div>
+<div class="user-role">
+  {{
+    authStore.isAdmin
+      ? 'Administrator'
+      : authStore.isArmy
+        ? 'Lebanese Army'
+        : authStore.isWatcher
+          ? 'Watcher'
+          : 'Pilot'
+  }}
+</div>
           </div>
         </div>
         <button @click="logout" class="logout-btn">
@@ -246,13 +282,14 @@ onMounted(async () => {
   }
 
   // ✅ Consistent role check
-  const isArmy = authStore.isArmy
-  const isAdmin = authStore.isAdmin
+const isArmy = authStore.isArmy
+const isAdmin = authStore.isAdmin
+const isWatcher = authStore.isWatcher
 
-  if (!isAdmin && !isArmy) {
-    console.log('Access denied in Layout: Redirecting home...')
-    navigateTo('/')
-  }
+if (!isAdmin && !isArmy && !isWatcher) {
+  console.log('Access denied in Layout: Redirecting home...')
+  navigateTo('/')
+}
 })
 </script>
 
