@@ -1,10 +1,19 @@
 <script setup>
-const config = useRuntimeConfig()
+import { useAuthStore } from '~/stores/auth'
 
-const { data, refresh } = await useFetch(
+definePageMeta({
+    layout: 'admin'
+})
+
+const config = useRuntimeConfig()
+const authStore = useAuthStore()
+
+const { data, pending, refresh } = await useFetch(
     `${config.public.apiBase}/admin/contact-messages`,
     {
-        headers: useAuthHeaders()
+        headers: {
+            Authorization: `Bearer ${authStore.token}`
+        }
     }
 )
 
