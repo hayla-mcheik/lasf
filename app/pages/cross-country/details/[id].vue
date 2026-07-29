@@ -1,8 +1,19 @@
 <template>
-    <Breadcrumbs title="Flight Details" />
+   <Breadcrumbs
+    parent="Cross Country"
+    title="Flight Details"
+/>
 
     <div class="container py-5">
-
+<div class="mb-4">
+    <button
+        class="btn btn-light border shadow-sm rounded-pill px-4"
+        @click="$router.back()"
+    >
+        <i class="bi bi-arrow-left me-2"></i>
+        Back
+    </button>
+</div>
         <div v-if="loading" class="text-center py-5">
             <div class="spinner-border text-success"></div>
         </div>
@@ -57,7 +68,7 @@
 
                                 <br>
 
-                                {{ flight.flight_date }}
+                                               {{ formatDate(flight.flight_date) }}
 
                             </div>
 

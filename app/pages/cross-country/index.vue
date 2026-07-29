@@ -3,7 +3,15 @@
 
   <div class="cross-country-page py-5">
     <div class="container">
-
+<div class="mb-4">
+    <button
+        class="btn btn-light border shadow-sm rounded-pill px-4"
+        @click="$router.back()"
+    >
+        <i class="bi bi-arrow-left me-2"></i>
+        Back
+    </button>
+</div>
       <div class="row justify-content-center">
 
         <div class="col-xl-9 col-lg-10">

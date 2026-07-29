@@ -535,6 +535,14 @@ onUnmounted(() => {
       <!-- Header -->
       <div class="location-header py-5 ">
         <div class="container">
+                <a
+        href="#"
+        class="text-decoration-none fw-semibold"
+        @click.prevent="$router.back()"
+    >
+        <i class="bi bi-arrow-left me-2"></i>
+        Back to Flying Locations
+    </a>
           <div class="row align-items-center">
             <div class="col-md-8">
               <h1 class="display-5 fw-bold mb-5 text-dark">{{ location.name }}</h1>

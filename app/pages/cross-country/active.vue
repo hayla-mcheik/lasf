@@ -1,8 +1,19 @@
 <template>
-    <Breadcrumbs title="Active Cross Country Flight" />
+<Breadcrumbs
+    parent="Cross Country"
+    title="Active Flight"
+/>
 
     <div class="container py-5">
-
+<div class="mb-4">
+    <button
+        class="btn btn-light border shadow-sm rounded-pill px-4"
+        @click="$router.back()"
+    >
+        <i class="bi bi-arrow-left me-2"></i>
+        Back
+    </button>
+</div>
         <div
             v-if="loading"
             class="text-center py-5"

@@ -1,8 +1,19 @@
 <template>
-    <Breadcrumbs title="Cross Country History" />
+<Breadcrumbs
+    parent="Cross Country"
+    title="History"
+/>
 
     <div class="container py-5">
-
+<div class="mb-4">
+    <button
+        class="btn btn-light border shadow-sm rounded-pill px-4"
+        @click="$router.back()"
+    >
+        <i class="bi bi-arrow-left me-2"></i>
+        Back
+    </button>
+</div>
         <div class="row justify-content-center">
 
             <div class="col-lg-10">
@@ -89,7 +100,8 @@
 
                                             <td>
 
-                                                {{ flight.flight_date }}
+                                         
+                                                  {{ formatDate(flight.flight_date) }}
 
                                             </td>
 
