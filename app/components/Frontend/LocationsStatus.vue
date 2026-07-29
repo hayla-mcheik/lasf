@@ -266,7 +266,7 @@ const locations = computed(() => locationsData.value || [])
 
 // Status
 const getStatusKey = (location) => {
-  return location?.clearance_statuses?.[0]?.status || 'green'
+    return location.status_label
 }
 
 const getStatusBootstrapColor = (status) => {
