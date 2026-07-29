@@ -170,6 +170,14 @@
     label="Feedback"
     to="/admin/feedback"
 />
+<NavItem
+    :active="$route.path.startsWith('/admin/contact-messages')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-envelope-paper"
+    label="Contact Messages"
+    to="/admin/contact-messages"
+/>
+
           </template>
 
         </div>
@@ -249,6 +257,7 @@ const pageTitle = computed(() => {
     '/admin/pilot-safety-message': 'Pilot Safety Message',
     '/admin/regulations': 'Safety & Regulations',
     '/admin/feedback': 'Feedback & Complaints',
+    '/admin/contact-messages': 'Contact Messages',
     '/admin/testimonials': 'Testimonials',
     '/admin/gallery': 'Gallery'
   }

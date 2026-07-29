@@ -24,7 +24,88 @@
         </div>
 
         <!-- Enhanced Status Summary -->
-     <LocationsStatus  />
+
+     <!-- <LocationsStatus  /> -->
+      <!-- Flying Locations CTA -->
+<section class="locations-dashboard py-6">
+  <div class="container">
+
+    <div class="location-cta">
+
+      <div class="row align-items-center">
+
+        <div class="col-lg-8">
+
+          <div class="d-flex align-items-center mb-3">
+
+            <div class="location-icon me-4">
+              <i class="bi bi-geo-alt-fill"></i>
+            </div>
+
+            <div>
+              <h2 class="mb-2">
+                Flying Locations
+              </h2>
+
+              <p class="mb-0 text-muted">
+                View all flying sites, airspace clearance and weather conditions before your next flight.
+              </p>
+            </div>
+
+          </div>
+
+          <div class="row mt-4">
+
+            <div class="col-md-6 mb-3">
+
+              <div class="location-feature">
+                <i class="bi bi-shield-check text-success"></i>
+
+                <div>
+                  <h6>Airspace Clearance</h6>
+                  <small>Check today's flying status.</small>
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="col-md-6 mb-3">
+
+              <div class="location-feature">
+                <i class="bi bi-cloud-sun text-primary"></i>
+
+                <div>
+                  <h6>Weather Conditions</h6>
+                  <small>View the latest weather updates.</small>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="col-lg-4 text-center">
+
+          <NuxtLink
+            to="/location"
+            class="btn btn-primary btn-lg px-5"
+          >
+            <i class="bi bi-arrow-right-circle-fill me-2"></i>
+            View Flying Locations
+          </NuxtLink>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</section>
       </div>
     </section>
 
@@ -190,7 +271,7 @@ import WeatherCheckTwo from '~/components/Frontend/WeatherCheckTwo.vue'
   right: -50%;
   width: 200%;
   height: 200%;
-  background: conic-gradient(transparent, #667eea, transparent 30%);
+  background: conic-gradient(transparent, #198754, transparent 30%);
   animation: rotate 4s linear infinite;
 }
 
@@ -224,7 +305,7 @@ import WeatherCheckTwo from '~/components/Frontend/WeatherCheckTwo.vue'
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #667eea, transparent);
+  background: linear-gradient(90deg, transparent, #198754, transparent);
   animation: scan 2s ease-in-out infinite;
 }
 
@@ -357,6 +438,63 @@ import WeatherCheckTwo from '~/components/Frontend/WeatherCheckTwo.vue'
     .feedback-card .btn{
         margin-top:25px;
         width:100%;
+    }
+
+}
+.location-cta{
+    background:#fff;
+    border-radius:20px;
+    padding:50px;
+    box-shadow:0 10px 35px rgba(0,0,0,.08);
+}
+
+.location-icon{
+    width:75px;
+    height:75px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#198754,#82bba0);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2rem;
+}
+
+.location-feature{
+    display:flex;
+    align-items:flex-start;
+    gap:15px;
+    padding:15px;
+    background:#f8f9fa;
+    border-radius:12px;
+    height:100%;
+}
+
+.location-feature i{
+    font-size:1.8rem;
+}
+
+.location-feature h6{
+    margin-bottom:5px;
+    font-weight:700;
+}
+
+.location-cta .btn{
+    border-radius:50px;
+    padding:14px 35px;
+    background-color: #198754;
+    border-color: #198754;
+}
+
+@media(max-width:991px){
+
+    .location-cta{
+        padding:30px;
+    }
+
+    .location-cta .btn{
+        width:100%;
+        margin-top:25px;
     }
 
 }
