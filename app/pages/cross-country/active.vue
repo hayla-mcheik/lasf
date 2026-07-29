@@ -55,7 +55,8 @@
 
                                 <h6>Date</h6>
 
-                                {{ request.flight_date }}
+                     
+                                {{ formatDate(request.flight_date) }}
 
                             </div>
 
@@ -63,7 +64,7 @@
 
                                 <h6>Takeoff</h6>
 
-                                {{ request.takeoff_time }}
+                            {{ formatTime(request.takeoff_time) }}
 
                             </div>
 
@@ -278,7 +279,31 @@ const headers = computed(() => ({
     Authorization: `Bearer ${authStore.token}`,
     Accept: 'application/json'
 }))
+const formatDate = (date) => {
 
+    if (!date) return '-'
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).format(new Date(date))
+
+}
+
+const formatTime = (time) => {
+
+    if (!time) return '-'
+
+    const today = new Date().toISOString().split('T')[0]
+
+    return new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).format(new Date(`${today}T${time}`))
+
+}
 /*
 |--------------------------------------------------------------------------
 | Aircraft Position

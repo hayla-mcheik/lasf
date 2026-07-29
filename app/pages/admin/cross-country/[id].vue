@@ -176,7 +176,7 @@
 
                                 <p>
 
-                                    {{ request.flight_date }}
+                       {{ formatDate(request.flight_date) }}
 
                                 </p>
 
@@ -188,7 +188,7 @@
 
                                 <p>
 
-                                    {{ request.takeoff_time }}
+                            {{ formatTime(request.takeoff_time) }}
 
                                 </p>
 
@@ -200,7 +200,7 @@
 
                                 <p>
 
-                                    {{ request.estimated_landing_time }}
+                                 {{ formatTime(request.estimated_landing_time) }}
 
                                 </p>
 
@@ -420,6 +420,31 @@ const pilotImage = computed(() => {
     return `${config.public.mediaBase}/storage/${image}`
 
 })
+const formatDate = (date) => {
+
+    if (!date) return '-'
+
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).format(new Date(date))
+
+}
+
+const formatTime = (time) => {
+
+    if (!time) return '-'
+
+    const today = new Date().toISOString().split('T')[0]
+
+    return new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).format(new Date(`${today}T${time}`))
+
+}
 
 /*
 |--------------------------------------------------------------------------
