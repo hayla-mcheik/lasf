@@ -1,9 +1,15 @@
 import { useAuthStore } from "~/stores/auth"
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware((to) => {
+
   const auth = useAuthStore()
 
-  // Prevent logged-in users from visiting Login
+  /*
+  |--------------------------------------------------------------------------
+  | Prevent authenticated users from visiting Login
+  |--------------------------------------------------------------------------
+  */
+
   if (to.path === '/login' && auth.isAuthenticated) {
 
     if (auth.isAdmin) {
@@ -11,45 +17,95 @@ export default defineNuxtRouteMiddleware((to, from) => {
     }
 
     if (auth.isArmy) {
-      return navigateTo('/admin/locations')
+      return navigateTo('/admin/dashboard')
+    }
+
+    if (auth.isWatcher) {
+      return navigateTo('/admin/dashboard')
     }
 
     return navigateTo('/account')
   }
 
-  // Existing Admin Protection
+  /*
+  |--------------------------------------------------------------------------
+  | Admin Area Protection
+  |--------------------------------------------------------------------------
+  */
+
   if (to.path.startsWith('/admin')) {
 
     if (!auth.isAuthenticated) {
       return navigateTo('/login')
     }
 
-    // Super Admin
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin
+    |--------------------------------------------------------------------------
+    */
+
     if (auth.isAdmin) {
       return
     }
 
-    // Army
+    /*
+    |--------------------------------------------------------------------------
+    | Army
+    |--------------------------------------------------------------------------
+    */
+
     if (auth.isArmy) {
 
-const allowedArmyPaths = [
-  '/admin/locations',
-  '/admin/dashboard',
-  '/admin/live-tracking'
-]
+      const allowedArmyPaths = [
+        '/admin/dashboard',
+        '/admin/locations',
+        '/admin/live-tracking',
+        '/admin/pilots'
+      ]
 
-      const isAllowed = allowedArmyPaths.some(path =>
+      const allowed = allowedArmyPaths.some(path =>
         to.path.startsWith(path)
       )
 
-      if (!isAllowed) {
-        return navigateTo('/admin/locations')
+      if (!allowed) {
+        return navigateTo('/admin/dashboard')
       }
 
       return
     }
 
-    // Normal user
-    return navigateTo('/')
+    /*
+    |--------------------------------------------------------------------------
+    | Watcher
+    |--------------------------------------------------------------------------
+    */
+
+    if (auth.isWatcher) {
+
+      const allowedWatcherPaths = [
+        '/admin/dashboard',
+        '/admin/live-tracking'
+      ]
+
+      const allowed = allowedWatcherPaths.some(path =>
+        to.path.startsWith(path)
+      )
+
+      if (!allowed) {
+        return navigateTo('/admin/dashboard')
+      }
+
+      return
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pilot
+    |--------------------------------------------------------------------------
+    */
+
+    return navigateTo('/account')
   }
+
 })

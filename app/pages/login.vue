@@ -230,34 +230,27 @@ const handleLogin = async () => {
   error.value = ''
 
 
-  const payload =
-
-    loginType.value === 'pilot'
-
-      ? {
-
-          license_number:
-            identifier.value,
-
-          phone:
-            securityValue.value
-
-        }
-
-      : {
-
-          email:
-            identifier.value,
-
-          password:
-            securityValue.value
-
-        }
+const payload =
+  loginType.value === 'pilot'
+    ? {
+        license_number: identifier.value,
+        phone: securityValue.value
+      }
+    : {
+        email: identifier.value,
+        password: securityValue.value,
+        login_type: loginType.value
+      }
 
 
   const result =
     await authStore.login(payload)
-
+console.log('RESULT:', result)
+console.log('USER:', authStore.user)
+console.log('ROLE:', authStore.user?.role)
+console.log('IS ADMIN:', authStore.isAdmin)
+console.log('IS ARMY:', authStore.isArmy)
+console.log('IS WATCHER:', authStore.isWatcher)
 
   if (!result.success) {
 
@@ -361,15 +354,17 @@ const handleLogin = async () => {
   |--------------------------------------------------------------------------
   */
 
-  if (authStore.isWatcher) {
+if (authStore.isWatcher) {
 
-    await navigateTo(
-      '/admin/dashboard'
-    )
+    console.log('WATCHER REDIRECT')
+
+    await navigateTo('/admin/dashboard', {
+        replace: true
+    })
 
     return
 
-  }
+}
 
 
   /*

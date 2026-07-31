@@ -258,7 +258,7 @@ export const useAuthStore = defineStore('auth', {
         */
 
         this.user = response.user
-
+console.log(response.user)
         this.token = response.token
 
 
