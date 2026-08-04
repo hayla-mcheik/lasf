@@ -16,7 +16,9 @@
       ? 'bg-warning text-dark'
       : loginType === 'watcher'
         ? 'bg-info text-white'
-        : 'bg-primary text-white'
+        : loginType === 'beirut_airport'
+          ? 'bg-secondary text-white'
+          : 'bg-primary text-white'
 ]"
 >
 
@@ -31,6 +33,10 @@
       <i class="bi bi-shield-lock"></i>
       Army Login
     </template>
+    <template v-else-if="loginType === 'beirut_airport'">
+    <i class="bi bi-cloud-sun"></i>
+    Beirut Airport Login
+</template>
 <template v-else-if="loginType === 'watcher'">
   <i class="bi bi-eye"></i>
   Watcher Login
@@ -69,6 +75,18 @@
     >
       Army
     </button>
+    <button
+    type="button"
+    class="btn flex-fill"
+    :class="
+        loginType === 'beirut_airport'
+            ? 'btn-secondary'
+            : 'btn-outline-secondary'
+    "
+    @click="loginType = 'beirut_airport'"
+>
+    Beirut Airport
+</button>
     <button
   type="button"
   class="btn flex-fill"
@@ -161,14 +179,16 @@
     <button
       type="submit"
       class="btn btn-lg w-100 py-3 text-white"
-:class="
+   :class="
   loginType === 'pilot'
     ? 'bg-success'
     : loginType === 'army'
       ? 'bg-warning'
       : loginType === 'watcher'
         ? 'bg-info'
-        : 'bg-primary'
+        : loginType === 'beirut_airport'
+          ? 'bg-secondary'
+          : 'bg-primary'
 "
     >
 
@@ -179,9 +199,10 @@
       ? 'Army Login'
       : loginType === 'watcher'
         ? 'Watcher Login'
-        : 'Admin Login'
+        : loginType === 'beirut_airport'
+          ? 'Beirut Airport Login'
+          : 'Admin Login'
 }}
-
     </button>
 
   </form>
@@ -251,6 +272,7 @@ console.log('ROLE:', authStore.user?.role)
 console.log('IS ADMIN:', authStore.isAdmin)
 console.log('IS ARMY:', authStore.isArmy)
 console.log('IS WATCHER:', authStore.isWatcher)
+console.log('IS BEIRUT AIRPORT:', authStore.isBeirutAirport)
 
   if (!result.success) {
 
@@ -347,7 +369,21 @@ console.log('IS WATCHER:', authStore.isWatcher)
 
   }
 
+/*
+|--------------------------------------------------------------------------
+| BEIRUT AIRPORT
+|--------------------------------------------------------------------------
+*/
 
+if (authStore.isBeirutAirport) {
+
+    await navigateTo('/admin/weather', {
+        replace: true
+    })
+
+    return
+
+}
   /*
   |--------------------------------------------------------------------------
   | WATCHER

@@ -23,7 +23,9 @@ export default defineNuxtRouteMiddleware((to) => {
     if (auth.isWatcher) {
       return navigateTo('/admin/dashboard')
     }
-
+if (auth.isBeirutAirport) {
+    return navigateTo('/admin/weather')
+}
     return navigateTo('/account')
   }
 
@@ -99,6 +101,28 @@ export default defineNuxtRouteMiddleware((to) => {
       return
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Beirut Airport
+|--------------------------------------------------------------------------
+*/
+
+if (auth.isBeirutAirport) {
+
+    const allowedAirportPaths = [
+        '/admin/weather'
+    ]
+
+    const allowed = allowedAirportPaths.some(path =>
+        to.path.startsWith(path)
+    )
+
+    if (!allowed) {
+        return navigateTo('/admin/weather')
+    }
+
+    return
+}
     /*
     |--------------------------------------------------------------------------
     | Pilot

@@ -86,7 +86,11 @@ export const useAuthStore = defineStore('auth', {
 
     },
 
+isBeirutAirport: (state) => {
 
+  return state.user?.role === 'beirut_airport'
+
+},
     /*
     |--------------------------------------------------------------------------
     | PILOT / NORMAL USER
@@ -99,7 +103,8 @@ export const useAuthStore = defineStore('auth', {
         this.isAuthenticated &&
         !this.isAdmin &&
         !this.isArmy &&
-        !this.isWatcher
+        !this.isWatcher &&
+        !this.isBeirutAirport
       )
 
     },
@@ -121,7 +126,8 @@ export const useAuthStore = defineStore('auth', {
       return (
         this.isAdmin ||
         this.isArmy ||
-        this.isWatcher
+        this.isWatcher ||
+        this.isBeirutAirport
       )
 
     },

@@ -2,7 +2,12 @@
   <div class="admin-layout">
     <div class="sidebar" :class="{ 'collapsed': sidebarCollapsed }">
       <div class="sidebar-header">
-        <NuxtLink to="/admin/dashboard" class="logo-link">
+<NuxtLink
+    :to="authStore.isBeirutAirport
+        ? '/admin/weather'
+        : '/admin/dashboard'"
+    class="logo-link"
+>
           <i class="bi bi-airplane fs-4"></i>
           <span v-if="!sidebarCollapsed" class="logo-text">
             <img src="/assets/images/icons/logo.png" class="w-80px" />
@@ -15,21 +20,50 @@
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section">
-          <div class="nav-label" v-if="!sidebarCollapsed">Main</div>
-          <NavItem 
+<template v-if="!authStore.isBeirutAirport">
+
+    <div class="nav-section">
+
+        <div
+            class="nav-label"
+            v-if="!sidebarCollapsed"
+        >
+            Main
+        </div>
+
+        <NavItem
             :active="$route.path === '/admin/dashboard'"
             :collapsed="sidebarCollapsed"
             icon="bi-speedometer2"
             label="Dashboard"
             to="/admin/dashboard"
-          />
+        />
 
-        </div>
+    </div>
+
+</template>
 
         <div class="nav-section">
-          <div class="nav-label" v-if="!sidebarCollapsed">Management</div>
-          
+     <div
+    class="nav-label"
+    v-if="
+        !sidebarCollapsed &&
+        !authStore.isBeirutAirport
+    "
+>
+    Management
+</div>
+         <template v-if="authStore.isAdmin || authStore.isBeirutAirport">
+
+    <NavItem
+        :active="$route.path.startsWith('/admin/weather')"
+        :collapsed="sidebarCollapsed"
+        icon="bi-cloud-sun"
+        label="Weather Reports"
+        to="/admin/weather"
+    />
+
+</template> 
         
   <!-- ============================= -->
   <!-- LOCATIONS (Admin + Army) -->
@@ -51,7 +85,12 @@
   <!-- LIVE TRACKING (Admin + Army + Watcher) -->
   <!-- ============================= -->
 
-  <template v-if="authStore.canViewLiveTracking">
+<template
+    v-if="
+        authStore.canViewLiveTracking &&
+        !authStore.isBeirutAirport
+    "
+>
 
     <NavItem
       :active="$route.path.startsWith('/admin/live-tracking')"
@@ -105,13 +144,7 @@
               label="News"
               to="/admin/news"
             />
-<NavItem
-  :active="$route.path.startsWith('/admin/weather')"
-  :collapsed="sidebarCollapsed"
-  icon="bi-cloud-sun"
-  label="Weather Reports"
-  to="/admin/weather"
-/>
+
 <NavItem
   :active="$route.path.startsWith('/admin/pilot-safety-message')"
   :collapsed="sidebarCollapsed"
@@ -195,15 +228,17 @@
               </p>
             </div>
 <div class="user-role">
-  {{
-    authStore.isAdmin
-      ? 'Administrator'
-      : authStore.isArmy
-        ? 'Lebanese Army'
-        : authStore.isWatcher
-          ? 'Watcher'
+{{
+  authStore.isAdmin
+    ? 'Administrator'
+    : authStore.isArmy
+      ? 'Lebanese Army'
+      : authStore.isWatcher
+        ? 'Watcher'
+        : authStore.isBeirutAirport
+          ? 'Beirut Airport'
           : 'Pilot'
-  }}
+}}
 </div>
           </div>
         </div>
@@ -245,6 +280,7 @@ const sidebarCollapsed = ref(false)
 const pageTitle = computed(() => {
   const titles = {
     '/admin/dashboard': 'Dashboard',
+    '/admin/weather': 'Weather Reports',
       '/admin/live-tracking': 'Live Tracking',
     '/admin/locations': 'Locations',
     '/admin/cross-country': 'Cross Country',
@@ -294,10 +330,16 @@ onMounted(async () => {
 const isArmy = authStore.isArmy
 const isAdmin = authStore.isAdmin
 const isWatcher = authStore.isWatcher
+const isBeirutAirport = authStore.isBeirutAirport
 
-if (!isAdmin && !isArmy && !isWatcher) {
-  console.log('Access denied in Layout: Redirecting home...')
-  navigateTo('/')
+if (
+    !isAdmin &&
+    !isArmy &&
+    !isWatcher &&
+    !isBeirutAirport
+) {
+    console.log('Access denied in Layout')
+    return navigateTo('/')
 }
 })
 </script>

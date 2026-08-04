@@ -16,7 +16,21 @@
           <div class="row g-4">
             <div class="col-md-6">
               <label class="form-label fw-bold small text-uppercase">Briefing Date</label>
-              <input v-model="form.forecast_date" type="date" class="form-control form-control-lg border-2" @change="updateDayLabels" required />
+           <input
+    v-model="form.forecast_date"
+    type="date"
+    class="form-control form-control-lg border-2"
+    :class="{ 'is-invalid': errors.forecast_date }"
+    @change="updateDayLabels"
+    required
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.forecast_date"
+>
+    {{ errors.forecast_date[0] }}
+</div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold small text-uppercase text-muted">Day Name (Arabic)</label>
@@ -25,7 +39,19 @@
 
             <div class="col-12">
               <label class="form-label fw-bold small text-uppercase">General Situation (الحالة العامة)</label>
-              <textarea v-model="form.general_situation_ar" class="form-control border-2 shadow-sm" rows="3"></textarea>
+            <textarea
+    v-model="form.general_situation_ar"
+    class="form-control border-2 shadow-sm"
+    :class="{ 'is-invalid': errors.general_situation_ar }"
+    rows="3"
+></textarea>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.general_situation_ar"
+>
+    {{ errors.general_situation_ar[0] }}
+</div>
             </div>
             <div class="col-12 mt-4">
 
@@ -122,7 +148,12 @@
                 </div>
 
             </div>
-
+<div
+    class="text-danger mt-2"
+    v-if="errors.flyable_status"
+>
+    {{ errors.flyable_status[0] }}
+</div>
             <div class="mt-4">
 
                 <label class="form-label fw-bold">
@@ -131,17 +162,19 @@
 
                 </label>
 
-                <textarea
+<textarea
+    v-model="form.flyable_message"
+    rows="2"
+    class="form-control"
+    :class="{ 'is-invalid': errors.flyable_message }"
+></textarea>
 
-                    v-model="form.flyable_message"
-
-                    rows="2"
-
-                    class="form-control"
-
-                    placeholder="Example: Strong wind after 3 PM"
-
-                ></textarea>
+<div
+    class="invalid-feedback"
+    v-if="errors.flyable_message"
+>
+    {{ errors.flyable_message[0] }}
+</div>
 
             </div>
 
@@ -153,28 +186,94 @@
 
             <div class="col-md-4">
               <label class="form-label fw-bold small text-primary">Surface Winds (الرياح السطحية)</label>
-              <input v-model="form.surface_winds_ar" type="text" class="form-control border-primary-subtle" />
+            <input
+    v-model="form.surface_winds_ar"
+    class="form-control border-primary-subtle"
+    :class="{ 'is-invalid': errors.surface_winds_ar }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.surface_winds_ar"
+>
+    {{ errors.surface_winds_ar[0] }}
+</div>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-bold small text-primary">Visibility (الانقشاع)</label>
-              <input v-model="form.visibility_ar" type="text" class="form-control border-primary-subtle" />
+            <input
+    v-model="form.visibility_ar"
+    class="form-control border-primary-subtle"
+    :class="{ 'is-invalid': errors.visibility_ar }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.visibility_ar"
+>
+    {{ errors.visibility_ar[0] }}
+</div>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-bold small text-primary">Humidity (الرطوبة النسبية)</label>
-              <input v-model="form.humidity_range" type="text" class="form-control border-primary-subtle" />
+             <input
+    v-model="form.humidity_range"
+    class="form-control border-primary-subtle"
+    :class="{ 'is-invalid': errors.humidity_range }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.humidity_range"
+>
+    {{ errors.humidity_range[0] }}
+</div>
             </div>
 
             <div class="col-md-4 mt-3">
               <label class="form-label fw-bold small">Sea State (حالة البحر)</label>
-              <input v-model="form.sea_state_ar" type="text" class="form-control border-2 shadow-sm" />
+             <input
+    v-model="form.sea_state_ar"
+    class="form-control border-2 shadow-sm"
+    :class="{ 'is-invalid': errors.sea_state_ar }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.sea_state_ar"
+>
+    {{ errors.sea_state_ar[0] }}
+</div>
             </div>
             <div class="col-md-4 mt-3">
               <label class="form-label fw-bold small">Pressure (hPa)</label>
-              <input v-model="form.pressure_hpa" type="text" class="form-control border-2 shadow-sm" />
+         <input
+    v-model="form.pressure_hpa"
+    class="form-control border-2 shadow-sm"
+    :class="{ 'is-invalid': errors.pressure_hpa }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.pressure_hpa"
+>
+    {{ errors.pressure_hpa[0] }}
+</div>
             </div>
             <div class="col-md-4 mt-3">
               <label class="form-label fw-bold small">Water Temp (حرارة الماء)</label>
-              <input v-model="form.water_temp_ar" type="text" class="form-control border-2 shadow-sm" />
+            <input
+    v-model="form.water_temp_ar"
+    class="form-control border-2 shadow-sm"
+    :class="{ 'is-invalid': errors.water_temp_ar }"
+/>
+
+<div
+    class="invalid-feedback"
+    v-if="errors.water_temp_ar"
+>
+    {{ errors.water_temp_ar[0] }}
+</div>
             </div>
 
             <div class="col-12 mt-4">
@@ -184,7 +283,18 @@
                   <div v-for="i in 3" :key="i" class="col-md-4">
                     <div class="p-3 rounded bg-light border-start border-4 border-primary">
                       <label class="small fw-black text-primary mb-2 d-block text-uppercase">{{ getNextDayLabel(i) }}</label>
-                      <textarea v-model="form.daily_details['day_' + i]" class="form-control form-control-sm border-0 bg-transparent" rows="4"></textarea>
+<textarea
+    v-model="form.daily_details['day_' + i]"
+    class="form-control form-control-sm border-0 bg-transparent"
+    :class="{ 'is-invalid': errors['daily_details.day_' + i] }"
+    rows="4"
+></textarea>
+                      <div
+    class="invalid-feedback"
+    v-if="errors['daily_details.day_' + i]"
+>
+    {{ errors['daily_details.day_' + i][0] }}
+</div>
                     </div>
                   </div>
                 </div>
@@ -269,8 +379,12 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({ layout: 'admin' })
+useHead({
+    title: 'Weather Reports'
+})
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
+const errors = ref({})
 const loading = ref(true)
 
 const form = ref({
@@ -307,16 +421,37 @@ flyable_message:
 }
 
 const saveReport = async () => {
-  loading.value = true
-  try {
-    await $fetch(`${config.public.apiBase}/admin/weather/${form.value.id}`, { 
-      method: 'PUT', 
-      body: form.value, 
-      headers: getHeaders() 
-    })
-    alert("Briefing updated successfully!");
-    await fetchBriefing()
-  } finally { loading.value = false }
+
+    loading.value = true
+    errors.value = {}
+
+    try {
+
+        await $fetch(
+            `${config.public.apiBase}/admin/weather/${form.value.id}`,
+            {
+                method: 'PUT',
+                body: form.value,
+                headers: getHeaders()
+            }
+        )
+
+        alert("Briefing updated successfully!")
+
+        await fetchBriefing()
+
+    } catch (err) {
+
+        if (err.data?.errors) {
+            errors.value = err.data.errors
+        }
+
+    } finally {
+
+        loading.value = false
+
+    }
+
 }
 
 const updateDayLabels = () => {
