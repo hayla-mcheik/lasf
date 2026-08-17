@@ -109,10 +109,7 @@
       </div>
     </section>
 
-    <section class="py-6">
-      <Pilot />
-    </section>
-    
+
 <Testimonials />
 
 <!-- Feedback & Complaints CTA -->
