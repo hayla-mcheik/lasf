@@ -136,15 +136,20 @@
 
           </div>
 
-          <div class="pilot-card-right">
+<div class="pilot-card-right">
 
-            <span class="badge bg-success">
+    <span class="badge bg-success">
+        Flying
+    </span>
 
-              Flying
+    <div
+        v-if="pilot.outside_zone"
+        class="outside-warning mt-2"
+    >
+        ⚠️ Outside Zone
+    </div>
 
-            </span>
-
-          </div>
+</div>
 
         </div>
 
@@ -160,7 +165,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import { useAuthStore } from '~/stores/auth'
-
+// import { loadKml } from '~/utils/loadKmz'
 definePageMeta({
     layout: 'admin'
 })
@@ -178,6 +183,7 @@ const pilots = ref([])
 const selectedLocation = ref('')
 
 let markers = []
+let kmlLayer = null
 let refreshTimer = null
 
 onMounted(async () => {
@@ -232,12 +238,41 @@ popupAnchor: [0,-24],
             attribution: '&copy; OpenStreetMap & CARTO'
         }
     ).addTo(map)
+function drawPolygons() {
+    if (!map) return
+
+    locations.value.forEach(location => {
+
+        if (
+            !location.kml_polygon ||
+            !Array.isArray(location.kml_polygon)
+        ) {
+            return
+        }
+
+        location.kml_polygon.forEach(polygon => {
+
+            const points = polygon.map(point => [
+                Number(point.lat),
+                Number(point.lng)
+            ])
+
+            L.polygon(points, {
+                weight: 3,
+                fillOpacity: 0.25
+            }).addTo(map)
+
+        })
+
+    })
+}
 
 setTimeout(() => {
     map.invalidateSize()
 }, 200)
 
     await loadLocations()
+    drawPolygons()
     await loadPilots()
 
     refreshTimer = setInterval(() => {
@@ -354,41 +389,89 @@ if (!Array.isArray(response)) {
             const mapsUrl=`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
 
         
+const currentIcon = L.divIcon({
+
+    html: `
+        <div class="${
+            session.outside_zone
+                ? 'airplane-marker-danger'
+                : 'airplane-marker'
+        }">
+            <i class="bi bi-airplane-fill"></i>
+        </div>
+    `,
+
+    className: 'custom-airplane-icon',
+
+    iconSize: [44, 44],
+
+    iconAnchor: [24, 24],
+
+    popupAnchor: [0, -24],
+
+})
 
 const marker = L.marker(
-                [
-                    Number(gps.latitude),
-                    Number(gps.longitude)
-                ],
-                {
-                    icon:airplaneIcon
-                }
-            ).addTo(map)
+    [
+        Number(gps.latitude),
+        Number(gps.longitude)
+    ],
+    {
+        icon: currentIcon
+    }
+).addTo(map)
 
-            marker.bindPopup(`
+   const contactButtons = authStore.canContactPilots
+    ? `
+        <a
+            class="btn btn-primary btn-sm"
+            href="tel:${phone}">
+            📞 Call Pilot
+        </a>
+
+        <a
+            target="_blank"
+            class="btn btn-success btn-sm"
+            href="https://wa.me/${phone}?text=${encodeURIComponent(
+              '⚠️ LASF Emergency: Please land immediately.'
+            )}">
+            💬 Send WhatsApp
+        </a>
+      `
+    : ''
+
+marker.bindPopup(`
 <div class="pilot-popup">
 
     <div class="popup-header">
 
- <div class="popup-icon">
-    <i class="bi bi-airplane-fill"></i>
-</div>
+        <div class="popup-icon">
+            <i class="bi bi-airplane-fill"></i>
+        </div>
 
         <div>
 
             <h5>${session.pilot?.name ?? 'Pilot'}</h5>
 
-  <small>
-📍 ${session.location?.name ?? 'Unknown Location'}
-</small>
+            <small>
+                📍 ${session.location?.name ?? 'Unknown Location'}
+            </small>
 
         </div>
 
     </div>
 
-    <div class="popup-status">
-        🟢 Currently Flying
-    </div>
+<div class="popup-status ${
+    session.outside_zone
+        ? 'popup-status-danger'
+        : ''
+}">
+    ${
+        session.outside_zone
+            ? '⚠️ Outside Authorized Zone'
+            : '🟢 Currently Flying'
+    }
+</div>
 
     <table class="table table-sm mb-3">
 
@@ -411,18 +494,7 @@ const marker = L.marker(
 
     <div class="d-grid gap-2">
 
-        <a
-            class="btn btn-primary btn-sm"
-            href="tel:${phone}">
-            📞 Call Pilot
-        </a>
-
-        <a
-            target="_blank"
-            class="btn btn-success btn-sm"
-            href="https://wa.me/${phone}?text=${encodeURIComponent('⚠️ LASF Emergency: Please land immediately.')}">
-            💬 Send WhatsApp
-        </a>
+        ${contactButtons}
 
         <a
             target="_blank"
@@ -693,5 +765,50 @@ gap:15px;
 :deep(.airplane-marker i){
     font-size:22px;
     color:#fff;
+}
+.outside-warning {
+
+    background: #dc3545;
+
+    color: white;
+
+    padding: 6px 12px;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+
+    font-weight: bold;
+
+}
+
+:deep(.popup-status-danger) {
+
+    background: #dc3545 !important;
+
+}
+
+:deep(.airplane-marker-danger) {
+
+    width: 48px;
+
+    height: 48px;
+
+    border-radius: 50%;
+
+    background: #dc3545;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #fff;
+
+    border: 3px solid #fff;
+
+    box-shadow: 0 10px 20px rgba(0, 0, 0, .25);
+
 }
 </style>

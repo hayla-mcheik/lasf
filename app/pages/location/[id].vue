@@ -151,7 +151,58 @@ const canCheckIn = computed(() => {
 | Refresh Everything
 |--------------------------------------------------------------------------
 */
+async function handlePause()
+{
+    try
+    {
+        await $fetch(
+            `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/pause`,
+            {
+                method: 'POST',
 
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
+            }
+        )
+
+        stopTracking()
+
+        await authStore.loadActiveSession()
+
+        alert('Permission paused successfully.')
+    }
+    catch (error)
+    {
+        alert(error?.data?.message)
+    }
+}
+async function handleResume()
+{
+    try
+    {
+        await $fetch(
+            `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/resume`,
+            {
+                method: 'POST',
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
+            }
+        )
+
+        startTracking()
+
+        await authStore.loadActiveSession()
+
+        alert('Permission resumed successfully.')
+    }
+    catch (error)
+    {
+        alert(error?.data?.message)
+    }
+}
 const refreshEverything = async () => {
 
     await Promise.allSettled([
@@ -299,7 +350,7 @@ catch (error) {
 */
 
 let watchId = null
-
+const outsideZoneWarningShown = ref(false)
 function startTracking() {
 
     if (!process.client)
@@ -317,33 +368,41 @@ function startTracking() {
 
             try {
 
-                await $fetch(
+  const response = await $fetch(
+    `${config.public.apiBase}/gps/update`,
+    {
+        method: 'POST',
 
-                    `${config.public.apiBase}/gps/update`,
+        headers: {
+            Authorization: `Bearer ${authStore.token}`
+        },
 
-                    {
+        body: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+        }
+    }
+)
 
-                        method: 'POST',
+if (
+    response.outside_zone &&
+    !outsideZoneWarningShown.value
+) {
 
-                        headers: {
+    outsideZoneWarningShown.value = true
 
-                            Authorization: `Bearer ${authStore.token}`
+    alert(
+        'Warning: You are outside the authorized flying zone.'
+    )
 
-                        },
+}
 
-                        body: {
+if (!response.outside_zone) {
 
-                            latitude: position.coords.latitude,
+    outsideZoneWarningShown.value = false
 
-                            longitude: position.coords.longitude,
-
-                            accuracy: position.coords.accuracy
-
-                        }
-
-                    }
-
-                )
+}
 
             }
 
@@ -373,6 +432,18 @@ function startTracking() {
 
     )
 
+}
+
+function stopTracking()
+{
+    if (!watchId)
+    {
+        return
+    }
+
+    navigator.geolocation.clearWatch(watchId)
+
+    watchId = null
 }
 
 /*
@@ -756,19 +827,32 @@ onUnmounted(() => {
 
             </NuxtLink>
 
-            <button
+<div class="d-flex flex-column gap-3">
 
-                @click="handleCheckOut"
+<button
+    v-if="activeSession?.status === 'active'"
+    @click="handlePause"
+    class="btn btn-warning btn-lg"
+>
+    Pause Permission
+</button>
 
-                class="btn btn-danger btn-lg"
+<button
+    v-if="activeSession?.status === 'paused'"
+    @click="handleResume"
+    class="btn btn-success btn-lg"
+>
+    Resume Permission
+</button>
 
-            >
+<button
+    @click="handleCheckOut"
+    class="btn btn-danger btn-lg"
+>
+    Close Permission
+</button>
 
-                <i class="bi bi-box-arrow-right me-2"></i>
-
-                Confirm Landing
-
-            </button>
+</div>
 
         </div>
 

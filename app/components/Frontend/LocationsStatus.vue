@@ -235,6 +235,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 
 import 'leaflet/dist/leaflet.css'
 import LocationCard from './LocationCard.vue'
+
 let L = null
 const props = defineProps({
   limit: {
@@ -253,7 +254,7 @@ const activeFilter = ref('all')
 const showMap = ref(true)
 let map = null
 let markers = []
-
+let kmlLayer = null
 // Fetch Locations
 const { data: locationsData, pending } = await useFetch(
   `${config.public.apiBase}/flying-locations`,
@@ -422,6 +423,34 @@ const drawMap = async () => {
       maxZoom: 20
     }
   ).addTo(map)
+  displayLocations.value.forEach(location => {
+
+    if (
+        !location.kml_polygon ||
+        !Array.isArray(location.kml_polygon)
+    ) {
+        return
+    }
+
+    location.kml_polygon.forEach(polygon => {
+
+        const points = polygon.map(point => [
+
+            Number(point.lat),
+            Number(point.lng)
+
+        ])
+
+        L.polygon(points, {
+
+            weight: 3,
+            fillOpacity: 0.25
+
+        }).addTo(map)
+
+    })
+
+})
 
   markers = []
 

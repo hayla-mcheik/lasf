@@ -183,6 +183,14 @@ isBeirutAirport: (state) => {
 
     },
 
+    canContactPilots() {
+
+  return (
+    this.isAdmin ||
+    this.isArmy
+  )
+
+},
 
     /*
     |--------------------------------------------------------------------------
