@@ -783,7 +783,13 @@ formData.append(
       const errMsgs = Object.values(err.data.errors).flat()
       alert(`Validation Failure: ${errMsgs[0] || 'Check syntax.'}`)
     } else {
-      alert(`Server Error: ${err.data?.message || 'Transaction aborted.'}`)
+      console.log(err)
+
+    alert(
+        err.data?.error ||
+        err.data?.message ||
+        'Transaction aborted.'
+    )
     }
   } finally {
     saving.value = false
