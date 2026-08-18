@@ -551,6 +551,7 @@
     :href="file.view"
     target="_blank"
     class="btn btn-primary btn-sm me-2"
+      @click="showLicensesModal = false"
 >
     View
 </a>
