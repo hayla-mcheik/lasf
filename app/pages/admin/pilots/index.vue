@@ -430,7 +430,19 @@
                   <div class="brand-logo-graphics">
                     <img src="/assets/images/logocard.png" alt="LASF" class="img-fluid" @error="(e) => e.target.style.display='none'">
                   </div>
-   
+                  <div class="brand-title-text"></div>
+
+                  <div class="qr-code-wrapper">
+                    <img 
+                      v-if="qrCodeData" 
+                      :src="qrCodeData" 
+                      alt="QR Code" 
+                      class="qr-code-image"
+                    >
+                    <div v-else class="qr-placeholder">
+                      <i class="bi bi-qr-code"></i>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="disclaimer-red-block text-start">
@@ -504,7 +516,7 @@
             </div>
 
             <div class="d-flex gap-2 hide-on-print">
-              <button class="btn btn-light px-4 border" @click="activeCardPilot = null">Close Preview</button>
+              <button class="btn btn-light px-4 border" @click="closeCardPreview">Close Preview</button>
               <button class="btn btn-primary px-4 shadow" @click="printMembershipCard"><i class="bi bi-printer-fill me-2"></i> Print Dual Card</button>
             </div>
           </div>
@@ -547,7 +559,7 @@
 
                     <div>
 
-                 <a
+               <a  
     :href="file.view"
     target="_blank"
     class="btn btn-primary btn-sm me-2"
@@ -571,6 +583,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import QRCode from 'qrcode'
 
 definePageMeta({ layout: 'admin' })
 const showLicensesModal = ref(false)
@@ -586,6 +599,8 @@ const error = ref(null)
 const fieldErrors = ref({})
 const pilots = ref([])
 const availableSports = ref([])
+
+const qrCodeData = ref(null)
 
 const showCreateModal = ref(false)
 const showDeleteModal = ref(false)
@@ -935,7 +950,50 @@ const viewLicenses = async (pilot) => {
     }
 
 }
-const generateCardView = (pilot) => { activeCardPilot.value = pilot }
+
+/**
+ * Generate a QR code for a specific pilot's public profile URL.
+ */
+const generateQRCodeForPilot = async (pilot) => {
+  const license = pilot?.pilot_profile?.license_number
+
+  console.log('License:', license)
+
+  if (!license) {
+    qrCodeData.value = null
+    return
+  }
+
+  try {
+    const baseUrl = window.location.origin
+
+    const profileUrl =
+      `${baseUrl}/pilot/${encodeURIComponent(license)}`
+
+    console.log('Profile URL:', profileUrl)
+
+    qrCodeData.value = await QRCode.toDataURL(profileUrl)
+
+    console.log('QR generated:', qrCodeData.value)
+
+  } catch (err) {
+    console.error(err)
+
+    qrCodeData.value = null
+  }
+}
+
+const generateCardView = async (pilot) => {
+  activeCardPilot.value = pilot
+
+  await generateQRCodeForPilot(pilot)
+}
+
+const closeCardPreview = () => {
+  activeCardPilot.value = null
+  qrCodeData.value = null
+}
+
 const printMembershipCard = () => { window.print() }
 
 const formatDisciplinesString = (pilot) => {
@@ -1019,34 +1077,34 @@ onMounted(fetchPilots)
 .lasf-official-card {
   width: 340px;
   height: 250px;
-  background-color: #ffffff !important; /* Added important to lock white card background */
+  background-color: #ffffff !important;
   border-radius: 0px !important; 
   overflow: hidden;
   font-family: 'Roboto', sans-serif;
   border: 1px solid #d3d3d3;
   box-sizing: border-box;
-  print-color-adjust: exact !important;         /* Forces color rendering on print */
-  -webkit-print-color-adjust: exact !important; /* Forces color rendering on print */
+  print-color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
 }
 .lasf-official-cardtwo {
     height: 200px !important;
 }
 .brand-top-band {
-  background-color: #e52427 !important; /* Added important */
+  background-color: #e52427 !important;
   height: 30px;
   width: 100%;
-  print-color-adjust: exact !important;         /* Forces color rendering on print */
-  -webkit-print-color-adjust: exact !important; /* Forces color rendering on print */
+  print-color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
 }
 
-/* Front Side Layout Changes */
 .brand-header-area {
   height: 110px;
   padding: 0 30px;
   background: #ffffff;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 .brand-logo-graphics {
   width: 150px;
@@ -1065,6 +1123,7 @@ onMounted(fetchPilots)
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex: 1;
 }
 .brand-title-text .main-title {
   font-size: 1rem;
@@ -1074,14 +1133,34 @@ onMounted(fetchPilots)
   letter-spacing: 1.5px;
 }
 
-/* Disclaimer Red Box Changes */
+.qr-code-wrapper {
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  padding: 3px;
+}
+.qr-code-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.qr-placeholder {
+  font-size: 1.5rem;
+  color: #ccc;
+}
+
 .disclaimer-red-block {
   background-color: #e52427 !important;
   height: 116px;
   padding: 12px 20px;
   color: #ffffff !important;
-  print-color-adjust: exact !important;         /* Forces background color rendering on print */
-  -webkit-print-color-adjust: exact !important; /* Forces background color rendering on print */
+  print-color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
 }
 .disclaimer-paragraph {
   font-size: 0.9rem !important;
@@ -1094,7 +1173,6 @@ onMounted(fetchPilots)
   font-weight: 500;
 }
 
-/* Back Side Profile Card Changes */
 .pilot-header-row {
   height: 34px;
 }
@@ -1127,7 +1205,6 @@ onMounted(fetchPilots)
   font-weight: 400;
 }
 
-/* Metadata Parameters Matrix Grid Grid alignment rules matching layout */
 .data-grid-matrix .matrix-label {
   display: block;
   font-size: 0.9rem;
@@ -1141,22 +1218,18 @@ onMounted(fetchPilots)
   color: #777777;
 }
 
-/* Screen Mode Layout Enhancements */
 @media screen {
   .print-friendly-overlay {
     background: rgba(0, 0, 0, 0.6);
   }
 }
 
-/* Strict Print Rule Config matching view standard metrics */
 @media print {
-  /* Hides everything including background leakages cleanly */
   body, html, #__nuxt, #layout-wrapper {
     visibility: hidden !important;
     background: none !important;
   }
   
-  /* Keeps only the badge view visible */
   .print-friendly-overlay,
   .printable-modal-dialog,
   .lasf-badge-container,
@@ -1178,7 +1251,7 @@ onMounted(fetchPilots)
   }
   
   .lasf-official-card {
-    border: 1px solid #d3d3d3 !important; /* Retain your design border outline on paper */
+    border: 1px solid #d3d3d3 !important;
     page-break-inside: avoid;
     margin-bottom: 20px;
     print-color-adjust: exact !important;
