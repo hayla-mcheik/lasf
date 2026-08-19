@@ -155,10 +155,12 @@ async function handlePause()
 {
     try
     {
+        console.log('Session:', activeSession.value)
+
         await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/pause`,
             {
-                method: 'POST',
+                method: 'PATCH',
 
                 headers: {
                     Authorization: `Bearer ${authStore.token}`
@@ -174,7 +176,16 @@ async function handlePause()
     }
     catch (error)
     {
-        alert(error?.data?.message)
+        console.log(error)
+
+        console.log(error.response)
+
+        alert(
+            error?.data?.message ||
+            error?.response?._data?.message ||
+            error?.message ||
+            'Pause failed.'
+        )
     }
 }
 async function handleResume()
@@ -200,7 +211,13 @@ async function handleResume()
     }
     catch (error)
     {
-        alert(error?.data?.message)
+          console.log(error)
+    alert(JSON.stringify(error))
+    alert(
+        error?.data?.message ||
+        error?.message ||
+        'Resume failed.'
+    )
     }
 }
 const refreshEverything = async () => {
