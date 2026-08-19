@@ -191,6 +191,42 @@
         </div>
       </div>
     </div>
+    <!-- Pagination -->
+<div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center flex-wrap gap-3 py-3 hide-on-print">
+  <div class="text-muted small">
+    Showing <strong>{{ pilots.length }}</strong> of <strong>{{ total }}</strong> pilots
+    <span v-if="perPage < total" class="ms-2">
+      (Page {{ currentPage }} of {{ lastPage }})
+    </span>
+  </div>
+  
+  <nav aria-label="Pilot pagination">
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item" :class="{ disabled: currentPage <= 1 }">
+        <a class="page-link" href="#" @click.prevent="prevPage">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </li>
+      
+      <li 
+        v-for="page in visiblePages" 
+        :key="page" 
+        class="page-item" 
+        :class="{ active: page === currentPage }"
+      >
+        <a class="page-link" href="#" @click.prevent="goToPage(page)">
+          {{ page }}
+        </a>
+      </li>
+      
+      <li class="page-item" :class="{ disabled: currentPage >= lastPage }">
+        <a class="page-link" href="#" @click.prevent="nextPage">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
 
     <!-- Modals (Create/Edit & Delete) -->
     <div v-if="showCreateModal" class="modal-backdrop fade show hide-on-print"></div>
@@ -581,7 +617,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted , computed } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import QRCode from 'qrcode'
 
@@ -610,7 +646,10 @@ const activeCardPilot = ref(null)
 
 const imageFile = ref(null)
 const licensesFileList = ref([])
-
+const currentPage = ref(1)
+const lastPage = ref(1)
+const perPage = ref(20)
+const total = ref(0)
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 const clubsList = [
@@ -708,14 +747,27 @@ const syncClubFields = () => {
 }
 
 
-const fetchPilots = async () => {
+const fetchPilots = async (page = 1) => {
   loading.value = true
   error.value = null
   try {
-    const data = await $fetch(`${config.public.apiBase}/admin/pilots`, {
+    const response = await $fetch(`${config.public.apiBase}/admin/pilots?page=${page}&per_page=${perPage.value}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    pilots.value = data.data || data
+    
+    // Handle both paginated and non-paginated responses
+    if (response.data && response.current_page !== undefined) {
+      pilots.value = response.data
+      currentPage.value = response.current_page
+      lastPage.value = response.last_page
+      total.value = response.total
+    } else {
+      pilots.value = response.data || response
+      // If response is not paginated, set default values
+      currentPage.value = 1
+      lastPage.value = 1
+      total.value = pilots.value.length
+    }
 
     const sportsData = await $fetch(`${config.public.apiBase}/admin/sports`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
@@ -723,10 +775,62 @@ const fetchPilots = async () => {
     availableSports.value = sportsData
   } catch (err) {
     error.value = "Failed processing server content."
+    console.error(err)
   } finally {
     loading.value = false
   }
 }
+
+// Add pagination methods
+const goToPage = (page) => {
+  if (page < 1 || page > lastPage.value) return
+  fetchPilots(page)
+}
+
+const nextPage = () => {
+  if (currentPage.value < lastPage.value) {
+    goToPage(currentPage.value + 1)
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    goToPage(currentPage.value - 1)
+  }
+}
+const visiblePages = computed(() => {
+  const pages = []
+  const total = lastPage.value
+  const current = currentPage.value
+  
+  if (total <= 7) {
+    // Show all pages if 7 or fewer
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Show first page, last page, and pages around current
+    if (current <= 3) {
+      // Near start
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 2) {
+      // Near end
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
+    } else {
+      // Middle
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+  return pages
+})
 
 const savePilot = async () => {
   saving.value = true

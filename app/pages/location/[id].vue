@@ -157,15 +157,13 @@ async function handlePause()
     {
         console.log('Session:', activeSession.value)
 
-        // Add these two lines
         alert(JSON.stringify(activeSession.value))
         alert(`Session ID: ${activeSession.value?.id}`)
 
         await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/pause`,
             {
-                method: 'PATCH',
-
+                method: 'PATCH',  // ← Already correct
                 headers: {
                     Authorization: `Bearer ${authStore.token}`
                 }
@@ -195,11 +193,13 @@ async function handleResume()
 {
     try
     {
-        await $fetch(
+        // Show what we're about to do
+        alert(`Attempting to resume session ${activeSession.value.id}`)
+        
+        const response = await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/resume`,
             {
-                method: 'POST',
-
+                method: 'PATCH',  // ← Change from 'POST' to 'PATCH'
                 headers: {
                     Authorization: `Bearer ${authStore.token}`
                 }
@@ -207,20 +207,35 @@ async function handleResume()
         )
 
         startTracking()
-
         await authStore.loadActiveSession()
-
+        
         alert('Permission resumed successfully.')
     }
     catch (error)
     {
-          console.log(error)
-    alert(JSON.stringify(error))
-    alert(
-        error?.data?.message ||
-        error?.message ||
-        'Resume failed.'
-    )
+        // Show detailed error information
+        let errorMsg = 'Resume failed.\n\n'
+        
+        if (error?.data?.message) {
+            errorMsg += `Message: ${error.data.message}\n`
+        }
+        
+        if (error?.status) {
+            errorMsg += `Status: ${error.status}\n`
+        }
+        
+        if (error?.response?._data?.message) {
+            errorMsg += `Response: ${error.response._data.message}\n`
+        }
+        
+        // Show the full error as string
+        try {
+            errorMsg += `\nFull error: ${JSON.stringify(error)}`
+        } catch(e) {
+            errorMsg += `\nError: ${error}`
+        }
+        
+        alert(errorMsg)
     }
 }
 const refreshEverything = async () => {
