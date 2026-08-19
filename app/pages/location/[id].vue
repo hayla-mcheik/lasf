@@ -157,6 +157,10 @@ async function handlePause()
     {
         console.log('Session:', activeSession.value)
 
+        // Add these two lines
+        alert(JSON.stringify(activeSession.value))
+        alert(`Session ID: ${activeSession.value?.id}`)
+
         await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/pause`,
             {
@@ -177,7 +181,6 @@ async function handlePause()
     catch (error)
     {
         console.log(error)
-
         console.log(error.response)
 
         alert(
