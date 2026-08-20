@@ -30,7 +30,7 @@
                         <ul class="sub-menu">
                             <li><NuxtLink to="/about" :class="{ 'active': $route.path === '/about' }">About Us</NuxtLink></li>
                             <li><NuxtLink to="/gallery" :class="{ 'active': $route.path === '/gallery' }">Gallery</NuxtLink></li>
-                            <li><NuxtLink to="/pilots" :class="{ 'active': $route.path === '/pilots' }">Pilots</NuxtLink></li>
+
                             <li><NuxtLink to="/regulations" :class="{ 'active': $route.path === '/regulations' }">Regulations</NuxtLink></li>
                         </ul>
                     </li>
@@ -231,16 +231,7 @@
                                         Gallery
                                     </NuxtLink>
                                 </li>
-                                <li>
-                                    <NuxtLink 
-                                        to="/pilots" 
-                                        class="mobile-sub-link" 
-                                        :class="{ 'active': $route.path === '/pilots' }"
-                                        @click="closeMobileMenu"
-                                    >
-                                        Pilots
-                                    </NuxtLink>
-                                </li>
+                
                                 <li>
                                     <NuxtLink 
                                         to="/regulations" 

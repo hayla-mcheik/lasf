@@ -6335,7 +6335,6 @@ form.style-1 .form-inner textarea {
 }
 @media (max-width: 1199px) {
     .footer-section .footer-about .footer1-logo img {
-    max-width: 130px;
     width: 100%}
 }.footer-section .footer-about svg {
     -webkit-animation: rotate 15s linear infinite;

@@ -12,11 +12,7 @@
                     <!-- Breadcrumb Navigation -->
                     <nav v-if="showBreadcrumb" aria-label="breadcrumb" class="breadcrumb-nav mb-3">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <NuxtLink to="/" class="breadcrumb-link">
-                                  Home
-                                </NuxtLink>
-                            </li>
+                
                             <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
                                 <li 
                                     class="breadcrumb-item" 

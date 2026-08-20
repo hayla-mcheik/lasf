@@ -350,4 +350,7 @@ onBeforeUnmount(() => {
     display: none;
   }
 }
+.footer-section .footer-about .footer-plane{
+  display: none !important;
+}
 </style>

@@ -1,7 +1,7 @@
 <template>
  <Breadcrumbs />
  <AboutUs />
- <Pilot />
+
 
 </template>
 

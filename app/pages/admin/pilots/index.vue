@@ -1,28 +1,50 @@
 <template>
   <div class="pilots-admin container-fluid">
     
-    <div class="dashboard-header mb-4 shadow-sm p-4 bg-white rounded hide-on-print">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-          <h1 class="display-6 fw-bold text-dark mb-1">
-            <i class="bi bi-people-fill me-2 text-primary"></i> Pilots Registry
-          </h1>
-          <p class="text-muted mb-0">Manage member logs, tracking configurations, and badge metrics.</p>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-success shadow-sm" @click="exportPilots">
-            <i class="bi bi-download me-1"></i> Export
-          </button>
-          <label class="btn btn-outline-primary mb-0 cursor-pointer shadow-sm">
-            <i class="bi bi-upload me-1"></i> Import CSV
-            <input type="file" @change="importPilots" hidden accept=".csv">
-          </label>
-          <button class="btn btn-primary shadow-sm" @click="openCreateModal">
-            <i class="bi bi-plus-circle me-1"></i> Register Member
-          </button>
-        </div>
-      </div>
+<div class="dashboard-header mb-4 shadow-sm p-4 bg-white rounded hide-on-print">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="display-6 fw-bold text-dark mb-1">
+        <i class="bi bi-people-fill me-2 text-primary"></i> Pilots Registry
+      </h1>
+      <p class="text-muted mb-0">Manage member logs, tracking configurations, and badge metrics.</p>
     </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <!-- Search Input -->
+      <div class="position-relative">
+        <input
+          v-model="searchQuery"
+          @input="handleSearch"
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Search pilots..."
+          style="width: 200px; padding-right: 30px;"
+        />
+        <i
+          v-if="searchQuery"
+          class="bi bi-x-circle position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+          style="cursor: pointer;"
+          @click="searchQuery = ''; handleSearch();"
+        ></i>
+        <i
+          v-else
+          class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
+        ></i>
+      </div>
+      <!-- Existing buttons -->
+      <button class="btn btn-outline-success shadow-sm" @click="exportPilots">
+        <i class="bi bi-download me-1"></i> Export
+      </button>
+      <label class="btn btn-outline-primary mb-0 cursor-pointer shadow-sm">
+        <i class="bi bi-upload me-1"></i> Import CSV
+        <input type="file" @change="importPilots" hidden accept=".csv">
+      </label>
+      <button class="btn btn-primary shadow-sm" @click="openCreateModal">
+        <i class="bi bi-plus-circle me-1"></i> Register Member
+      </button>
+    </div>
+  </div>
+</div>
 
     <div v-if="error" class="alert alert-danger alert-dismissible fade show shadow-sm hide-on-print" role="alert">
       <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
@@ -652,6 +674,12 @@ const perPage = ref(20)
 const total = ref(0)
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
+
+// Add search query
+const searchQuery = ref('')
+let searchTimeout = null
+
+
 const clubsList = [
   { code: '01', name: 'Thermique' }, { code: '02', name: 'CLVL' },
   { code: '03', name: 'Northen Eagles' }, { code: '04', name: 'Sama Lebnan' },
@@ -751,11 +779,14 @@ const fetchPilots = async (page = 1) => {
   loading.value = true
   error.value = null
   try {
-    const response = await $fetch(`${config.public.apiBase}/admin/pilots?page=${page}&per_page=${perPage.value}`, {
+    const url = `${config.public.apiBase}/admin/pilots?page=${page}&per_page=${perPage.value}`
+    const search = searchQuery.value.trim()
+    const finalUrl = search ? `${url}&search=${encodeURIComponent(search)}` : url
+
+    const response = await $fetch(finalUrl, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     
-    // Handle both paginated and non-paginated responses
     if (response.data && response.current_page !== undefined) {
       pilots.value = response.data
       currentPage.value = response.current_page
@@ -763,7 +794,6 @@ const fetchPilots = async (page = 1) => {
       total.value = response.total
     } else {
       pilots.value = response.data || response
-      // If response is not paginated, set default values
       currentPage.value = 1
       lastPage.value = 1
       total.value = pilots.value.length
@@ -780,6 +810,15 @@ const fetchPilots = async (page = 1) => {
     loading.value = false
   }
 }
+
+// Debounced search handler
+const handleSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchPilots(1) // Reset to page 1 on search
+  }, 500)
+}
+
 
 // Add pagination methods
 const goToPage = (page) => {

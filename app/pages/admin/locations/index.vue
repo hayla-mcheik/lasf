@@ -45,6 +45,7 @@
 
      <PermissionCalendar
     :selectedDate="selectedDate"
+    :locations="locations"
     @dateSelected="onDateSelected"
 />
 
