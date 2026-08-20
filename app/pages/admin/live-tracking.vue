@@ -347,205 +347,114 @@ function clearMarkers() {
 
 }
 
-async function loadPilots(){
-
-    try{
-
+async function loadPilots() {
+    try {
         const url = selectedLocation.value
             ? `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`
             : `${config.public.apiBase}/admin/gps/live`
 
-        const response = await $fetch(url,{
-            headers:{
-                Authorization:`Bearer ${authStore.token}`
+        const response = await $fetch(url, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`
             }
         })
-        pilots.value=response
-console.log(response)
+
+        pilots.value = response
+        console.log(response)
+
+        // Clear old markers
         clearMarkers()
-if (!Array.isArray(response)) {
-    pilots.value = []
-    return
-}
-    if (!map) return
-        response.forEach(session=>{
 
-         const gps = session.gps
-
-            if(!gps) return
-
-            const rawPhone=session.pilot?.phone ?? ''
-
-            let phone=rawPhone.replace(/\D/g,'')
-
-            if(phone.startsWith('0')){
-                phone=phone.substring(1)
-            }
-
-            if(!phone.startsWith('961')){
-                phone='961'+phone
-            }
-
-            const mapsUrl=`https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
-
-        
-const currentIcon = L.divIcon({
-
-    html: `
-        <div class="${
-            session.outside_zone
-                ? 'airplane-marker-danger'
-                : 'airplane-marker'
-        }">
-            <i class="bi bi-airplane-fill"></i>
-        </div>
-    `,
-
-    className: 'custom-airplane-icon',
-
-    iconSize: [44, 44],
-
-    iconAnchor: [24, 24],
-
-    popupAnchor: [0, -24],
-
-})
-
-const marker = L.marker(
-    [
-        Number(gps.latitude),
-        Number(gps.longitude)
-    ],
-    {
-        icon: currentIcon
-    }
-).addTo(map)
-
-   const contactButtons = authStore.canContactPilots
-    ? `
-        <a
-            class="btn btn-primary btn-sm"
-            href="tel:${phone}">
-            📞 Call Pilot
-        </a>
-
-        <a
-            target="_blank"
-            class="btn btn-success btn-sm"
-            href="https://wa.me/${phone}?text=${encodeURIComponent(
-              '⚠️ LASF Emergency: Please land immediately.'
-            )}">
-            💬 Send WhatsApp
-        </a>
-      `
-    : ''
-
-marker.bindPopup(`
-<div class="pilot-popup">
-
-    <div class="popup-header">
-
-        <div class="popup-icon">
-            <i class="bi bi-airplane-fill"></i>
-        </div>
-
-        <div>
-
-            <h5>${session.pilot?.name ?? 'Pilot'}</h5>
-
-            <small>
-                📍 ${session.location?.name ?? 'Unknown Location'}
-            </small>
-
-        </div>
-
-    </div>
-
-<div class="popup-status ${
-    session.outside_zone
-        ? 'popup-status-danger'
-        : ''
-}">
-    ${
-        session.outside_zone
-            ? '⚠️ Outside Authorized Zone'
-            : '🟢 Currently Flying'
-    }
-</div>
-
-    <table class="table table-sm mb-3">
-
-        <tr>
-            <td><strong>Phone</strong></td>
-            <td>${rawPhone}</td>
-        </tr>
-
-        <tr>
-            <td><strong>Latitude</strong></td>
-            <td>${Number(gps.latitude).toFixed(6)}</td>
-        </tr>
-
-        <tr>
-            <td><strong>Longitude</strong></td>
-            <td>${Number(gps.longitude).toFixed(6)}</td>
-        </tr>
-
-    </table>
-
-    <div class="d-grid gap-2">
-
-        ${contactButtons}
-
-        <a
-            target="_blank"
-            class="btn btn-dark btn-sm"
-            href="${mapsUrl}">
-            🗺️ Google Maps
-        </a>
-
-    </div>
-
-</div>
-`)
-
-marker.on('click', () => {
-
-    map.flyTo(
-        [
-            Number(gps.latitude),
-            Number(gps.longitude)
-        ],
-        16,
-        {
-            animate: true,
-            duration: 1
+        if (!Array.isArray(response) || !map) {
+            pilots.value = []
+            return
         }
-    )
 
-})
-markers.push(marker)
+        // Add markers for each pilot
+        response.forEach(session => {
+            const gps = session.gps
+            if (!gps) return
 
+            // Phone formatting (for contact buttons)
+            const rawPhone = session.pilot?.phone ?? ''
+            let phone = rawPhone.replace(/\D/g, '')
+            if (phone.startsWith('0')) {
+                phone = phone.substring(1)
+            }
+            if (!phone.startsWith('961')) {
+                phone = '961' + phone
+            }
+
+            const mapsUrl = `https://www.google.com/maps?q=${gps.latitude},${gps.longitude}`
+
+            // Choose marker icon (danger if outside zone)
+            const currentIcon = L.divIcon({
+                html: `
+                    <div class="${session.outside_zone ? 'airplane-marker-danger' : 'airplane-marker'}">
+                        <i class="bi bi-airplane-fill"></i>
+                    </div>
+                `,
+                className: 'custom-airplane-icon',
+                iconSize: [44, 44],
+                iconAnchor: [24, 24],
+                popupAnchor: [0, -24],
+            })
+
+            const marker = L.marker(
+                [Number(gps.latitude), Number(gps.longitude)],
+                { icon: currentIcon }
+            ).addTo(map)
+
+            // Build popup content
+            const contactButtons = authStore.canContactPilots
+                ? `
+                    <a class="btn btn-primary btn-sm" href="tel:${phone}">📞 Call Pilot</a>
+                    <a target="_blank" class="btn btn-success btn-sm" href="https://wa.me/${phone}?text=${encodeURIComponent('⚠️ LASF Emergency: Please land immediately.')}">💬 Send WhatsApp</a>
+                  `
+                : ''
+
+            marker.bindPopup(`
+                <div class="pilot-popup">
+                    <div class="popup-header">
+                        <div class="popup-icon"><i class="bi bi-airplane-fill"></i></div>
+                        <div>
+                            <h5>${session.pilot?.name ?? 'Pilot'}</h5>
+                            <small>📍 ${session.location?.name ?? 'Unknown Location'}</small>
+                        </div>
+                    </div>
+                    <div class="popup-status ${session.outside_zone ? 'popup-status-danger' : ''}">
+                        ${session.outside_zone ? '⚠️ Outside Authorized Zone' : '🟢 Currently Flying'}
+                    </div>
+                    <table class="table table-sm mb-3">
+                        <tr><td><strong>Phone</strong></td><td>${rawPhone}</td></tr>
+                        <tr><td><strong>Latitude</strong></td><td>${Number(gps.latitude).toFixed(6)}</td></tr>
+                        <tr><td><strong>Longitude</strong></td><td>${Number(gps.longitude).toFixed(6)}</td></tr>
+                    </table>
+                    <div class="d-grid gap-2">
+                        ${contactButtons}
+                        <a target="_blank" class="btn btn-dark btn-sm" href="${mapsUrl}">🗺️ Google Maps</a>
+                    </div>
+                </div>
+            `)
+
+            // Click on marker → zoom to that pilot
+            marker.on('click', () => {
+                map.flyTo(
+                    [Number(gps.latitude), Number(gps.longitude)],
+                    16,
+                    { animate: true, duration: 1 }
+                )
+            })
+
+            markers.push(marker)
         })
 
-     if (map && markers.length) {
+        // ❌ REMOVED the auto‑fit‑bounds block – now the map stays at its current zoom/center.
+        // The user can manually zoom or click a marker to zoom in.
 
-            const group=L.featureGroup(markers)
-
-            map.fitBounds(
-                group.getBounds(),
-                {
-                    padding:[60,60]
-                }
-            )
-
-        }
-
-    }catch(e){
-
+    } catch (e) {
         console.error(e)
-
     }
-
 }
 </script>
 

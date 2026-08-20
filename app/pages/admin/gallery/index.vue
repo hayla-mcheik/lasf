@@ -258,70 +258,85 @@ const previewItem = ref(null)
 const mediaToDelete = ref(null)
 const fileInput = ref(null)
 
-// Helpers
-const toggleMenu = (id) => { activeMenuId.value = activeMenuId.value === id ? null : id }
-const closeMenus = () => { activeMenuId.value = null }
-const formatTimeAgo = (date) => date ? new Date(date).toLocaleDateString() : 'Just now'
-
-
-const getFullUrl = (path) => {
+// Helper to get full image URL
+const getImageUrl = (path) => {
   if (!path) return ''
   
   // If it's already a full URL, return it
-  if (path.startsWith('http')) return path 
+  if (path.startsWith('http')) return path
   
-  // Your server requires /api/ before /storage/
-  // config.public.apiBase is likely https://lasf.info/api
-  return `${config.public.apiBase}${path}`
+  // If it starts with /storage, prepend the API base URL (without /api)
+  let baseUrl = config.public.apiBase
+  if (baseUrl.endsWith('/api')) {
+    baseUrl = baseUrl.replace(/\/api$/, '')
+  }
+  
+  // Ensure path starts with a slash if needed
+  if (!path.startsWith('/')) {
+    path = '/' + path
+  }
+  
+  return `${baseUrl}${path}`
 }
 
 // API
 const fetchMedia = async () => {
-  loading.value = true;
+  loading.value = true
   try {
     const params = new URLSearchParams({ 
-        page: pagination.current_page, 
-        search: filters.search, 
-        type: filters.type, 
-        sort: filters.sort 
-    });
+      page: pagination.current_page, 
+      search: filters.search, 
+      type: filters.type, 
+      sort: filters.sort 
+    })
     
     const response = await $fetch(`${config.public.apiBase}/admin/gallery?${params}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
-    });
+    })
 
-    const rawData = response.data || response;
+    console.log('Gallery response:', response) // Debug
+
+    // Handle both paginated and non-paginated responses
+    const rawData = response.data || response
+    const items = Array.isArray(rawData) ? rawData : []
     
-    media.value = Array.isArray(rawData) ? rawData.map(item => ({
+    media.value = items.map(item => ({
       ...item,
       file: getImageUrl(item.file)
-    })) : [];
+    }))
 
+    // Update pagination
     if (response.total !== undefined) {
-      pagination.total = response.total;
-      pagination.last_page = response.last_page;
-      pagination.current_page = response.current_page;
+      pagination.total = response.total
+      pagination.last_page = response.last_page
+      pagination.current_page = response.current_page
     } else {
-      pagination.total = media.value.length;
+      pagination.total = media.value.length
     }
 
-    stats.images = media.value.filter(m => m.type === 'image').length;
-    stats.videos = media.value.filter(m => m.type === 'video').length;
+    stats.images = media.value.filter(m => m.type === 'image').length
+    stats.videos = media.value.filter(m => m.type === 'video').length
 
   } catch (err) {
-    console.error("Failed to fetch gallery:", err);
+    console.error("Failed to fetch gallery:", err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
 const handleSearch = useDebounceFn(fetchMedia, 500)
 
+// ... rest of your existing functions (toggleMenu, formatTimeAgo, browseFiles, handleFileSelect, handleDrop, removeFile, uploadMedia, previewMedia, downloadMedia, confirmDelete, deleteMedia, editMedia, closeUploadModal, closePreviewModal, closeDeleteModal)
+
+// You may already have these, but ensure they are present:
+const toggleMenu = (id) => { activeMenuId.value = activeMenuId.value === id ? null : id }
+const formatTimeAgo = (date) => date ? new Date(date).toLocaleDateString() : 'Just now'
+
 const browseFiles = () => fileInput.value.click()
 const handleFileSelect = (e) => selectedFiles.value.push(...Array.from(e.target.files))
 const handleDrop = (e) => {
-    isDragging.value = false
-    selectedFiles.value.push(...Array.from(e.dataTransfer.files))
+  isDragging.value = false
+  selectedFiles.value.push(...Array.from(e.dataTransfer.files))
 }
 const removeFile = (idx) => selectedFiles.value.splice(idx, 1)
 
@@ -342,18 +357,17 @@ const uploadMedia = async () => {
           body: formData
         })
       } catch (err) {
-        // Extract validation errors from Laravel response
-        const errorData = err.data;
+        const errorData = err.data
         const msg = errorData?.errors 
           ? Object.values(errorData.errors).flat().join(' ') 
-          : (errorData?.message || "File upload failed");
-        throw new Error(msg);
+          : (errorData?.message || "File upload failed")
+        throw new Error(msg)
       }
     }
     closeUploadModal()
     fetchMedia()
   } catch (err) {
-    uploadError.value = err.message;
+    uploadError.value = err.message
   } finally {
     uploading.value = false
   }
@@ -370,7 +384,7 @@ const deleteMedia = async () => {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    showDeleteModal.value = false; 
+    showDeleteModal.value = false
     fetchMedia()
   } finally {
     deleting.value = false
@@ -390,14 +404,20 @@ const editMedia = async (item) => {
 }
 
 const closeUploadModal = () => { 
-  showUploadModal.value = false; 
-  selectedFiles.value = [];
-  uploadError.value = null; 
+  showUploadModal.value = false
+  selectedFiles.value = []
+  uploadError.value = null
 }
 const closePreviewModal = () => { showPreviewModal.value = false }
 const closeDeleteModal = () => { showDeleteModal.value = false }
 
-onMounted(() => { fetchMedia(); window.addEventListener('click', closeMenus) })
+// Close dropdown when clicking outside
+const closeMenus = () => { activeMenuId.value = null }
+
+onMounted(() => { 
+  fetchMedia()
+  window.addEventListener('click', closeMenus)
+})
 onUnmounted(() => window.removeEventListener('click', closeMenus))
 </script>
 
