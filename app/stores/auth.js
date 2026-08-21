@@ -31,8 +31,7 @@ export const useAuthStore = defineStore('auth', {
 
   },
 
-
-  getters: {
+getters: {
 
     /*
     |--------------------------------------------------------------------------
@@ -41,186 +40,190 @@ export const useAuthStore = defineStore('auth', {
     */
 
     isAuthenticated: (state) => {
-      return !!state.token
+        return !!state.token
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | SUPER ADMIN
+    | ROLES
     |--------------------------------------------------------------------------
     */
 
     isAdmin: (state) => {
-
-      return (
-        state.user?.is_admin === true ||
-        state.user?.is_admin == 1
-      )
-
+        return (
+            state.user?.is_admin === true ||
+            state.user?.is_admin == 1
+        )
     },
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | ARMY
-    |--------------------------------------------------------------------------
-    */
 
     isArmy: (state) => {
-
-      return state.user?.role === 'army'
-
+        return state.user?.role === 'army'
     },
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | WATCHER
-    |--------------------------------------------------------------------------
-    */
 
     isWatcher: (state) => {
-
-      return state.user?.role === 'watcher'
-
+        return state.user?.role === 'watcher'
     },
 
-isBeirutAirport: (state) => {
+    isBeirutAirport: (state) => {
+        return state.user?.role === 'beirut_airport'
+    },
 
-  return state.user?.role === 'beirut_airport'
+    isPermission: (state) => {
+        return state.user?.role === 'permission'
+    },
 
-},
+
     /*
     |--------------------------------------------------------------------------
-    | PILOT / NORMAL USER
+    | PILOT
     |--------------------------------------------------------------------------
     */
 
     isPilot() {
-
-      return (
-        this.isAuthenticated &&
-        !this.isAdmin &&
-        !this.isArmy &&
-        !this.isWatcher &&
-        !this.isBeirutAirport
-      )
-
+        return (
+            this.isAuthenticated &&
+            !this.isAdmin &&
+            !this.isArmy &&
+            !this.isWatcher &&
+            !this.isBeirutAirport &&
+            !this.isPermission
+        )
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | DASHBOARD ACCESS
+    | DASHBOARD
     |--------------------------------------------------------------------------
-    |
-    | Admin
-    | Army
-    | Watcher
-    |
     */
 
     canAccessDashboard() {
-
-      return (
-        this.isAdmin ||
-        this.isArmy ||
-        this.isWatcher ||
-        this.isBeirutAirport
-      )
-
+        return (
+            this.isAdmin ||
+            this.isArmy ||
+            this.isWatcher ||
+            this.isBeirutAirport ||
+            this.isPermission
+        )
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | LIVE TRACKING ACCESS
+    | LOCATIONS - VIEW
     |--------------------------------------------------------------------------
+    | Admin + Army + Permission
     */
 
-    canViewLiveTracking() {
-
-      return this.canAccessDashboard
-
+    canViewLocations() {
+        return (
+            this.isAdmin ||
+            this.isArmy ||
+            this.isPermission
+        )
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | LOCATION MANAGEMENT
+    | LOCATIONS - MANAGEMENT
     |--------------------------------------------------------------------------
-    |
-    | Admin + Army
-    |
+    | Admin + Army only
     */
 
     canManageLocations() {
-
-      return (
-        this.isAdmin ||
-        this.isArmy
-      )
-
+        return (
+            this.isAdmin ||
+            this.isArmy
+        )
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | PILOTS VIEWING
+    | CLEARANCE STATUS
     |--------------------------------------------------------------------------
-    |
-    | Admin + Army
-    |
+    | Admin + Army + Permission
+    */
+
+    canManageClearance() {
+        return (
+            this.isAdmin ||
+            this.isArmy ||
+            this.isPermission
+        )
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PILOTS - VIEW
+    |--------------------------------------------------------------------------
+    | Admin + Army + Permission
     */
 
     canViewPilots() {
-
-      return (
-        this.isAdmin ||
-        this.isArmy
-      )
-
+        return (
+            this.isAdmin ||
+            this.isArmy ||
+            this.isPermission
+        )
     },
 
-    canContactPilots() {
-
-  return (
-    this.isAdmin ||
-    this.isArmy
-  )
-
-},
 
     /*
     |--------------------------------------------------------------------------
-    | PILOT MANAGEMENT
+    | PILOTS - MANAGEMENT
     |--------------------------------------------------------------------------
-    |
     | Admin only
-    |
     */
 
     canManagePilots() {
-
-      return this.isAdmin
-
+        return this.isAdmin
     },
 
 
     /*
     |--------------------------------------------------------------------------
-    | CMS MANAGEMENT
+    | CONTACT PILOTS
     |--------------------------------------------------------------------------
-    |
+    | Admin + Army only
+    */
+
+    canContactPilots() {
+        return (
+            this.isAdmin ||
+            this.isArmy
+        )
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LIVE TRACKING
+    |--------------------------------------------------------------------------
+    | Admin + Army + Watcher
+    */
+
+    canViewLiveTracking() {
+        return (
+            this.isAdmin ||
+            this.isArmy ||
+            this.isWatcher
+        )
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CMS
+    |--------------------------------------------------------------------------
     | Admin only
-    |
     */
 
     canManageCms() {
-
-      return this.isAdmin
-
+        return this.isAdmin
     },
 
 
@@ -231,12 +234,10 @@ isBeirutAirport: (state) => {
     */
 
     userFullName: (state) => {
-
-      return state.user?.name || 'User'
-
+        return state.user?.name || 'User'
     }
 
-  },
+},
 
 
   actions: {

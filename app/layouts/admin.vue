@@ -69,17 +69,15 @@
   <!-- LOCATIONS (Admin + Army) -->
   <!-- ============================= -->
 
-  <template v-if="authStore.canManageLocations">
-
-    <NavItem
-      :active="$route.path.startsWith('/admin/locations')"
-      :collapsed="sidebarCollapsed"
-      icon="bi-geo-alt"
-      label="Locations"
-      to="/admin/locations"
-    />
-
-  </template>
+<template v-if="authStore.canViewLocations">
+  <NavItem
+    :active="$route.path.startsWith('/admin/locations')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-geo-alt"
+    label="Locations"
+    to="/admin/locations"
+  />
+</template>
 
   <!-- ============================= -->
   <!-- LIVE TRACKING (Admin + Army + Watcher) -->
@@ -237,7 +235,9 @@
         ? 'Watcher'
         : authStore.isBeirutAirport
           ? 'Beirut Airport'
-          : 'Pilot'
+          : authStore.isPermission
+            ? 'Permission Officer'
+            : 'Pilot'
 }}
 </div>
           </div>
@@ -331,12 +331,14 @@ const isArmy = authStore.isArmy
 const isAdmin = authStore.isAdmin
 const isWatcher = authStore.isWatcher
 const isBeirutAirport = authStore.isBeirutAirport
+const isPermission = authStore.isPermission
 
 if (
     !isAdmin &&
     !isArmy &&
     !isWatcher &&
-    !isBeirutAirport
+    !isBeirutAirport &&
+    !isPermission
 ) {
     console.log('Access denied in Layout')
     return navigateTo('/')

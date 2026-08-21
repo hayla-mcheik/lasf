@@ -123,6 +123,34 @@ if (auth.isBeirutAirport) {
 
     return
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| Permission
+|--------------------------------------------------------------------------
+*/
+
+if (auth.isPermission) {
+
+  const allowedPermissionPaths = [
+    '/admin/dashboard',
+    '/admin/locations',
+    '/admin/pilots'
+  ]
+
+  const allowed = allowedPermissionPaths.some(path =>
+    to.path.startsWith(path)
+  )
+
+  if (!allowed) {
+    return navigateTo('/admin/dashboard')
+  }
+
+  return
+}
+
+
     /*
     |--------------------------------------------------------------------------
     | Pilot

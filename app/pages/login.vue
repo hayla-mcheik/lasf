@@ -41,6 +41,10 @@
   <i class="bi bi-eye"></i>
   Watcher Login
 </template>
+<template v-else-if="loginType === 'permission'">
+  <i class="bi bi-shield-check"></i>
+  Permission Login
+</template>
     <template v-else>
       <i class="bi bi-person-badge"></i>
       Admin Login
@@ -98,6 +102,18 @@
   Watcher
 </button>
 
+<button
+  type="button"
+  class="btn flex-fill"
+  :class="
+    loginType === 'permission'
+      ? 'btn-dark'
+      : 'btn-outline-dark'
+  "
+  @click="loginType = 'permission'"
+>
+  Permission
+</button>
     <button
       type="button"
       class="btn flex-fill"
@@ -179,7 +195,7 @@
     <button
       type="submit"
       class="btn btn-lg w-100 py-3 text-white"
-   :class="
+:class="
   loginType === 'pilot'
     ? 'bg-success'
     : loginType === 'army'
@@ -188,7 +204,9 @@
         ? 'bg-info'
         : loginType === 'beirut_airport'
           ? 'bg-secondary'
-          : 'bg-primary'
+          : loginType === 'permission'
+            ? 'bg-dark'
+            : 'bg-primary'
 "
     >
 
@@ -201,7 +219,9 @@
         ? 'Watcher Login'
         : loginType === 'beirut_airport'
           ? 'Beirut Airport Login'
-          : 'Admin Login'
+          : loginType === 'permission'
+            ? 'Permission Login'
+            : 'Admin Login'
 }}
     </button>
 
@@ -369,6 +389,14 @@ console.log('IS BEIRUT AIRPORT:', authStore.isBeirutAirport)
 
   }
 
+  if (authStore.isPermission) {
+
+    await navigateTo('/admin/dashboard', {
+        replace: true
+    })
+
+    return
+}
 /*
 |--------------------------------------------------------------------------
 | BEIRUT AIRPORT
