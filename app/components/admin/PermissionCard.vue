@@ -22,21 +22,119 @@
             <label class="form-label fw-bold">
                 Airspace Status
             </label>
-            <select
-                class="form-select"
-                v-model="status"
-                :class="statusSelectClass"
-            >
-                <option value="green">
-                    🟢 Open
-                </option>
-                <option value="yellow">
-                    🟡 Pending
-                </option>
-                <option value="red">
-                    🔴 Closed
-                </option>
-            </select>
+         <select
+    class="form-select"
+    v-model="status"
+    :class="statusSelectClass"
+>
+
+    <!-- ================================================= -->
+    <!-- PERMISSION ACCOUNT -->
+    <!-- ================================================= -->
+
+    <template v-if="isPermission">
+
+        <!-- CLOSED -->
+        <template v-if="currentStatus === 'red'">
+
+            <option value="red">
+                🔴 Closed
+            </option>
+
+            <option value="yellow">
+                🟡 Pending
+            </option>
+
+        </template>
+
+
+        <!-- PENDING -->
+        <template v-else-if="currentStatus === 'yellow'">
+
+            <option value="yellow">
+                🟡 Pending
+            </option>
+
+        </template>
+
+
+        <!-- OPEN -->
+        <template v-else>
+
+            <option value="green">
+                🟢 Open
+            </option>
+
+        </template>
+
+    </template>
+
+
+<!-- ================================================= -->
+<!-- ARMY ACCOUNT -->
+<!-- ================================================= -->
+<template v-else-if="isArmy">
+
+    <!-- CURRENT STATUS = PENDING -->
+    <template v-if="currentStatus === 'yellow'">
+
+        <!-- Show current status -->
+        <option value="yellow" disabled>
+            🟡 Pending
+        </option>
+
+        <!-- Army decisions -->
+        <option value="green">
+            🟢 Open
+        </option>
+
+        <option value="red">
+            🔴 Closed
+        </option>
+
+    </template>
+
+    <!-- CURRENT STATUS = OPEN -->
+    <template v-else-if="currentStatus === 'green'">
+
+        <option value="green">
+            🟢 Open
+        </option>
+
+    </template>
+
+    <!-- CURRENT STATUS = CLOSED -->
+    <template v-else>
+
+        <option value="red">
+            🔴 Closed
+        </option>
+
+    </template>
+
+</template>
+
+    <!-- ================================================= -->
+    <!-- ADMIN -->
+    <!-- ================================================= -->
+
+    <template v-else>
+
+        <option value="green">
+            🟢 Open
+        </option>
+
+        <option value="yellow">
+            🟡 Pending
+        </option>
+
+        <option value="red">
+            🔴 Closed
+        </option>
+
+    </template>
+
+</select>
         </div>
 
         <div class="mb-3">
@@ -59,7 +157,15 @@
             >
                 <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
                 <i v-else class="bi bi-check-circle me-1"></i>
-                {{ saving ? 'Saving...' : 'Save Permission' }}
+           {{
+    saving
+        ? 'Saving...'
+        : isPermission && currentStatus === 'red'
+            ? 'Request Pending'
+            : isArmy && currentStatus === 'yellow'
+                ? 'Update Decision'
+                : 'Save Permission'
+}}
             </button>
         </div>
 
@@ -68,6 +174,9 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+
+const authStore = useAuthStore()
 
 const props = defineProps({
     location: {
@@ -82,6 +191,17 @@ const status = ref('')
 const reason = ref('')
 const saving = ref(false)
 
+const currentStatus = computed(() => {
+    return props.location.clearance_statuses?.[0]?.status ?? 'red'
+})
+
+const isPermission = computed(() => {
+    return authStore.isPermission
+})
+
+const isArmy = computed(() => {
+    return authStore.isArmy
+})
 watch(
     () => props.location,
     (location) => {
@@ -129,17 +249,11 @@ const statusSelectClass = computed(() => {
 })
 
 const save = () => {
-    saving.value = true
-    
     emit('save', {
         location: props.location,
         status: status.value,
         reason: reason.value
     })
-    
-    setTimeout(() => {
-        saving.value = false
-    }, 2000)
 }
 </script>
 

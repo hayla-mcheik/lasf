@@ -4,6 +4,7 @@
     <div class="">
       <div class="">
       <slot />
+
       </div>
     </div>
     <TheFooter />
@@ -14,4 +15,5 @@
 // Import components directly
 import TheHeader from '../components/Frontend/TheHeader.vue'
 import TheFooter from '../components/Frontend/TheFooter.vue'
+
 </script>

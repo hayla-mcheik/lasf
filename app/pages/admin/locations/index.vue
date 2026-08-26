@@ -10,20 +10,28 @@
           <div class="d-flex align-items-center gap-3">
             <p class="text-muted mb-0">
               <i class="bi bi-info-circle me-1"></i>
-              Manage technical coordinates (Kato/Nazim) and QR airspace reservation.
+            Manage flying locations, coordinates, allowed sports, and QR access.
             </p>
             <span class="badge bg-primary-subtle text-primary">
               {{ pagination.total }} locations
             </span>
           </div>
         </div>
-        <button class="btn btn-primary d-flex align-items-center shadow" @click="openCreateModal">
-          <i class="bi bi-plus-circle me-2"></i> Add New Location
-        </button>
+    <button
+    v-if="authStore.isAdmin"
+    class="btn btn-primary"
+    @click="openCreateModal"
+>
+    <i class="bi bi-plus-circle me-1"></i>
+    Add Location
+</button>
       </div>
+      <!-- Notification -->
+
     </div>
 
     <div v-if="!loading" class="container-fluid px-4">
+
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
           <div class="input-group">
@@ -144,10 +152,10 @@
                 class="col-lg-6 mb-4"
             >
 
-                <PermissionCard
-                    :location="location"
-                    @save="savePermission"
-                />
+        <PermissionCard
+    :location="location"
+    @save="savePermission"
+/>
 
             </div>
 
@@ -162,7 +170,6 @@
             <thead class="table-light">
               <tr>
                 <th class="ps-4">Location & Type</th>
-                <th class="text-center">Takeoff (K/N)</th>
                 <th class="text-center">Allowed Sports</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">QR Code</th>
@@ -175,10 +182,7 @@
                   <div class="fw-bold">{{ location.name }}</div>
                   <span class="badge bg-info-subtle text-info small">{{ location.type }}</span>
                 </td>
-                <td class="text-center small">
-                  <div>K: {{ location.takeoff_kato }}</div>
-                  <div class="text-muted">N: {{ location.takeoff_nazim }}</div>
-                </td>
+
                 <td class="text-center">
                   <div class="d-flex flex-wrap justify-content-center gap-1">
                     <span v-for="sport in location.sports" :key="sport.id" class="badge bg-secondary-subtle text-secondary border small">
@@ -228,131 +232,97 @@
             <button type="button" class="btn-close btn-close-white" @click="closeModal"></button>
           </div>
           <form @submit.prevent="saveLocation">
-            <div class="modal-body custom-scrollbar" style="max-height: 70vh; overflow-y: auto;">
-                  <div class="alert alert-info mb-3">
+         <div class="modal-body custom-scrollbar" style="max-height: 70vh; overflow-y: auto;">
 
-    <strong>
-        Editing permission for:
-    </strong>
+    <div class="row g-3">
 
-    {{ form.permission_date }}
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Name</label>
 
-</div>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Name</label>
-                  <input v-model="form.name" type="text" :class="['form-control', {'is-invalid': validationErrors.name}]">
-                  <div v-if="validationErrors.name" class="invalid-feedback">{{ validationErrors.name[0] }}</div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Type</label>
-                  <input v-model="form.type" type="text" :class="['form-control', {'is-invalid': validationErrors.type}]">
-                  <div v-if="validationErrors.type" class="invalid-feedback">{{ validationErrors.type[0] }}</div>
-                </div>
-                
-                <div class="col-md-3">
-                  <label class="form-label small fw-bold">Takeoff Kato *</label>
-                  <input v-model="form.takeoff_kato" type="text" :class="['form-control', {'is-invalid': validationErrors.takeoff_kato}]">
-                  <div v-if="validationErrors.takeoff_kato" class="invalid-feedback">{{ validationErrors.takeoff_kato[0] }}</div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small fw-bold">Takeoff Nazim *</label>
-                  <input v-model="form.takeoff_nazim" type="text" :class="['form-control', {'is-invalid': validationErrors.takeoff_nazim}]">
-                  <div v-if="validationErrors.takeoff_nazim" class="invalid-feedback">{{ validationErrors.takeoff_nazim[0] }}</div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small fw-bold">Landing Kato</label>
-                  <input v-model="form.landing_kato" type="text" class="form-control">
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label small fw-bold">Landing Nazim</label>
-                  <input v-model="form.landing_nazim" type="text" class="form-control">
-                </div>
+            <input
+                v-model="form.name"
+                type="text"
+                :class="[
+                    'form-control',
+                    {
+                        'is-invalid': validationErrors.name
+                    }
+                ]"
+            >
 
-                <div class="col-md-12">
-                  <label class="form-label fw-bold d-block">Allowed Sports</label>
-                  <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
-                    <div v-for="sport in availableSports" :key="sport.id" class="form-check">
-                      <input 
-                        class="form-check-input" 
-                        type="checkbox" 
+            <div
+                v-if="validationErrors.name"
+                class="invalid-feedback"
+            >
+                {{ validationErrors.name[0] }}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Type</label>
+
+            <input
+                v-model="form.type"
+                type="text"
+                :class="[
+                    'form-control',
+                    {
+                        'is-invalid': validationErrors.type
+                    }
+                ]"
+            >
+
+            <div
+                v-if="validationErrors.type"
+                class="invalid-feedback"
+            >
+                {{ validationErrors.type[0] }}
+            </div>
+        </div>
+
+
+        <!-- Allowed Sports -->
+        <div class="col-md-12">
+            <label class="form-label fw-bold d-block">
+                Allowed Sports
+            </label>
+
+            <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+
+                <div
+                    v-for="sport in availableSports"
+                    :key="sport.id"
+                    class="form-check"
+                >
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
                         :id="'sport-' + sport.id"
                         :value="sport.id"
                         v-model="form.sports"
-                      >
-                      <label class="form-check-label" :for="'sport-' + sport.id">
+                    >
+
+                    <label
+                        class="form-check-label"
+                        :for="'sport-' + sport.id"
+                    >
                         {{ sport.name }}
-                      </label>
-                    </div>
-                    <div v-if="availableSports.length === 0" class="text-muted small">Loading sports...</div>
-                  </div>
+                    </label>
                 </div>
 
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Max Altitude</label>
-                  <input v-model="form.max_altitude" type="text" class="form-control">
+                <div
+                    v-if="availableSports.length === 0"
+                    class="text-muted small"
+                >
+                    Loading sports...
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Status</label>
-                  <select v-model="form.clearance_status" class="form-select">
-          <option value="green">
-    🟢 Green (Open)
-</option>
 
-<option value="yellow">
-    🟡 Yellow (Pending)
-</option>
-
-<option value="red">
-    🔴 Red (Closed)
-</option>
-                  </select>
-                </div>
-                <!-- Permission Date -->
-
-<div class="col-md-6">
-
-    <label class="form-label fw-bold">
-        Permission Date
-    </label>
-
-<input
-    type="date"
-    class="form-control"
-    :class="{
-        'is-invalid': validationErrors.permission_date
-    }"
-    v-model="form.permission_date"
-    required
->
-
-<div
-    v-if="validationErrors.permission_date"
-    class="invalid-feedback"
->
-    {{ validationErrors.permission_date[0] }}
-</div>
-
-</div>
-
-<!-- Reason -->
-
-<div class="col-12">
-
-    <label class="form-label fw-bold">
-        Reason
-    </label>
-
-    <textarea
-        class="form-control"
-        rows="3"
-        v-model="form.reason"
-        placeholder="Optional reason..."
-    ></textarea>
-
-</div>
-              </div>
             </div>
+        </div>
+
+    </div>
+
+</div>
             <div class="modal-footer">
               <button type="button" class="btn btn-light" @click="closeModal">Cancel</button>
               <button type="submit" class="btn btn-primary" :disabled="saving">
@@ -395,6 +365,7 @@ import {
     ref,
     reactive,
     onMounted,
+    onBeforeUnmount,
     nextTick,
     computed
 } from 'vue'
@@ -403,7 +374,12 @@ import { useAuthStore } from '~/stores/auth'
 import { useDebounceFn } from '@vueuse/core'
 import PermissionCalendar from '~/components/admin/PermissionCalendar.vue'
 import PermissionCard from '~/components/admin/PermissionCard.vue'
+import { useStatusNotifications } from '~/composables/useStatusNotifications'
 definePageMeta({ layout: 'admin' })
+const {
+    addNotification
+} = useStatusNotifications()
+
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
@@ -430,61 +406,117 @@ const savePermission = async (data) => {
 
     try {
 
-        await $fetch(
-            `${config.public.apiBase}/admin/clearance-statuses`,
-            {
-                method: 'POST',
-
-                headers: {
-                    Authorization: `Bearer ${authStore.token}`
-                },
-
-                body: {
-                    flying_location_id: data.location.id,
-                    permission_date: selectedDate.value,
-                    status: data.status,
-                    reason: data.reason
-                }
-            }
+        const permission = data.location?.clearance_statuses?.find(
+            p => p.permission_date === selectedDate.value
         )
+
+        const oldStatus =
+            permission?.status ?? 'red'
+
+        const newStatus =
+            data.status
+
+        const headers = {
+            Authorization: `Bearer ${authStore.token}`
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing permission -> UPDATE
+        |--------------------------------------------------------------------------
+        */
+
+        if (permission?.id) {
+
+            await $fetch(
+                `${config.public.apiBase}/admin/clearance-statuses/${permission.id}`,
+                {
+                    method: 'PATCH',
+
+                    headers,
+
+                    body: {
+                        status: newStatus,
+                        reason: data.reason
+                    }
+                }
+            )
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | No permission yet -> CREATE
+        |--------------------------------------------------------------------------
+        */
+
+        else {
+
+            await $fetch(
+                `${config.public.apiBase}/admin/clearance-statuses`,
+                {
+                    method: 'POST',
+
+                    headers,
+
+                    body: {
+                        flying_location_id: data.location.id,
+                        permission_date: selectedDate.value,
+                        status: newStatus,
+                        reason: data.reason
+                    }
+                }
+            )
+        }
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Refresh locations
+        |--------------------------------------------------------------------------
+        */
 
         await fetchLocations()
 
-        alert('Permission updated successfully.')
-
     } catch (error) {
 
-        console.error(error)
+        console.error(
+            'SAVE PERMISSION ERROR:',
+            error
+        )
 
-        alert('Unable to update permission.')
+        alert(
+            error?.data?.message ||
+            'Unable to update permission.'
+        )
+    }
+}
+const locationLatitude = computed(() => {
+
+    if (editingLocation.value) {
+        return editingLocation.value.latitude ?? ''
     }
 
-}
-const form = reactive({
-
-    name: '',
-
-    type: '',
-
-    takeoff_kato: '',
-
-    takeoff_nazim: '',
-
-    landing_kato: '',
-
-    landing_nazim: '',
-
-    max_altitude: '',
-
-    clearance_status: 'green',
-
-    permission_date: '',
-reason: '',
-    is_enabled: true,
-
-    sports: []
-
+    return ''
 })
+
+const locationLongitude = computed(() => {
+
+    if (editingLocation.value) {
+        return editingLocation.value.longitude ?? ''
+    }
+
+    return ''
+})
+
+const form = reactive({
+    name: '',
+    type: '',
+    is_enabled: true,
+    sports: []
+})
+
 const onDateSelected = (date) => {
 
     selectedDate.value = date
@@ -561,93 +593,151 @@ const fetchSports = async () => {
     console.error('Sports load failed', err)
   }
 }
+const showStatusNotification = (
+    location,
+    oldStatus,
+    newStatus,
+    changedByRole,
+    permissionDate
+) => {
 
-const fetchLocations = async () => {
+    if (oldStatus === newStatus) {
+        return
+    }
 
-    loading.value = true
+    const formattedDate = new Date(permissionDate).toLocaleDateString(
+        'en-US',
+        {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }
+    )
+
+    // Army changed → notify Permission
+    if (
+        changedByRole === 'army' &&
+        authStore.isPermission
+    ) {
+
+        addNotification({
+            title: 'Army Status Update',
+            message:
+                `${location.name} — ${formattedDate} changed from ` +
+                `${getStatusLabel(oldStatus)} to ` +
+                `${getStatusLabel(newStatus)}.`
+        })
+
+        return
+    }
+
+    // Permission changed → notify Army
+    if (
+        changedByRole === 'permission' &&
+        authStore.isArmy
+    ) {
+
+        addNotification({
+            title: 'Permission Status Update',
+            message:
+                `${location.name} — ${formattedDate} changed from ` +
+                `${getStatusLabel(oldStatus)} to ` +
+                `${getStatusLabel(newStatus)}.`
+        })
+    }
+}
+const getStatusLabel = (status) => {
+
+    switch (status) {
+
+        case 'green':
+            return 'Open'
+
+        case 'yellow':
+            return 'Pending'
+
+        case 'red':
+            return 'Closed'
+
+        default:
+            return 'Unknown'
+    }
+}
+
+const fetchLocations = async ({
+    silent = false,
+   
+} = {}) => {
+
+    if (!silent) {
+        loading.value = true
+    }
 
     try {
 
         const res = await $fetch(
-
-            `${config.public.apiBase}/flying-locations`,
-
+            `${config.public.apiBase}/admin/flying-locations`,
             {
-
                 query: {
-
                     date: selectedDate.value,
-
                     search: searchQuery.value
-
                 },
 
                 headers: {
-
-                    Authorization: `Bearer ${authStore.token}`
-
+                    Authorization:
+                        `Bearer ${authStore.token}`
                 }
-
             }
-
         )
 
-        locations.value = res.data
+        const newLocations = res.data || []
 
-        pagination.total = res.data.length
 
-    } catch (e) {
+        locations.value = newLocations
 
-        notify('error','Failed to load locations')
+        pagination.total = newLocations.length
 
+    } catch (error) {
+
+        console.error(
+            'FETCH LOCATIONS ERROR:',
+            error
+        )
+
+    } finally {
+
+        if (!silent) {
+            loading.value = false
+        }
     }
-
-    finally {
-
-        loading.value = false
-
-    }
-
 }
-
 const validateForm = () => {
-  validationErrors.value = {}
 
-  if (!form.name?.trim()) {
-    validationErrors.value.name = ['Location name is required']
-  }
+    validationErrors.value = {}
 
-  if (!form.takeoff_kato?.trim()) {
-    validationErrors.value.takeoff_kato = ['Takeoff Kato is required']
-  }
+    if (!form.name?.trim()) {
 
-  if (!form.takeoff_nazim?.trim()) {
-    validationErrors.value.takeoff_nazim = ['Takeoff Nazim is required']
-  }
+        validationErrors.value.name = [
+            'Location name is required'
+        ]
 
- if (!['green', 'yellow', 'red'].includes(form.clearance_status)){
-    validationErrors.value.clearance_status = ['Invalid status']
-  }
-if (!form.permission_date) {
+    }
 
-    validationErrors.value.permission_date = [
-        'Permission date is required'
-    ]
+    if (!form.type?.trim()) {
 
-}
-  if (
-    form.max_altitude &&
-    form.max_altitude.length > 255
-  ) {
-    validationErrors.value.max_altitude = [
-      'Maximum altitude is too long'
-    ]
-  }
+        validationErrors.value.type = [
+            'Location type is required'
+        ]
 
-  return Object.keys(validationErrors.value).length === 0
+    }
+
+    return Object.keys(
+        validationErrors.value
+    ).length === 0
 }
 // --- SAVE LOGIC ---
 const saveLocation = async () => {
+
     validationErrors.value = {}
 
     if (!validateForm()) {
@@ -661,46 +751,30 @@ const saveLocation = async () => {
 
     try {
 
-        // ---------------------------------
-        // 1. Save Location
-        // ---------------------------------
-
         const locationUrl = isEditing
             ? `${config.public.apiBase}/admin/flying-locations/${editingLocation.value.id}`
             : `${config.public.apiBase}/admin/flying-locations`
 
-        const locationResponse = await $fetch(locationUrl, {
-            method: isEditing ? 'PUT' : 'POST',
-            headers: {
-                Authorization: `Bearer ${authStore.token}`
-            },
-            body: form
-        })
+        const locationResponse = await $fetch(
+            locationUrl,
+            {
+                method: isEditing ? 'PUT' : 'POST',
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+
+                body: form
+            }
+        )
 
         const location =
             locationResponse.data || locationResponse
 
-        // ---------------------------------
-        // 2. Save Daily Permission
-        // ---------------------------------
-
-        await $fetch(
-            `${config.public.apiBase}/admin/clearance-statuses`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${authStore.token}`
-                },
-                body: {
-                    flying_location_id: location.id,
-                    permission_date: form.permission_date,
-                    status: form.clearance_status,
-                    reason: form.reason
-                }
-            }
+        notify(
+            'success',
+            'Location saved successfully'
         )
-
-        notify('success', 'Location saved successfully')
 
         closeModal()
 
@@ -711,12 +785,14 @@ const saveLocation = async () => {
         console.error(error)
 
         if (error.status === 422) {
-            validationErrors.value = error.data?.errors || {}
+            validationErrors.value =
+                error.data?.errors || {}
         }
 
         notify(
             'error',
-            error.data?.message || 'Server Error'
+            error.data?.message ||
+            'Server Error'
         )
 
     } finally {
@@ -728,11 +804,14 @@ const saveLocation = async () => {
 
 // --- UI HANDLERS ---
 const openCreateModal = () => {
-  editingLocation.value = null
-  resetForm()
-  form.permission_date = selectedDate.value
-  validationErrors.value = {}
-  showCreateModal.value = true
+
+    editingLocation.value = null
+
+    resetForm()
+
+    validationErrors.value = {}
+
+    showCreateModal.value = true
 }
 
 const editLocation = (location) => {
@@ -743,17 +822,15 @@ const editLocation = (location) => {
 
     Object.assign(form, {
 
-        ...location,
+        name: location.name ?? '',
 
-        sports: location.sports.map(s => s.id),
+        type: location.type ?? '',
 
-        permission_date: selectedDate.value,
+        is_enabled: location.is_enabled ?? true,
 
-        clearance_status:
-            location.today_clearance_status?.status ?? 'red',
-
-        reason:
-            location.today_clearance_status?.reason ?? ''
+        sports: location.sports?.map(
+            sport => sport.id
+        ) ?? []
 
     })
 
@@ -773,20 +850,6 @@ const resetForm = () => {
         name: '',
 
         type: '',
-
-        takeoff_kato: '',
-
-        takeoff_nazim: '',
-
-        landing_kato: '',
-
-        landing_nazim: '',
-
-        max_altitude: '',
-
-        clearance_status: 'green',
-reason: '',
-        permission_date: selectedDate.value,
 
         is_enabled: true,
 
@@ -868,9 +931,10 @@ const getCurrentStatus = (location) => {
             }
     }
 }
-onMounted(() => {
-  fetchLocations()
-  fetchSports()
+
+onMounted(async () => {
+    await fetchLocations()
+    await fetchSports()
 })
 </script>
 

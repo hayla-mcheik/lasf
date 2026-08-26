@@ -262,7 +262,9 @@
       <main class="content-wrapper">
         <slot />
       </main>
+          
     </div>
+      <StatusNotifications />
   </div>
 </template>
 
@@ -271,12 +273,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from '#app'
 import { useAuthStore } from '~/stores/auth'
 import NavItem from '../components/Frontend/NavItem.vue'
-
+import StatusNotifications from '~/components/StatusNotifications.vue'
+import { useStatusNotifications } from '~/composables/useStatusNotifications'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const sidebarCollapsed = ref(false)
-
+const config = useRuntimeConfig()
 const pageTitle = computed(() => {
   const titles = {
     '/admin/dashboard': 'Dashboard',
@@ -314,35 +317,303 @@ const logout = async () => {
   navigateTo('/login')
 }
 
+
 // AdminLayout.vue
 
 // Inside <script setup> of AdminLayout.vue
 
-onMounted(async () => {
-  if (!authStore.isAuthenticated) {
-    const isAuth = await authStore.checkAuth()
-    if (!isAuth) {
-      return navigateTo('/login')
+
+const {
+    addNotification
+} = useStatusNotifications()
+
+let statusPollingTimer = null
+
+const previousStatuses = ref({})
+
+const getStatusLabel = (status) => {
+
+    switch (status) {
+
+        case 'green':
+            return 'Open'
+
+        case 'yellow':
+            return 'Pending'
+
+        case 'red':
+            return 'Closed'
+
+        default:
+            return 'Unknown'
     }
-  }
-
-  // ✅ Consistent role check
-const isArmy = authStore.isArmy
-const isAdmin = authStore.isAdmin
-const isWatcher = authStore.isWatcher
-const isBeirutAirport = authStore.isBeirutAirport
-const isPermission = authStore.isPermission
-
-if (
-    !isAdmin &&
-    !isArmy &&
-    !isWatcher &&
-    !isBeirutAirport &&
-    !isPermission
-) {
-    console.log('Access denied in Layout')
-    return navigateTo('/')
 }
+const formatPermissionDate = (date) => {
+
+    if (!date) {
+        return ''
+    }
+
+    return new Date(date).toLocaleDateString(
+        'en-US',
+        {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }
+    )
+}
+const checkStatusChanges = (locations) => {
+
+    locations.forEach(location => {
+
+        const permission =
+            location.clearance_statuses?.[0]
+
+        if (!permission) {
+            return
+        }
+
+        const permissionDate =
+            permission.permission_date
+
+        const key =
+            `${location.id}-${permissionDate}`
+
+        const newStatus =
+            permission.status ?? 'red'
+
+        const oldStatus =
+            previousStatuses.value[key]
+
+        /*
+         * First time we see this location/date.
+         * Do not show notification.
+         */
+        if (oldStatus === undefined) {
+
+            previousStatuses.value[key] =
+                newStatus
+
+            return
+        }
+
+        /*
+         * Nothing changed.
+         */
+        if (oldStatus === newStatus) {
+            return
+        }
+
+        /*
+         * Save the new status.
+         */
+        previousStatuses.value[key] =
+            newStatus
+
+        const updatedByRole =
+            permission.updated_by?.role
+
+        /*
+         * Format permission date.
+         */
+        const formattedDate =
+            new Date(permissionDate).toLocaleDateString(
+                'en-US',
+                {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                }
+            )
+
+        /*
+         * Army → Permission
+         */
+        if (
+            updatedByRole === 'army' &&
+            authStore.isPermission
+        ) {
+
+            addNotification({
+
+                title: 'Army Status Update',
+
+                message:
+                    `${location.name} — ${formattedDate} ` +
+                    `changed from ` +
+                    `${getStatusLabel(oldStatus)} to ` +
+                    `${getStatusLabel(newStatus)}.`
+            })
+
+            return
+        }
+
+        /*
+         * Permission → Army
+         */
+        if (
+            updatedByRole === 'permission' &&
+            authStore.isArmy
+        ) {
+
+            addNotification({
+
+                title: 'Permission Status Update',
+
+                message:
+                    `${location.name} — ${formattedDate} ` +
+                    `changed from ` +
+                    `${getStatusLabel(oldStatus)} to ` +
+                    `${getStatusLabel(newStatus)}.`
+            })
+        }
+
+    })
+}
+const lastStatusCheck = ref(null)
+const checkStatuses = async () => {
+
+    try {
+
+        const res = await $fetch(
+            `${config.public.apiBase}/admin/clearance-statuses/changes`,
+            {
+                query: {
+                    since: lastStatusCheck.value
+                },
+
+                headers: {
+                    Authorization:
+                        `Bearer ${authStore.token}`
+                }
+            }
+        )
+
+        const changes = res.data || []
+
+        for (const change of changes) {
+
+            const changedByRole =
+                change.changed_by?.role
+
+            /*
+            |--------------------------------------------------------------------------
+            | Army -> Permission
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                changedByRole === 'army' &&
+                authStore.isPermission
+            ) {
+
+                addNotification({
+
+                    title: 'Army Status Update',
+
+                    message:
+                        `${change.location?.name} — ` +
+                        `${formatPermissionDate(change.permission_date)} ` +
+                        `changed from ` +
+                        `${getStatusLabel(change.old_status)} ` +
+                        `to ` +
+                        `${getStatusLabel(change.new_status)}.`
+                })
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Permission -> Army
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                changedByRole === 'permission' &&
+                authStore.isArmy
+            ) {
+
+                addNotification({
+
+                    title: 'Permission Status Update',
+
+                    message:
+                        `${change.location?.name} — ` +
+                        `${formatPermissionDate(change.permission_date)} ` +
+                        `changed from ` +
+                        `${getStatusLabel(change.old_status)} ` +
+                        `to ` +
+                        `${getStatusLabel(change.new_status)}.`
+                })
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Remember the last check
+        |--------------------------------------------------------------------------
+        */
+
+        lastStatusCheck.value =
+            new Date().toISOString()
+
+        localStorage.setItem(
+            'last-status-check',
+            lastStatusCheck.value
+        )
+
+    } catch (error) {
+
+        console.error(
+            'GLOBAL STATUS CHECK ERROR:',
+            error
+        )
+    }
+}
+onMounted(async () => {
+
+    /*
+    |--------------------------------------------------------------------------
+    | localStorage is available only in the browser
+    |--------------------------------------------------------------------------
+    */
+
+    lastStatusCheck.value =
+        localStorage.getItem('last-status-check')
+        || new Date(
+            Date.now() - 10000
+        ).toISOString()
+
+    if (!authStore.isAuthenticated) {
+
+        const isAuth =
+            await authStore.checkAuth()
+
+        if (!isAuth) {
+            return navigateTo('/login')
+        }
+    }
+
+    await checkStatuses()
+
+    statusPollingTimer =
+        setInterval(
+            checkStatuses,
+            5000
+        )
+
+    // keep the rest of your existing role/access code here
+})
+onBeforeUnmount(() => {
+
+    if (statusPollingTimer) {
+
+        clearInterval(
+            statusPollingTimer
+        )
+
+    }
+
 })
 </script>
 
