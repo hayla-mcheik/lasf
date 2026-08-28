@@ -32,17 +32,7 @@
                 <button type="button" class="btn-close" @click="globalError = null"></button>
               </div>
 
-              <!-- Validation Error Summary -->
-              <div v-if="Object.keys(errors).length > 0" class="alert alert-warning alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <strong>Please fix the following errors:</strong>
-                <ul class="mb-0 mt-1">
-                  <li v-for="(error, field) in errors" :key="field">
-                    {{ getFieldLabel(field) }}: {{ Array.isArray(error) ? error[0] : error }}
-                  </li>
-                </ul>
-                <button type="button" class="btn-close" @click="errors = {}"></button>
-              </div>
+      
 
               <form @submit.prevent="saveMembership" novalidate>
                 <!-- Personal Information -->
@@ -184,6 +174,55 @@
                     <div v-if="errors.instagram_url" class="invalid-feedback">{{ Array.isArray(errors.instagram_url) ? errors.instagram_url[0] : errors.instagram_url }}</div>
                   </div>
                 </div>
+
+                <!-- Disciplines -->
+<div class="col-12 mt-3">
+
+    <label class="form-label fw-bold small">
+        Disciplines <span class="text-danger">*</span>
+    </label>
+
+    <div
+        class="border rounded p-3"
+        :class="{ 'border-danger': errors.disciplines }"
+    >
+
+        <div
+            v-for="discipline in disciplines"
+            :key="discipline.id"
+            class="form-check form-check-inline mb-2"
+        >
+
+            <input
+                class="form-check-input"
+                type="checkbox"
+                :id="`discipline-${discipline.id}`"
+                :value="discipline.id"
+                v-model="form.disciplines"
+            >
+
+            <label
+                class="form-check-label"
+                :for="`discipline-${discipline.id}`"
+            >
+                {{ discipline.name }}
+            </label>
+
+        </div>
+
+    </div>
+
+    <div
+        v-if="errors.disciplines"
+        class="invalid-feedback d-block"
+    >
+        {{ Array.isArray(errors.disciplines)
+            ? errors.disciplines[0]
+            : errors.disciplines
+        }}
+    </div>
+
+</div>
 <!-- License Attachment -->
 <h5 class="text-success border-bottom pb-2 mb-3 mt-4">
     <i class="bi bi-file-earmark-pdf me-2"></i>
@@ -320,7 +359,7 @@ const globalError = ref(null)
 const imageFile = ref(null)
 const licenseFile = ref(null)
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-
+const disciplines = ref([])
 const form = ref({
   name: '',
   phone: '',
@@ -330,9 +369,11 @@ const form = ref({
   facebook_url: '',
   instagram_url: '',
   date_of_birth: '',
+  disciplines: [],
   image: null,
   license_attachment: null
 })
+
 
 // Field labels for error display
 const fieldLabels = {
@@ -385,6 +426,8 @@ const fetchMembership = async () => {
     
     form.value.name = user.name || ''
     form.value.phone = user.phone || ''
+    form.value.disciplines =
+    user.pilot_profile?.disciplines?.map(d => d.id) || []
     form.value.blood_type = user.pilot_profile?.blood_type || ''
     form.value.insurance_provider = user.pilot_profile?.insurance_provider || ''
     form.value.insurance_number = user.pilot_profile?.insurance_number || ''
@@ -410,6 +453,26 @@ const fetchMembership = async () => {
   }
 }
 
+const fetchDisciplines = async () => {
+    try {
+
+        const data = await $fetch(
+            `${config.public.apiBase}/sports`,
+            {
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                }
+            }
+        )
+
+        disciplines.value = data.data || data
+
+    } catch (err) {
+
+        console.error('Failed to load disciplines:', err)
+
+    }
+}
 const onFileChange = (event) => {
 
     const file = event.target.files[0]
@@ -490,7 +553,9 @@ const saveMembership = async () => {
     formData.append('phone', form.value.phone.trim())
     formData.append('blood_type', form.value.blood_type)
     formData.append('date_of_birth', form.value.date_of_birth)
-    
+    form.value.disciplines.forEach((disciplineId) => {
+    formData.append('disciplines[]', disciplineId)
+})
     if (form.value.insurance_provider) {
       formData.append('insurance_provider', form.value.insurance_provider.trim())
     }
@@ -559,8 +624,11 @@ router.push('/account')
   }
 }
 
-onMounted(() => {
-  fetchMembership()
+onMounted(async () => {
+    await Promise.all([
+        fetchMembership(),
+        fetchDisciplines()
+    ])
 })
 </script>
 
