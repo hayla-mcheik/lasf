@@ -1,383 +1,1227 @@
 <template>
   <div class="weather-dashboard mx-md-5 h-100">
-    <div v-if="loading" class="d-flex flex-column align-items-center justify-content-center p-5 h-100 bg-white rounded-4 border shadow-sm">
-      <div class="spinner-border text-success" role="status"></div>
-      <p class="mt-3 text-muted fw-bold small-caps">Synchronizing Met Data...</p>
+
+    <!-- Loading -->
+    <div
+      v-if="loading"
+      class="d-flex flex-column align-items-center justify-content-center p-5 h-100 bg-white rounded-4 border shadow-sm"
+    >
+      <div
+        class="spinner-border text-success"
+        role="status"
+      ></div>
+
+      <p class="mt-3 text-muted fw-bold small-caps">
+        Synchronizing Met Data...
+      </p>
     </div>
 
-    <div v-else-if="weather" class="weather-card bg-white rounded-4 shadow-sm h-100 d-flex flex-column border-0">
-      
+
+    <!-- No weather -->
+    <div
+      v-else-if="!weather"
+      class="alert alert-warning"
+    >
+      No weather bulletin available.
+    </div>
+
+
+    <!-- WEATHER -->
+    <div
+      v-else
+      class="weather-card bg-white rounded-4 shadow-sm h-100 d-flex flex-column border-0"
+    >
+
+      <!-- ================================================= -->
+      <!-- HEADER -->
+      <!-- ================================================= -->
+
       <div class="p-4 mx-md-5 border-bottom bg-white rounded-top-4">
-        <div class="d-flex justify-content-between align-items-center">
+
+        <div
+          class="d-flex justify-content-between align-items-center"
+        >
+
           <div class="d-flex align-items-center gap-3">
+
             <i class="bi bi-wind fs-1 text-success"></i>
+
             <div>
-              <h2 class="mb-0 fw-black text-dark text-uppercase letter-spacing-1">Aviation Briefing</h2>
-              <span class="text-muted fs-5 fw-bold">Official Meteorological Report • LASF</span>
+
+              <h2
+                class="mb-0 fw-black text-dark text-uppercase letter-spacing-1"
+              >
+                Aviation Briefing
+              </h2>
+
+              <span class="text-muted fs-5 fw-bold">
+                Official Meteorological Report • LASF
+              </span>
+
             </div>
+
           </div>
+
+
           <div class="text-end">
-            <span class="badge-outline-success mb-2 px-4 py-2 fs-4 fw-black text-uppercase">{{ weather.day_name_ar }}</span>
-            <div class="text-muted fs-4 font-mono fw-bold">{{ formatDate(weather.forecast_date) }}</div>
+
+            <span
+              class="badge-outline-success mb-2 px-4 py-2 fs-4 fw-black text-uppercase"
+            >
+              {{ getArabicDay(weather.date) }}
+            </span>
+
+            <div
+              class="text-muted fs-4 font-mono fw-bold"
+            >
+              {{ formatDate(weather.date) }}
+            </div>
+
           </div>
+
         </div>
+
       </div>
+
+
+      <!-- ================================================= -->
+      <!-- BODY -->
+      <!-- ================================================= -->
 
       <div class="p-4 mx-md-5 flex-grow-1">
-        <!-- Flyable Status -->
-<div
-  class="mb-5 p-4 rounded-4 shadow-sm border"
-  :class="flyableCardClass"
->
 
-  <div class="d-flex align-items-center justify-content-between">
 
-    <div>
+        <!-- ================================================= -->
+        <!-- GENERAL SITUATION -->
+        <!-- ================================================= -->
 
-      <h3 class="fw-bold mb-2">
+        <div
+          class="situation-container mb-5 shadow-sm p-4 bg-light-subtle rounded-3"
+          dir="rtl"
+        >
 
-        <i
-          class="bi me-2"
-          :class="flyableIcon"
-        ></i>
+          <div
+            class="d-flex align-items-center gap-3 mb-3"
+          >
 
-        Flyable Status
-
-      </h3>
-
- <h4
-    class="fw-black mb-2"
-    :class="{
-        'text-success': weather.flyable_status === 'good',
-        'text-warning': weather.flyable_status === 'caution',
-        'text-danger': weather.flyable_status === 'not_flyable'
-    }"
->
-    {{ flyableTitle }}
-</h4>
-
-<p
-    class="mb-0 fs-5 fw-semibold"
->
-    {{ weather.flyable_message || defaultFlyableMessage }}
-</p>
-
-    </div>
-
-    <div class="display-2">
-
-      {{ flyableEmoji }}
-
-    </div>
-
-  </div>
-
-</div>
-        <div class="situation-container mb-5 shadow-sm p-4 bg-light-subtle rounded-3" dir="rtl">
-          <div class="d-flex align-items-center gap-3 mb-3">
             <div class="dot-indicator bg-success"></div>
-            <span class="fw-black fs-2 text-success">الحالة العامة</span>
+
+            <span
+              class="fw-black fs-2 text-success"
+            >
+              الحالة العامة
+            </span>
+
           </div>
-          <p class="situation-text text-dark ps-4">{{ weather.general_situation_ar }}</p>
+
+
+          <!-- IMPORTANT:
+               API returns HTML, so use v-html -->
+          <div
+            class="situation-text text-dark ps-4 weather-html"
+            v-html="cleanHtml(weather.state_ar)"
+          ></div>
+
         </div>
 
-        <div class="row g-4 mb-5 text-center" dir="rtl">
-           <div class="col-md-4">
-              <div class="aero-card shadow-sm">
-                 <label class="large-label">الرياح السطحية</label>
-                 <div class="fw-black fs-3 text-dark mt-2">{{ weather.surface_winds_ar || 'N/A' }}</div>
-              </div>
-           </div>
-           <div class="col-md-4">
-              <div class="aero-card shadow-sm">
-                 <label class="large-label">الانقشاع</label>
-                 <div class="fw-black fs-3 text-dark mt-2">{{ weather.visibility_ar || 'N/A' }}</div>
-              </div>
-           </div>
-           <div class="col-md-4">
-              <div class="aero-card shadow-sm">
-                 <label class="large-label">الرطوبة النسبية</label>
-                 <div class="fw-black fs-3 text-dark mt-2">{{ weather.humidity_range }}</div>
-              </div>
-           </div>
-        </div>
 
-        <div class="forecast-timeline mb-5">
-          <div class="d-flex align-items-center gap-2 mb-4">
-            <i class="bi bi-calendar3 text-muted fs-3"></i>
-            <span class="fw-black fs-4 text-muted text-uppercase letter-spacing-2">72-Hour Outlook</span>
-          </div>
-          <div class="row g-4" dir="rtl">
-            <div v-for="i in 3" :key="i" class="col-md-4">
-              <div class="timeline-item border-start-success shadow-sm p-4 rounded-4 bg-white">
-                <div class="timeline-day text-success fs-3 mb-2 fw-black border-bottom pb-2">{{ getArDay(i, weather.forecast_date) }}</div>
-                <p class="timeline-desc text-dark fs-5 lh-base">{{ truncateText(weather.daily_details['day_' + i], 120) }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- ================================================= -->
+        <!-- WEATHER CONDITIONS -->
+        <!-- ================================================= -->
 
-        <div class="row g-4 mb-5 align-items-center">
+        <div
+          class="row g-4 mb-5 text-center"
+          dir="rtl"
+        >
+
+          <!-- WIND -->
           <div class="col-md-3">
-            <div class="stat-box border-start-success-thick p-3 bg-light shadow-sm">
-              <span class="stat-label">Sea State / حالة البحر</span>
-              <div class="stat-value fs-4 mt-1 fw-black">{{ weather.sea_state_ar || 'Stable' }}</div>
+
+            <div class="aero-card shadow-sm">
+
+              <label class="large-label">
+                الرياح السطحية
+              </label>
+
+              <div
+                class="weather-html fw-black fs-3 text-dark mt-2"
+                v-html="cleanHtml(weather.wind_ar)"
+              ></div>
+
             </div>
+
           </div>
+
+
+          <!-- VISIBILITY -->
           <div class="col-md-3">
-            <div class="stat-box border-start-dark-thick p-3 bg-light shadow-sm">
-              <span class="stat-label">Pressure / الضغط</span>
-              <div class="stat-value fs-4 mt-1 fw-black">{{ weather.pressure_hpa }} hPa</div>
+
+            <div class="aero-card shadow-sm">
+
+              <label class="large-label">
+                الانقشاع
+              </label>
+
+              <div
+                class="weather-html fw-black fs-3 text-dark mt-2"
+                v-html="cleanHtml(weather.visibility_ar)"
+              ></div>
+
             </div>
+
           </div>
-          <div class="col-md-3 text-center border-end">
-             <i class="bi bi-sunrise fs-1 text-warning mb-1"></i>
-             <div class="stat-label d-block">Sunrise</div>
-             <div class="fw-black fs-3">{{ weather.sunrise }}</div>
+
+
+          <!-- HUMIDITY -->
+          <div class="col-md-3">
+
+            <div class="aero-card shadow-sm">
+
+              <label class="large-label">
+                الرطوبة النسبية
+              </label>
+
+              <div
+                class="weather-html fw-black fs-3 text-dark mt-2"
+                v-html="cleanHtml(weather.humidity_ar)"
+              ></div>
+
+            </div>
+
           </div>
-          <div class="col-md-3 text-center">
-             <i class="bi bi-sunset fs-1 text-danger mb-1"></i>
-             <div class="stat-label d-block">Sunset</div>
-             <div class="fw-black fs-3">{{ weather.sunset }}</div>
+
+
+          <!-- SEA -->
+          <div class="col-md-3">
+
+            <div class="aero-card shadow-sm">
+
+              <label class="large-label">
+                حالة البحر
+              </label>
+
+              <div
+                class="weather-html fw-black fs-3 text-dark mt-2"
+                v-html="cleanHtml(weather.sea_ar)"
+              ></div>
+
+            </div>
+
           </div>
+
         </div>
 
-        <div class="row g-4 pb-5">
+
+        <!-- ================================================= -->
+        <!-- FORECAST DAYS -->
+        <!-- ================================================= -->
+
+        <div
+          v-if="weather.forecast_days?.length"
+          class="forecast-timeline mb-5"
+        >
+
+          <div
+            class="d-flex align-items-center gap-2 mb-4"
+          >
+
+            <i
+              class="bi bi-calendar3 text-muted fs-3"
+            ></i>
+
+            <span
+              class="fw-black fs-4 text-muted text-uppercase letter-spacing-2"
+            >
+              Forecast Outlook
+            </span>
+
+          </div>
+
+
+          <div
+            class="row g-4"
+            dir="rtl"
+          >
+
+            <div
+              v-for="day in weather.forecast_days"
+              :key="day.id"
+              class="col-md-4"
+            >
+
+              <div
+                class="timeline-item border-start-success shadow-sm p-4 rounded-4 bg-white"
+              >
+
+                <div
+                  class="timeline-day text-success fs-3 mb-2 fw-black border-bottom pb-2"
+                >
+                  {{ getArabicDay(day.day) }}
+                </div>
+
+
+                <div
+                  class="text-muted small mb-2"
+                >
+                  {{ formatDate(day.day) }}
+                </div>
+
+
+                <!-- IMPORTANT:
+                     Forecast description is also HTML -->
+                <div
+                  class="timeline-desc text-dark fs-5 lh-base weather-html"
+                  v-html="cleanHtml(day.state_ar)"
+                ></div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- WEATHER MEASUREMENTS -->
+        <!-- ================================================= -->
+
+        <div
+          class="row g-4 mb-5 align-items-center"
+        >
+
+          <!-- SEA -->
+          <div class="col-md-3">
+
+            <div
+              class="stat-box border-start-success-thick p-3 bg-light shadow-sm"
+            >
+
+              <span class="stat-label">
+                Sea State / حالة البحر
+              </span>
+
+              <div
+                class="stat-value fs-4 mt-1 fw-black weather-html"
+                v-html="cleanHtml(weather.sea_ar)"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <!-- PRESSURE -->
+          <div class="col-md-3">
+
+            <div
+              class="stat-box border-start-dark-thick p-3 bg-light shadow-sm"
+            >
+
+              <span class="stat-label">
+                Pressure / الضغط
+              </span>
+
+              <div
+                class="stat-value fs-4 mt-1 fw-black"
+              >
+
+                {{ weather.pressure_hpa || 'N/A' }}
+
+                <span
+                  v-if="weather.pressure_hpa"
+                >
+                  hPa
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- WATER TEMP -->
+          <div class="col-md-3">
+
+            <div
+              class="stat-box border-start-success-thick p-3 bg-light shadow-sm"
+            >
+
+              <span class="stat-label">
+                Water Temperature / حرارة الماء
+              </span>
+
+              <div
+                class="stat-value fs-4 mt-1 fw-black"
+              >
+
+                {{ weather.water_temp_c || 'N/A' }}
+
+                <span
+                  v-if="weather.water_temp_c"
+                >
+                  °C
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- SUNRISE / SUNSET -->
+          <div class="col-md-3">
+
+            <div class="row">
+
+              <div class="col-6 text-center">
+
+                <i
+                  class="bi bi-sunrise fs-2 text-warning"
+                ></i>
+
+                <div class="stat-label">
+                  Sunrise
+                </div>
+
+                <div class="fw-black fs-5">
+                  {{ formatTime(weather.sunrise) }}
+                </div>
+
+              </div>
+
+
+              <div class="col-6 text-center">
+
+                <i
+                  class="bi bi-sunset fs-2 text-danger"
+                ></i>
+
+                <div class="stat-label">
+                  Sunset
+                </div>
+
+                <div class="fw-black fs-5">
+                  {{ formatTime(weather.sunset) }}
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- CITY TEMPERATURES -->
+        <!-- ================================================= -->
+
+        <div
+          v-if="weather.temperatures?.length"
+          class="row g-4 pb-5"
+        >
+
           <div class="col-lg-7">
-            <div class="table-container shadow rounded-4 border overflow-hidden">
-              <table class="table table-borderless align-middle mb-0">
+
+            <div
+              class="table-container shadow rounded-4 border overflow-hidden"
+            >
+
+              <table
+                class="table table-borderless align-middle mb-0"
+              >
+
                 <thead class="bg-black text-white">
+
                   <tr>
-                    <th class="ps-4 py-4 fs-5">Region / المنطقة</th>
-                    <th class="text-center fs-5">Location</th>
-                    <th class="pe-4 text-end fs-5">Range</th>
+
+                    <th
+                      class="ps-4 py-4 fs-5"
+                    >
+                      Region / المنطقة
+                    </th>
+
+                    <th
+                      class="text-center fs-5"
+                    >
+                      Location
+                    </th>
+
+                    <th
+                      class="text-center fs-5"
+                    >
+                      Day
+                    </th>
+
+                    <th
+                      class="pe-4 text-end fs-5"
+                    >
+                      Temperature
+                    </th>
+
                   </tr>
+
                 </thead>
+
+
                 <tbody>
-                  <tr v-for="temp in weather.regional_temperatures" :key="temp.id" class="border-bottom hover-bg">
-                    <td class="ps-4 py-4 fw-black fs-4 text-dark">{{ temp.region_type_ar }}</td>
-                    <td class="text-center text-muted fw-black fs-5">{{ temp.city_name_ar }}</td>
-                    <td class="pe-4 text-end fw-black fs-3 text-primary">{{ temp.temp_range }}°C</td>
+
+                  <tr
+                    v-for="temp in weather.temperatures"
+                    :key="temp.id"
+                    class="border-bottom hover-bg"
+                  >
+
+                    <td
+                      class="ps-4 py-4 fw-black fs-5 text-dark"
+                    >
+                      {{ temp.region_ar || temp.region_en || 'N/A' }}
+                    </td>
+
+
+                    <td
+                      class="text-center text-muted fw-black fs-5"
+                    >
+                      {{ temp.city_name_ar || temp.city_name || 'N/A' }}
+                    </td>
+
+
+                    <td
+                      class="text-center text-muted fw-bold"
+                    >
+                      {{ formatDate(temp.day) }}
+                    </td>
+
+
+                    <td
+                      class="pe-4 text-end fw-black fs-4 text-primary"
+                    >
+
+                      <span
+                        v-if="temp.tmax !== null"
+                      >
+                        {{ temp.tmax }}°
+                      </span>
+
+                      <span
+                        v-if="temp.tmin !== null"
+                      >
+                        /
+                        {{ temp.tmin }}°
+                      </span>
+
+                      <span
+                        v-if="temp.tmin !== null || temp.tmax !== null"
+                      >
+                        C
+                      </span>
+
+                    </td>
+
                   </tr>
+
                 </tbody>
+
               </table>
+
             </div>
+
           </div>
 
-          <div class="col-lg-5">
-            <div class="table-container shadow rounded-4 border overflow-hidden">
-              <table class="table table-sm table-striped align-middle mb-0 text-center">
+
+          <!-- ================================================= -->
+          <!-- PRECIPITATION -->
+          <!-- ================================================= -->
+
+         <div
+  v-if="precipitationRows.length > 0"
+  class="col-lg-5"
+>
+
+            <div
+              class="table-container shadow rounded-4 border overflow-hidden"
+            >
+
+              <table
+                class="table table-sm table-striped align-middle mb-0 text-center"
+              >
+
                 <thead class="bg-primary text-white">
+
                   <tr>
-                    <th class="py-4 fs-5">المنطقة</th>
-                    <th>٢٤ ساعة</th>
-                    <th>المتراكم</th>
-                    <th>المعدل</th>
+
+                    <th class="py-4 fs-5">
+                      المنطقة
+                    </th>
+
+                    <th>
+                      ٢٤ ساعة
+                    </th>
+
+                    <th>
+                      المتراكم
+                    </th>
+
+                    <th>
+                      المعدل
+                    </th>
+
                   </tr>
+
                 </thead>
+
+
                 <tbody>
-                  <tr v-for="stat in weather.precipitation_stats" :key="stat.id" class="border-bottom">
-                    <td class="py-4 fw-black fs-4">{{ stat.station_name_ar }}</td>
-                    <td class="fs-5 fw-bold">{{ stat.last_24_hours }}</td>
-                    <td class="text-primary fw-black fs-4">{{ stat.accumulated_total }}</td>
-                    <td class="text-muted fs-5 fw-bold">{{ stat.yearly_average }}</td>
+
+                  <tr
+                    v-for="temp in precipitationRows"
+                    :key="temp.id"
+                    class="border-bottom"
+                  >
+
+                    <td
+                      class="py-4 fw-black fs-5"
+                    >
+                      {{ temp.city_name_ar || temp.region_ar || 'N/A' }}
+                    </td>
+
+
+                    <td class="fs-5 fw-bold">
+                      {{ temp.rr_24 ?? 'N/A' }}
+                    </td>
+
+
+                    <td
+                      class="text-primary fw-black fs-5"
+                    >
+                      {{ temp.rr_cumul ?? 'N/A' }}
+                    </td>
+
+
+                    <td
+                      class="text-muted fs-5 fw-bold"
+                    >
+                      {{ temp.rr_avg ?? 'N/A' }}
+                    </td>
+
                   </tr>
+
                 </tbody>
+
               </table>
+
             </div>
+
           </div>
+
         </div>
+
+
+        <!-- ================================================= -->
+        <!-- REGION AGGREGATES -->
+        <!-- ================================================= -->
+
+        <div
+          v-if="weather.region_aggregates?.length"
+          class="mb-5"
+        >
+
+          <div
+            class="d-flex align-items-center gap-2 mb-4"
+          >
+
+            <i
+              class="bi bi-bar-chart-fill text-success fs-3"
+            ></i>
+
+            <span
+              class="fw-black fs-4 text-muted text-uppercase"
+            >
+              Regional Temperature Summary
+            </span>
+
+          </div>
+
+
+          <div
+            class="table-container shadow rounded-4 border overflow-hidden"
+          >
+
+            <table
+              class="table table-borderless align-middle mb-0"
+            >
+
+              <thead class="bg-black text-white">
+
+                <tr>
+
+                  <th class="py-4 ps-4">
+                    Region
+                  </th>
+
+                  <th class="text-center">
+                    Day
+                  </th>
+
+                  <th class="text-center">
+                    Minimum
+                  </th>
+
+                  <th class="text-center pe-4">
+                    Maximum
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody>
+
+                <tr
+                  v-for="region in weather.region_aggregates"
+                  :key="region.id"
+                  class="border-bottom"
+                >
+
+                  <td
+                    class="py-4 ps-4 fw-black fs-5"
+                  >
+                    {{ region.region_ar || region.region_en }}
+                  </td>
+
+
+                  <td class="text-center">
+                    {{ formatDate(region.day) }}
+                  </td>
+
+
+                  <td
+                    class="text-center fw-bold"
+                  >
+                    {{ region.tmin ?? 'N/A' }}°
+                  </td>
+
+
+                  <td
+                    class="text-center pe-4 fw-black text-primary fs-5"
+                  >
+                    {{ region.tmax ?? 'N/A' }}°
+                  </td>
+
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+
       </div>
+
     </div>
+
   </div>
 </template>
 
+
 <script setup>
-import { ref, computed, onMounted } from 'vue'
 
-const config = useRuntimeConfig();
-const weather = ref(null);
-const loading = ref(true);
+import {
+  ref,
+  computed,
+  onMounted
+} from 'vue'
 
-const flyableTitle = computed(() => {
 
-    switch (weather.value?.flyable_status) {
+const config = useRuntimeConfig()
 
-        case 'good':
-            return 'Good Conditions'
+const weather = ref(null)
 
-        case 'caution':
-            return 'Fly With Caution'
+const loading = ref(true)
 
-        case 'not_flyable':
-            return 'Not Flyable'
 
-        default:
-            return 'Good Conditions'
+/*
+|--------------------------------------------------------------------------
+| CLEAN API HTML
+|--------------------------------------------------------------------------
+|
+| The LCAA API returns HTML because:
+|
+| "text_format": "html"
+|
+| Example:
+|
+| <p>Weather information...</p>
+|
+| We use v-html to render it properly.
+|
+| This function removes empty paragraphs such as:
+|
+| <p>&nbsp;</p>
+|
+| while keeping the useful HTML formatting and colors sent by LCAA.
+|
+*/
 
-    }
+const cleanHtml = (html) => {
 
-})
-const defaultFlyableMessage = computed(() => {
+  if (!html) {
+    return 'N/A'
+  }
 
-    switch (weather.value?.flyable_status) {
+  return String(html)
 
-        case 'good':
-            return 'Excellent weather conditions for flying.'
+    // Remove empty paragraphs containing &nbsp;
+    .replace(
+      /<p>\s*(?:&nbsp;|\s)*<\/p>/gi,
+      ''
+    )
 
-        case 'caution':
-            return 'Please evaluate the weather carefully before takeoff.'
+    // Remove empty paragraphs
+    .replace(
+      /<p>\s*<\/p>/gi,
+      ''
+    )
 
-        case 'not_flyable':
-            return 'Flying operations are not recommended today.'
+    // Remove excessive whitespace
+    .replace(
+      /\s{2,}/g,
+      ' '
+    )
 
-        default:
-            return ''
+    .trim()
 
-    }
+}
 
-})
-const flyableEmoji = computed(() => {
 
-    switch (weather.value?.flyable_status) {
-
-        case 'good':
-            return '🟢'
-
-        case 'caution':
-            return '🟡'
-
-        case 'not_flyable':
-            return '🔴'
-
-        default:
-            return '🟢'
-
-    }
-
-})
-
-const flyableIcon = computed(() => {
-
-    switch (weather.value?.flyable_status) {
-
-        case 'good':
-            return 'bi-check-circle-fill'
-
-        case 'caution':
-            return 'bi-exclamation-triangle-fill'
-
-        case 'not_flyable':
-            return 'bi-x-circle-fill'
-
-        default:
-            return 'bi-check-circle-fill'
-
-    }
-
-})
-
-const flyableCardClass = computed(() => {
-
-    switch (weather.value?.flyable_status) {
-
-        case 'good':
-            return 'border-success bg-success-subtle'
-
-        case 'caution':
-            return 'border-warning bg-warning-subtle'
-
-        case 'not_flyable':
-            return 'border-danger bg-danger-subtle'
-
-        default:
-            return 'border-success bg-success-subtle'
-
-    }
-
-})
+/*
+|--------------------------------------------------------------------------
+| FETCH WEATHER
+|--------------------------------------------------------------------------
+*/
 
 const fetchWeather = async () => {
+
+  loading.value = true
+
   try {
-    // Fetches from the public route you defined: Route::get('/weather-report', [PublicWeatherController::class, 'index']);
-    const res = await $fetch(`${config.public.apiBase}/weather-report`);
+
+    const res = await $fetch(
+      `${config.public.apiBase}/weather-report`
+    )
+
     if (res.success) {
-      weather.value = res.data.report;
+
+      weather.value =
+        res.data.bulletin
+
     }
+
   } catch (err) {
-    console.error("Met data synchronization failed", err);
+
+    console.error(
+      'Met data synchronization failed',
+      err
+    )
+
   } finally {
-    loading.value = false;
+
+    loading.value = false
+
   }
-};
 
-const formatDate = (date) => date ? date.split('T')[0] : '';
+}
 
-const getArDay = (offset, baseDate) => {
-  if (!baseDate) return '';
-  const date = new Date(baseDate.split('T')[0]);
-  date.setDate(date.getDate() + offset);
-  return new Intl.DateTimeFormat('ar-LB', { weekday: 'long' }).format(date);
-};
 
-const truncateText = (text, length) => {
-  if (!text) return 'Detailed data pending...';
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
+/*
+|--------------------------------------------------------------------------
+| PRECIPITATION ROWS
+|--------------------------------------------------------------------------
+|
+| The new API stores precipitation directly
+| inside weather_temperatures.
+|
+*/
 
-onMounted(fetchWeather);
+const precipitationRows = computed(() => {
+  if (!weather.value?.temperatures) {
+    return []
+  }
+
+  return weather.value.temperatures
+    .filter(temp => {
+      return (
+        temp.rr_24 !== null ||
+        temp.rr_cumul !== null ||
+        temp.rr_avg_today !== null ||
+        temp.rr_avg !== null ||
+        temp.rr_last_year !== null
+      )
+    })
+    .map(temp => ({
+      region: temp.region_ar || '-',
+      city: temp.city_name_ar || temp.city_name || '-',
+      day: temp.day || '-',
+
+      rr_24: temp.rr_24,
+      rr_cumul: temp.rr_cumul,
+      rr_avg_today: temp.rr_avg_today,
+      rr_avg: temp.rr_avg,
+      rr_last_year: temp.rr_last_year,
+    }))
+})
+
+
+/*
+|--------------------------------------------------------------------------
+| DATE
+|--------------------------------------------------------------------------
+*/
+
+const formatDate = (date) => {
+
+  if (!date) {
+    return ''
+  }
+
+  return String(date)
+    .substring(0, 10)
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TIME
+|--------------------------------------------------------------------------
+*/
+
+const formatTime = (time) => {
+
+  if (!time) {
+    return 'N/A'
+  }
+
+  return String(time)
+    .substring(0, 5)
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| ARABIC DAY
+|--------------------------------------------------------------------------
+*/
+
+const getArabicDay = (date) => {
+
+  if (!date) {
+    return ''
+  }
+
+  const normalized =
+    String(date).substring(0, 10)
+
+  const parts =
+    normalized.split('-')
+
+  const localDate =
+    new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    )
+
+  return new Intl.DateTimeFormat(
+    'ar-LB',
+    {
+      weekday: 'long'
+    }
+  ).format(localDate)
+
+}
+
+
+onMounted(fetchWeather)
+
 </script>
 
+
 <style scoped>
-/* ================================
-   Flyable Status Card
-================================ */
 
-.bg-success-subtle{
-    background:#ecfdf3;
+.bg-success-subtle {
+  background: #ecfdf3;
 }
 
-.bg-warning-subtle{
-    background:#fff8e1;
+.bg-warning-subtle {
+  background: #fff8e1;
 }
 
-.bg-danger-subtle{
-    background:#fdecec;
+.bg-danger-subtle {
+  background: #fdecec;
 }
 
-.border-success{
-    border:3px solid #198754 !important;
+.fw-black {
+  font-weight: 900;
 }
 
-.border-warning{
-    border:3px solid #ffc107 !important;
+.letter-spacing-1 {
+  letter-spacing: 1px;
 }
 
-.border-danger{
-    border:3px solid #dc3545 !important;
+.letter-spacing-2 {
+  letter-spacing: 2px;
 }
-.fw-black { font-weight: 900; }
-.letter-spacing-1 { letter-spacing: 1px; }
-.letter-spacing-2 { letter-spacing: 2px; }
 
-/* Aerodome Labeling */
-.large-label { font-size: 1.1rem; font-weight: 800; color: #198754; text-transform: uppercase; letter-spacing: 1px; display: block; }
-.aero-card { padding: 25px; border-radius: 16px; border: 2px solid #f0f0f0; background: #fff; transition: all 0.2s ease-in-out; }
-.aero-card:hover { transform: translateY(-5px); border-color: #198754; }
+.large-label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #198754;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+}
 
-.stat-label { font-size: 0.95rem; font-weight: 800; color: #6c757d; text-transform: uppercase; }
+.aero-card {
+  padding: 25px;
+  border-radius: 16px;
+  border: 2px solid #f0f0f0;
+  background: #fff;
+  transition: all 0.2s ease-in-out;
+}
 
-/* Weather Situation Arabic Text */
-.situation-container { border-right: 10px solid #198754; padding-right: 20px; }
-.situation-text { font-size: 1.6rem; line-height: 1.8; font-weight: 600; color: #09100D !important; }
+.aero-card:hover {
+  transform: translateY(-5px);
+  border-color: #198754;
+}
 
-/* Global Styling & Branding */
-.text-primary { color: #198754 !important; }
-.bg-primary { background-color: #198754 !important; }
-.bg-black { background-color: #09100D; }
-.badge-outline-success { border: 3px solid #198754; color: #198754; border-radius: 12px; display: inline-block; font-weight: 900; }
-.timeline-item { border-right: 8px solid #198754; background-color: #f8fdfa; }
-.border-start-success-thick { border-left: 12px solid #198754; }
-.border-start-dark-thick { border-left: 12px solid #09100D; }
-.hover-bg:hover { background-color: #f8f9fa; }
+.stat-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+.situation-container {
+  border-right: 10px solid #198754;
+  padding-right: 20px;
+}
+
+.situation-text {
+  font-size: 1.6rem;
+  line-height: 1.8;
+  font-weight: 600;
+  color: #09100D !important;
+}
+
+.text-primary {
+  color: #198754 !important;
+}
+
+.bg-primary {
+  background-color: #198754 !important;
+}
+
+.bg-black {
+  background-color: #09100D;
+}
+
+.badge-outline-success {
+  border: 3px solid #198754;
+  color: #198754;
+  border-radius: 12px;
+  display: inline-block;
+  font-weight: 900;
+}
+
+.timeline-item {
+  border-right: 8px solid #198754;
+  background-color: #f8fdfa;
+}
+
+.border-start-success-thick {
+  border-left: 12px solid #198754;
+}
+
+.border-start-dark-thick {
+  border-left: 12px solid #09100D;
+}
+
+.hover-bg:hover {
+  background-color: #f8f9fa;
+}
+
+
+/* =========================================================
+   LCAA API HTML CONTENT
+========================================================= */
+
+/*
+|--------------------------------------------------------------------------
+| General HTML wrapper
+|--------------------------------------------------------------------------
+*/
+
+.weather-html {
+  direction: rtl;
+  text-align: right;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Paragraphs coming from API
+|--------------------------------------------------------------------------
+*/
+
+.weather-html :deep(p) {
+  margin: 0;
+  padding: 0;
+  line-height: 1.8;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Multiple paragraphs
+|--------------------------------------------------------------------------
+*/
+
+.weather-html :deep(p + p) {
+  margin-top: 8px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| API span formatting
+|--------------------------------------------------------------------------
+|
+| The API sends colors using:
+|
+| <span style="color: ...">
+|
+| We keep those colors.
+|
+*/
+
+.weather-html :deep(span) {
+  line-height: 1.8;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| BR tags
+|--------------------------------------------------------------------------
+*/
+
+.weather-html :deep(br) {
+  line-height: 0.8;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| GENERAL SITUATION
+|--------------------------------------------------------------------------
+*/
+
+.situation-text {
+  direction: rtl;
+  text-align: right;
+}
+
+.situation-text :deep(p) {
+  margin: 0 0 10px 0;
+}
+
+.situation-text :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FORECAST DESCRIPTION
+|--------------------------------------------------------------------------
+*/
+
+.timeline-desc {
+  direction: rtl;
+  text-align: right;
+}
+
+.timeline-desc :deep(p) {
+  margin: 0 0 8px 0;
+}
+
+.timeline-desc :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| WEATHER CONDITION CARDS
+|--------------------------------------------------------------------------
+*/
+
+.aero-card .weather-html {
+  min-height: 70px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| SEA / WEATHER STAT
+|--------------------------------------------------------------------------
+*/
+
+.stat-value.weather-html {
+  line-height: 1.7;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MOBILE
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 768px) {
+
+  .situation-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+  }
+
+  .weather-html {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .aero-card .weather-html {
+    min-height: auto;
+  }
+
+  .timeline-desc {
+    font-size: 1rem !important;
+    line-height: 1.8 !important;
+  }
+
+}
+
 </style>

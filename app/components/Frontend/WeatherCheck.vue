@@ -141,50 +141,56 @@ const cloudBaseFt = computed(() => {
   return Math.round((temp - dewPoint) * 400)
 })
 
-// Safety Status Logic
+
 const safetyStatusLabel = computed(() => {
 
-    switch (weatherReport.value?.flyable_status) {
+  if (!weatherReport.value) {
+    return 'Loading weather bulletin...'
+  }
 
-        case 'good':
-            return 'FLYABLE: GOOD CONDITIONS'
-
-        case 'caution':
-            return 'FLY WITH CAUTION'
-
-        case 'not_flyable':
-            return 'NOT FLYABLE'
-
-        default:
-            return 'Loading...'
-
-    }
-
+  return 'WEATHER BULLETIN'
 })
+
+
 const safetyDescription = computed(() => {
 
-    return weatherReport.value?.flyable_message || ''
+  if (!weatherReport.value) {
+    return ''
+  }
 
+  // LCAA API stores the bulletin text as HTML.
+  // We will display it safely as plain text here.
+  return stripHtml(
+    weatherReport.value.state_en ||
+    weatherReport.value.state_ar ||
+    ''
+  )
 })
+
+
 const safetyThemeClass = computed(() => {
 
-    switch (weatherReport.value?.flyable_status) {
+  if (!weatherReport.value) {
+    return 'bg-secondary text-white'
+  }
 
-        case 'good':
-            return 'bg-success text-white'
-
-        case 'caution':
-            return 'bg-warning text-dark'
-
-        case 'not_flyable':
-            return 'bg-danger text-white'
-
-        default:
-            return 'bg-secondary text-white'
-
-    }
-
+  return 'bg-success text-white'
 })
+
+
+const stripHtml = (html) => {
+
+  if (!html) {
+    return ''
+  }
+
+  const temp = document.createElement('div')
+  temp.innerHTML = html
+
+  return temp.textContent
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 // Navigation & URL Helpers
 const windyUrl = computed(() => {
@@ -217,16 +223,25 @@ const fetchWeatherReport = async () => {
       `${config.public.apiBase}/weather-report`
     )
 
-    if (res.success) {
+    console.log('LCAA Weather API:', res)
+
+    if (res?.success && res?.data?.report) {
+
       weatherReport.value = res.data.report
+
+    } else {
+
+      console.error('Invalid weather report response:', res)
+
+      weatherReport.value = null
     }
 
   } catch (err) {
 
-    console.error(err)
+    console.error('LCAA weather report fetch error:', err)
 
+    weatherReport.value = null
   }
-
 }
 // Lifecycle Hooks
 onMounted(async () => {
