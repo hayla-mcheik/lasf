@@ -31,14 +31,25 @@
           class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
         ></i>
       </div>
-      <!-- Existing buttons -->
-      <button class="btn btn-outline-success shadow-sm" @click="exportPilots">
-        <i class="bi bi-download me-1"></i> Export
-      </button>
-      <label class="btn btn-outline-primary mb-0 cursor-pointer shadow-sm">
-        <i class="bi bi-upload me-1"></i> Import CSV
-        <input type="file" @change="importPilots" hidden accept=".csv">
-      </label>
+
+<button
+  class="btn btn-outline-danger shadow-sm"
+  @click="downloadAllBadges"
+  :disabled="downloadingBadges"
+>
+  <span
+    v-if="downloadingBadges"
+    class="spinner-border spinner-border-sm me-1"
+  ></span>
+
+  <i
+    v-else
+    class="bi bi-file-earmark-zip-fill me-1"
+  ></i>
+
+  {{ downloadingBadges ? 'Creating ZIP...' : 'Download All Badges' }}
+</button>
+
       <button class="btn btn-primary shadow-sm" @click="openCreateModal">
         <i class="bi bi-plus-circle me-1"></i> Register Member
       </button>
@@ -519,11 +530,10 @@
 
                 <div class="pilot-header-row d-flex align-items-end px-4 pt-3 mb-3">
                   <div class="pilot-photo-frame me-3 position-relative">
-                    <img 
-                      :src="getAvatarUrl(activeCardPilot.pilot_profile?.image)" 
-                      class="pilot-card-img"
-                      @error="(e) => e.target.src = '/assets/images/avatarpilot.jpg'"
-                    >
+<img
+    :src="getAvatarUrl(activeCardPilot.pilot_profile?.image)"
+    class="pilot-card-img"
+/>
                   </div>
                   <div class="pilot-identity pb-1">
                     <div class="p-0 m-0"></div>
@@ -639,10 +649,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted , computed } from 'vue'
+import {
+  ref,
+  reactive,
+  onMounted,
+  computed,
+  nextTick
+} from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import QRCode from 'qrcode'
-
+import html2canvas from 'html2canvas'
+import JSZip from 'jszip'
 definePageMeta({ layout: 'admin' })
 const showLicensesModal = ref(false)
 
@@ -653,6 +670,7 @@ const config = useRuntimeConfig()
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const downloadingBadges = ref(false)
 const error = ref(null)
 const fieldErrors = ref({})
 const pilots = ref([])
@@ -678,6 +696,116 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 // Add search query
 const searchQuery = ref('')
 let searchTimeout = null
+
+const handleBadgeImageError = (event) => {
+  if (event.target.dataset.fallbackApplied) {
+    return
+  }
+
+  event.target.dataset.fallbackApplied = 'true'
+  event.target.src = '/assets/images/avatarpilot.jpg'
+}
+const blobToDataUrl = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+
+    reader.readAsDataURL(blob)
+  })
+}
+
+const loadImageAsDataUrl = async (img, pilot = null) => {
+    if (!img) {
+        return false
+    }
+
+    if (img.src && img.src.startsWith('data:')) {
+        return true
+    }
+
+    try {
+        let imageUrl = img.src
+
+        /*
+         * Pilot photo:
+         * Load it through Laravel API so we can authenticate
+         * and convert it to Base64 safely for html2canvas.
+         */
+        if (img.classList.contains('pilot-card-img') && pilot?.id) {
+            imageUrl =
+                `${config.public.apiBase}/admin/pilots/${pilot.id}/avatar`
+        }
+
+        console.log('Loading badge image:', imageUrl)
+
+        const response = await fetch(imageUrl, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${authStore.token}`,
+                Accept: 'image/*'
+            },
+            cache: 'no-cache'
+        })
+
+        if (!response.ok) {
+            throw new Error(
+                `Image request failed: HTTP ${response.status}`
+            )
+        }
+
+        const blob = await response.blob()
+
+        if (!blob || !blob.type.startsWith('image/')) {
+            throw new Error('Response is not an image.')
+        }
+
+        const dataUrl = await blobToDataUrl(blob)
+
+        img.src = dataUrl
+
+        await new Promise((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+                resolve()
+                return
+            }
+
+            img.onload = resolve
+            img.onerror = resolve
+        })
+
+        console.log('Badge image converted successfully.')
+
+        return true
+
+    } catch (error) {
+        console.error(
+            'Badge image conversion failed:',
+            imageUrl,
+            error
+        )
+
+        return false
+    }
+}
+
+const convertImagesToDataUrls = async (element, pilot) => {
+    if (!element) {
+        return
+    }
+
+    const images = element.querySelectorAll('img')
+
+    console.log(
+        `Found ${images.length} image(s) inside badge.`
+    )
+
+    for (const img of images) {
+        await loadImageAsDataUrl(img, pilot)
+    }
+}
+
 
 
 const clubsList = [
@@ -1138,7 +1266,409 @@ const closeCardPreview = () => {
 }
 
 const printMembershipCard = () => { window.print() }
+/*
+|--------------------------------------------------------------------------
+| Wait for badge images
+|--------------------------------------------------------------------------
+*/
 
+const waitForBadgeImages = (element) => {
+
+  return new Promise(resolve => {
+
+    const images =
+      element.querySelectorAll('img')
+
+    if (!images.length) {
+      resolve()
+      return
+    }
+
+    let completed = 0
+
+    const finish = () => {
+
+      completed++
+
+      if (completed >= images.length) {
+        resolve()
+      }
+
+    }
+
+    images.forEach(img => {
+
+      if (img.complete) {
+
+        finish()
+
+      } else {
+
+        img.addEventListener(
+          'load',
+          finish,
+          { once: true }
+        )
+
+        img.addEventListener(
+          'error',
+          finish,
+          { once: true }
+        )
+
+      }
+
+    })
+
+    /*
+    |--------------------------------------------------------------------------
+    | Safety timeout
+    |--------------------------------------------------------------------------
+    */
+
+    setTimeout(
+      resolve,
+      5000
+    )
+
+  })
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Convert canvas to PNG Blob
+|--------------------------------------------------------------------------
+*/
+
+const canvasToBlob = (canvas) => {
+
+  return new Promise((resolve, reject) => {
+
+    canvas.toBlob(
+      blob => {
+
+        if (blob) {
+          resolve(blob)
+        } else {
+          reject(
+            new Error(
+              'Could not create PNG blob.'
+            )
+          )
+        }
+
+      },
+      'image/png'
+    )
+
+  })
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Make safe filename
+|--------------------------------------------------------------------------
+*/
+
+const sanitizeFileName = (name) => {
+
+  return String(name || 'pilot')
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    || 'pilot'
+
+}
+
+const downloadAllBadges = async () => {
+
+  if (downloadingBadges.value) {
+    return
+  }
+
+  downloadingBadges.value = true
+  error.value = null
+
+  try {
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Get ALL pilots
+    |--------------------------------------------------------------------------
+    |
+    | Your table is paginated at 20 pilots.
+    | We do NOT use pilots.value because that contains only
+    | the current page.
+    |
+    */
+
+    const response = await $fetch(
+      `${config.public.apiBase}/admin/pilots?per_page=10000`,
+      {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`,
+          Accept: 'application/json'
+        }
+      }
+    )
+
+    const allPilots = response?.data || response || []
+
+    if (!Array.isArray(allPilots) || allPilots.length === 0) {
+      alert('No pilots found.')
+      return
+    }
+
+    console.log(
+      `Preparing badges for ${allPilots.length} pilots...`
+    )
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Create ZIP
+    |--------------------------------------------------------------------------
+    */
+
+    const zip = new JSZip()
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Process each pilot one by one
+    |--------------------------------------------------------------------------
+    */
+
+    let generated = 0
+
+    for (const pilot of allPilots) {
+
+      try {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Set current pilot
+        |--------------------------------------------------------------------------
+        */
+
+        activeCardPilot.value = pilot
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate this pilot's QR code
+        |--------------------------------------------------------------------------
+        */
+
+        await generateQRCodeForPilot(pilot)
+
+        /*
+        |--------------------------------------------------------------------------
+        | Wait until Vue renders the badge
+        |--------------------------------------------------------------------------
+        */
+
+        await nextTick()
+
+        /*
+        |--------------------------------------------------------------------------
+        | Wait for images
+        |--------------------------------------------------------------------------
+        */
+
+        const frontElement =
+          document.getElementById('print-badge-front')
+
+        const backElement =
+          document.getElementById('print-badge-back')
+
+        if (!frontElement || !backElement) {
+
+          console.warn(
+            `Badge elements not found for ${pilot.name}`
+          )
+
+          continue
+        }
+
+await waitForBadgeImages(frontElement)
+await waitForBadgeImages(backElement)
+
+await convertImagesToDataUrls(frontElement, pilot)
+await convertImagesToDataUrls(backElement, pilot)
+
+await new Promise(resolve => setTimeout(resolve, 200))
+
+const frontCanvas = await html2canvas(frontElement, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#ffffff',
+    logging: false
+})
+
+const backCanvas = await html2canvas(backElement, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: '#ffffff',
+    logging: false
+})
+        /*
+        |--------------------------------------------------------------------------
+        | Convert to PNG blobs
+        |--------------------------------------------------------------------------
+        */
+
+        const frontBlob = await canvasToBlob(frontCanvas)
+        const backBlob = await canvasToBlob(backCanvas)
+
+        /*
+        |--------------------------------------------------------------------------
+        | Safe filename
+        |--------------------------------------------------------------------------
+        */
+
+        const pilotName = sanitizeFileName(
+          pilot.name || 'pilot'
+        )
+
+        const license =
+          sanitizeFileName(
+            pilot.pilot_profile?.license_number || ''
+          )
+
+        const folderName = license
+          ? `${pilotName}-${license}`
+          : pilotName
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add files to ZIP
+        |--------------------------------------------------------------------------
+        */
+
+        zip.file(
+          `${folderName}/${folderName}-front.png`,
+          frontBlob
+        )
+
+        zip.file(
+          `${folderName}/${folderName}-back.png`,
+          backBlob
+        )
+
+        generated++
+
+        console.log(
+          `Badge ${generated}/${allPilots.length}: ${pilot.name}`
+        )
+
+      } catch (pilotError) {
+
+        console.error(
+          `Failed to generate badge for ${pilot.name}`,
+          pilotError
+        )
+
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Remove active badge
+    |--------------------------------------------------------------------------
+    */
+
+    activeCardPilot.value = null
+    qrCodeData.value = null
+
+    await nextTick()
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Make ZIP
+    |--------------------------------------------------------------------------
+    */
+
+    if (generated === 0) {
+      throw new Error(
+        'No badges could be generated.'
+      )
+    }
+
+    const zipBlob = await zip.generateAsync(
+      {
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: {
+          level: 6
+        }
+      },
+      metadata => {
+
+        console.log(
+          `Creating ZIP: ${Math.round(metadata.percent)}%`
+        )
+
+      }
+    )
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Download ZIP
+    |--------------------------------------------------------------------------
+    */
+
+    const downloadUrl =
+      window.URL.createObjectURL(zipBlob)
+
+    const link =
+      document.createElement('a')
+
+    link.href = downloadUrl
+
+    link.download =
+      `LASF-badges-${new Date().toISOString().slice(0, 10)}.zip`
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    link.remove()
+
+    window.URL.revokeObjectURL(downloadUrl)
+
+    alert(
+      `Successfully generated ${generated} pilot badges.`
+    )
+
+  } catch (err) {
+
+    console.error(
+      'Download all badges error:',
+      err
+    )
+
+    error.value =
+      err?.data?.message ||
+      err?.message ||
+      'Unable to generate all badges.'
+
+    alert(
+      error.value
+    )
+
+  } finally {
+
+    activeCardPilot.value = null
+    qrCodeData.value = null
+
+    downloadingBadges.value = false
+
+  }
+}
 const formatDisciplinesString = (pilot) => {
   if (!pilot.pilot_profile?.disciplines?.length) return 'No Active Disciplines'
   return pilot.pilot_profile.disciplines.map(d => d.name).join(' | ')
