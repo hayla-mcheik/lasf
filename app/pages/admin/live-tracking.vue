@@ -226,18 +226,19 @@ popupAnchor: [0,-24],
 })
 
     // Create map
-    map = L.map('map', {
-        zoomControl: true
-    }).setView([33.8547, 35.8623], 8)
+// Create map
+map = L.map('map', {
+    zoomControl: true
+}).setView([33.8547, 35.8623], 8)
 
-    // Same style as Flying Locations page
-    L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        {
-            maxZoom: 20,
-            attribution: '&copy; OpenStreetMap & CARTO'
-        }
-    ).addTo(map)
+// Minimal gray map
+L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    {
+        maxZoom: 16,
+        attribution: 'Tiles &copy; Esri'
+    }
+).addTo(map)
 function drawPolygons() {
     if (!map) return
 
