@@ -303,29 +303,31 @@ console.log(response.user)
           success: true
         }
 
-      } catch (error) {
+} catch (error) {
 
-        console.error(
-          'Login error:',
-          error
-        )
+    console.error('========== LOGIN ERROR ==========')
+    console.error('Full error:', error)
 
+    const message =
+        error?.data?.message ||
+        error?.response?._data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to login. Please try again.'
 
-        return {
+    console.error('Login error message:', message)
+    console.error('=================================')
 
-          success: false,
+    return {
+        success: false,
+        message
+    }
 
-          message:
-            error?.data?.message ||
-            'Login failed'
+} finally {
 
-        }
+    this.loading = false
 
-      } finally {
-
-        this.loading = false
-
-      }
+}
 
     },
 
