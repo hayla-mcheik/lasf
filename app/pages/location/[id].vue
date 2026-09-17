@@ -383,104 +383,227 @@ catch (error) {
 | GPS Tracking
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| GPS Tracking
+|--------------------------------------------------------------------------
+*/
 
 let watchId = null
+let gpsInterval = null
+let sendingGps = false
+
 const outsideZoneWarningShown = ref(false)
+
+
+async function sendGpsPosition(position) {
+
+    if (!authStore.token || sendingGps) {
+        return
+    }
+
+    sendingGps = true
+
+    try {
+
+        const latitude = position.coords.latitude
+        const longitude = position.coords.longitude
+        const accuracy = position.coords.accuracy
+
+        console.log('📍 SENDING GPS:', {
+            latitude,
+            longitude,
+            accuracy,
+            time: new Date().toISOString()
+        })
+
+        const response = await $fetch(
+            `${config.public.apiBase}/gps/update`,
+            {
+                method: 'POST',
+
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`
+                },
+
+                body: {
+                    latitude,
+                    longitude,
+                    accuracy
+                }
+            }
+        )
+
+        console.log('✅ GPS SENT:', response)
+
+        /*
+        |--------------------------------------------------------------------------
+        | Outside Zone Warning
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            response.outside_zone &&
+            !outsideZoneWarningShown.value
+        ) {
+
+            outsideZoneWarningShown.value = true
+
+            alert(
+                'Warning: You are outside the authorized flying zone.'
+            )
+        }
+
+        if (!response.outside_zone) {
+            outsideZoneWarningShown.value = false
+        }
+
+    } catch (error) {
+
+        console.error('❌ GPS SEND FAILED:', error)
+
+    } finally {
+
+        sendingGps = false
+
+    }
+}
+
+
 function startTracking() {
 
-    if (!process.client)
+    if (!process.client) {
         return
+    }
 
-    if (!navigator.geolocation)
-        return
+    if (!navigator.geolocation) {
 
-    if (watchId)
+        console.error(
+            '❌ Geolocation is not supported by this device.'
+        )
+
         return
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Prevent duplicate tracking
+    |--------------------------------------------------------------------------
+    */
+
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId)
+        watchId = null
+    }
+
+    if (gpsInterval !== null) {
+        clearInterval(gpsInterval)
+        gpsInterval = null
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GPS Watch
+    |--------------------------------------------------------------------------
+    */
 
     watchId = navigator.geolocation.watchPosition(
 
         async (position) => {
 
-            try {
+            console.log('📡 GPS WATCH UPDATE:', {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy
+            })
 
-  const response = await $fetch(
-    `${config.public.apiBase}/gps/update`,
-    {
-        method: 'POST',
-
-        headers: {
-            Authorization: `Bearer ${authStore.token}`
-        },
-
-        body: {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-        }
-    }
-)
-
-if (
-    response.outside_zone &&
-    !outsideZoneWarningShown.value
-) {
-
-    outsideZoneWarningShown.value = true
-
-    alert(
-        'Warning: You are outside the authorized flying zone.'
-    )
-
-}
-
-if (!response.outside_zone) {
-
-    outsideZoneWarningShown.value = false
-
-}
-
-            }
-
-            catch (error) {
-
-                console.error(error)
-
-            }
-
+            await sendGpsPosition(position)
         },
 
         (error) => {
 
-            console.error(error)
+            console.error(
+                '❌ GPS WATCH ERROR:',
+                error
+            )
 
         },
 
         {
-
             enableHighAccuracy: true,
-
-            maximumAge: 5000,
-
-            timeout: 10000
-
+            maximumAge: 0,
+            timeout: 15000
         }
 
     )
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Force GPS update every 5 seconds
+    |--------------------------------------------------------------------------
+    */
+
+    gpsInterval = setInterval(() => {
+
+        navigator.geolocation.getCurrentPosition(
+
+            async (position) => {
+
+                console.log('🔄 PERIODIC GPS UPDATE:', {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                })
+
+                await sendGpsPosition(position)
+            },
+
+            (error) => {
+
+                console.error(
+                    '❌ PERIODIC GPS ERROR:',
+                    error
+                )
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 15000
+            }
+
+        )
+
+    }, 5000)
+
 }
 
-function stopTracking()
-{
-    if (!watchId)
-    {
-        return
+
+function stopTracking() {
+
+    if (watchId !== null) {
+
+        navigator.geolocation.clearWatch(
+            watchId
+        )
+
+        watchId = null
     }
 
-    navigator.geolocation.clearWatch(watchId)
+    if (gpsInterval !== null) {
 
-    watchId = null
+        clearInterval(
+            gpsInterval
+        )
+
+        gpsInterval = null
+    }
+
+    console.log('🛑 GPS TRACKING STOPPED')
 }
-
 /*
 |--------------------------------------------------------------------------
 | Auto Start Tracking
@@ -599,13 +722,7 @@ function formatTime(date) {
 
 }
 onUnmounted(() => {
-
-    if (watchId) {
-
-        navigator.geolocation.clearWatch(watchId)
-
-    }
-
+    stopTracking()
 })
 </script>
 
