@@ -284,23 +284,33 @@ const payload =
       }
 
 
-  const result =
-    await authStore.login(payload)
-console.log('RESULT:', result)
-console.log('USER:', authStore.user)
-console.log('ROLE:', authStore.user?.role)
-console.log('IS ADMIN:', authStore.isAdmin)
-console.log('IS ARMY:', authStore.isArmy)
-console.log('IS WATCHER:', authStore.isWatcher)
-console.log('IS BEIRUT AIRPORT:', authStore.isBeirutAirport)
+const result = await authStore.login(payload)
 
-  if (!result.success) {
+console.log('========== LOGIN PAGE RESULT ==========')
+console.log('Login type:', loginType.value)
 
-    error.value = result.message
+console.log('Login identifier:', identifier.value)
 
-    return
+console.log('Security value provided:', !!securityValue.value)
 
-  }
+console.log('Result:', result)
+
+console.log('User:', authStore.user)
+console.log('Role:', authStore.user?.role)
+console.log('Is Admin:', authStore.isAdmin)
+console.log('Is Army:', authStore.isArmy)
+console.log('Is Watcher:', authStore.isWatcher)
+console.log('Is Permission:', authStore.isPermission)
+console.log('Is Beirut Airport:', authStore.isBeirutAirport)
+
+console.log('========================================')
+
+if (!result.success) {
+
+  error.value = result.message
+
+  return
+}
 
 
   /*

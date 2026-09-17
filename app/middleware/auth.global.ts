@@ -10,24 +10,30 @@ export default defineNuxtRouteMiddleware((to) => {
   |--------------------------------------------------------------------------
   */
 
-  if (to.path === '/login' && auth.isAuthenticated) {
+if (to.path === '/login' && auth.isAuthenticated) {
 
     if (auth.isAdmin) {
-      return navigateTo('/admin/dashboard')
+        return navigateTo('/admin/dashboard')
     }
 
     if (auth.isArmy) {
-      return navigateTo('/admin/dashboard')
+        return navigateTo('/admin/dashboard')
     }
 
     if (auth.isWatcher) {
-      return navigateTo('/admin/dashboard')
+        return navigateTo('/admin/dashboard')
     }
-if (auth.isBeirutAirport) {
-    return navigateTo('/admin/weather')
-}
+
+    if (auth.isPermission) {
+        return navigateTo('/admin/dashboard')
+    }
+
+    if (auth.isBeirutAirport) {
+        return navigateTo('/admin/weather')
+    }
+
     return navigateTo('/account')
-  }
+}
 
   /*
   |--------------------------------------------------------------------------

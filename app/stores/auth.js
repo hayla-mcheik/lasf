@@ -302,20 +302,117 @@ console.log(response.user)
         return {
           success: true
         }
-
 } catch (error) {
 
     console.error('========== LOGIN ERROR ==========')
-    console.error('Full error:', error)
+    console.error('Full error object:', error)
 
-    const message =
+    console.error('Error name:', error?.name)
+    console.error('Error message:', error?.message)
+    console.error('Error status:', error?.status)
+    console.error('Error statusCode:', error?.statusCode)
+
+    console.error('Error data:', error?.data)
+    console.error('Error response:', error?.response)
+    console.error('Error response data:', error?.response?._data)
+
+    const status =
+        error?.statusCode ||
+        error?.status ||
+        error?.response?.status ||
+        error?.response?._data?.status
+
+    const backendMessage =
         error?.data?.message ||
         error?.response?._data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to login. Please try again.'
+        error?.response?.data?.message
 
-    console.error('Login error message:', message)
+    let message = 'Unable to login. Please try again.'
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laravel returned an actual error
+    |--------------------------------------------------------------------------
+    */
+
+    if (backendMessage) {
+
+        message = backendMessage
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation error
+    |--------------------------------------------------------------------------
+    */
+
+    else if (status === 422) {
+
+        message = 'The information you entered is not valid. Please check your details.'
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unauthorized
+    |--------------------------------------------------------------------------
+    */
+
+    else if (status === 401) {
+
+        message = 'The license number or phone number is incorrect.'
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Forbidden
+    |--------------------------------------------------------------------------
+    */
+
+    else if (status === 403) {
+
+        message =
+            'Your account is not authorized to login. Please contact the LASF administrator.'
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Server error
+    |--------------------------------------------------------------------------
+    */
+
+    else if (status >= 500) {
+
+        message =
+            'The LASF server encountered a problem. Please try again later.'
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NO RESPONSE / NETWORK ERROR
+    |--------------------------------------------------------------------------
+    */
+
+    else if (
+        error?.message?.toLowerCase()?.includes('load failed') ||
+        error?.message?.toLowerCase()?.includes('failed to fetch') ||
+        error?.name === 'FetchError'
+    ) {
+
+        message =
+            'The login request could not reach the LASF server. Please check your internet connection and try again. If your internet is working, the server connection may be temporarily unavailable.'
+
+        console.error('LOGIN NETWORK ERROR')
+        console.error('The browser did NOT receive a response from the API.')
+        console.error('API URL:', `${useRuntimeConfig().public.apiBase}/login`)
+
+    }
+
+    console.error('FINAL LOGIN MESSAGE:', message)
     console.error('=================================')
 
     return {
