@@ -3,14 +3,17 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
+"build:android": "nuxt generate",
     "dev": "nuxt dev",
-    "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "@fullcalendar/bootstrap5": "^6.1.21",
     "@fullcalendar/core": "^6.1.21",
     "@fullcalendar/daygrid": "^6.1.21",
@@ -19,6 +22,7 @@
     "@pinia-plugin-persistedstate/nuxt": "^1.2.1",
     "@pinia/nuxt": "^0.11.3",
     "@tmcw/togeojson": "^7.1.2",
+    "@transistorsoft/capacitor-background-geolocation": "^9.5.0",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "@vueuse/core": "^14.1.0",
     "html2canvas": "^1.4.1",

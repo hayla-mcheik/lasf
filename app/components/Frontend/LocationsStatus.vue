@@ -256,14 +256,34 @@ let map = null
 let markers = []
 let kmlLayer = null
 // Fetch Locations
-const { data: locationsData, pending } = await useFetch(
+const {
+  data: locationsData,
+  pending,
+  error: locationsError,
+  refresh: refreshLocations
+} = await useFetch(
   `${config.public.apiBase}/flying-locations`,
   {
-    transform: (res) => res.data || res
+    key: 'flying-locations',
+    transform: (res) => res?.data || res || [],
+    default: () => []
   }
 )
+watch(locationsError, (error) => {
+  if (error) {
+    console.error('❌ LOCATIONS API ERROR:', error)
+  }
+})
 
-const locations = computed(() => locationsData.value || [])
+watch(locationsData, (data) => {
+  console.log('✅ LOCATIONS API DATA:', data)
+})
+
+const locations = computed(() => {
+  return Array.isArray(locationsData.value)
+    ? locationsData.value
+    : []
+})
 
 // Status
 const getStatusKey = (location) => {
@@ -416,13 +436,13 @@ const drawMap = async () => {
   }).setView([33.8547, 35.8623], 8)
 
   // Google Maps style tiles
-  L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    {
-      attribution: '&copy; OpenStreetMap & CARTO',
-      maxZoom: 20
-    }
-  ).addTo(map)
+L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri'
+  }
+).addTo(map)
   displayLocations.value.forEach(location => {
 
     if (
@@ -532,11 +552,16 @@ const drawMap = async () => {
 // WATCHERS
 // ===========================================
 
-watch(displayLocations, () => {
+watch(
+  displayLocations,
+  async (locations) => {
+    if (!locations.length) return
 
-  drawMap()
-
-})
+    await nextTick()
+    await drawMap()
+  },
+  { deep: true }
+)
 
 watch(showMap, () => {
 
@@ -552,10 +577,10 @@ watch(showMap, () => {
 // LIFECYCLE
 // ===========================================
 
-onMounted(() => {
-
-  drawMap()
-
+onMounted(async () => {
+  if (displayLocations.value.length) {
+    await drawMap()
+  }
 })
 </script>
 

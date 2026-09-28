@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">lasf</string>
+    <string name="title_activity_main">lasf</string>
+    <string name="package_name">info.lasf.app</string>
+    <string name="custom_url_scheme">info.lasf.app</string>
+</resources>

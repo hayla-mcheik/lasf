@@ -4,7 +4,10 @@ import { useRoute } from '#app'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCrossCountryStore } from '~/stores/crossCountry'
-
+const {
+    startBackgroundGps,
+    stopBackgroundGps
+} = useBackgroundGps()
 /*
 |--------------------------------------------------------------------------
 | Stores
@@ -170,7 +173,7 @@ async function handlePause()
             }
         )
 
-        stopTracking()
+   await stopTracking()
 
         await authStore.loadActiveSession()
 
@@ -206,7 +209,7 @@ async function handleResume()
             }
         )
 
-        startTracking()
+     await startTracking()
         await authStore.loadActiveSession()
         
         alert('Permission resumed successfully.')
@@ -339,9 +342,10 @@ async function handleCheckIn(token) {
 
         )
 
-        startTracking()
+        await startTracking()
 
         alert('Successfully checked in.')
+        
 
         await refreshEverything()
 
@@ -378,232 +382,30 @@ catch (error) {
 
 }
 
+
 /*
 |--------------------------------------------------------------------------
 | GPS Tracking
 |--------------------------------------------------------------------------
 */
-/*
-|--------------------------------------------------------------------------
-| GPS Tracking
-|--------------------------------------------------------------------------
-*/
 
-let watchId = null
-let gpsInterval = null
-let sendingGps = false
-
-const outsideZoneWarningShown = ref(false)
-
-
-async function sendGpsPosition(position) {
-
-    if (!authStore.token || sendingGps) {
+async function startTracking() {
+    if (!authStore.token) {
+        console.error('❌ No authentication token.')
         return
     }
 
-    sendingGps = true
+    console.log('🚀 Starting native background GPS...')
 
-    try {
-
-        const latitude = position.coords.latitude
-        const longitude = position.coords.longitude
-        const accuracy = position.coords.accuracy
-
-        console.log('📍 SENDING GPS:', {
-            latitude,
-            longitude,
-            accuracy,
-            time: new Date().toISOString()
-        })
-
-        const response = await $fetch(
-            `${config.public.apiBase}/gps/update`,
-            {
-                method: 'POST',
-
-                headers: {
-                    Authorization: `Bearer ${authStore.token}`
-                },
-
-                body: {
-                    latitude,
-                    longitude,
-                    accuracy
-                }
-            }
-        )
-
-        console.log('✅ GPS SENT:', response)
-
-        /*
-        |--------------------------------------------------------------------------
-        | Outside Zone Warning
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            response.outside_zone &&
-            !outsideZoneWarningShown.value
-        ) {
-
-            outsideZoneWarningShown.value = true
-
-            alert(
-                'Warning: You are outside the authorized flying zone.'
-            )
-        }
-
-        if (!response.outside_zone) {
-            outsideZoneWarningShown.value = false
-        }
-
-    } catch (error) {
-
-        console.error('❌ GPS SEND FAILED:', error)
-
-    } finally {
-
-        sendingGps = false
-
-    }
+    await startBackgroundGps(authStore.token)
 }
 
+async function stopTracking() {
+    console.log('🛑 Stopping native background GPS...')
 
-function startTracking() {
-
-    if (!process.client) {
-        return
-    }
-
-    if (!navigator.geolocation) {
-
-        console.error(
-            '❌ Geolocation is not supported by this device.'
-        )
-
-        return
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Prevent duplicate tracking
-    |--------------------------------------------------------------------------
-    */
-
-    if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId)
-        watchId = null
-    }
-
-    if (gpsInterval !== null) {
-        clearInterval(gpsInterval)
-        gpsInterval = null
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | GPS Watch
-    |--------------------------------------------------------------------------
-    */
-
-    watchId = navigator.geolocation.watchPosition(
-
-        async (position) => {
-
-            console.log('📡 GPS WATCH UPDATE:', {
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                accuracy: position.coords.accuracy
-            })
-
-            await sendGpsPosition(position)
-        },
-
-        (error) => {
-
-            console.error(
-                '❌ GPS WATCH ERROR:',
-                error
-            )
-
-        },
-
-        {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 15000
-        }
-
-    )
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Force GPS update every 5 seconds
-    |--------------------------------------------------------------------------
-    */
-
-    gpsInterval = setInterval(() => {
-
-        navigator.geolocation.getCurrentPosition(
-
-            async (position) => {
-
-                console.log('🔄 PERIODIC GPS UPDATE:', {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy
-                })
-
-                await sendGpsPosition(position)
-            },
-
-            (error) => {
-
-                console.error(
-                    '❌ PERIODIC GPS ERROR:',
-                    error
-                )
-
-            },
-
-            {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 15000
-            }
-
-        )
-
-    }, 5000)
-
+    await stopBackgroundGps()
 }
 
-
-function stopTracking() {
-
-    if (watchId !== null) {
-
-        navigator.geolocation.clearWatch(
-            watchId
-        )
-
-        watchId = null
-    }
-
-    if (gpsInterval !== null) {
-
-        clearInterval(
-            gpsInterval
-        )
-
-        gpsInterval = null
-    }
-
-    console.log('🛑 GPS TRACKING STOPPED')
-}
 /*
 |--------------------------------------------------------------------------
 | Auto Start Tracking
@@ -611,25 +413,19 @@ function stopTracking() {
 */
 
 watch(
-
     isFlyingHere,
-
-    (flying) => {
+    async (flying) => {
 
         if (flying) {
 
-            startTracking()
+            await startTracking()
 
         }
 
     },
-
     {
-
         immediate: true
-
     }
-
 )
 
 /*
@@ -666,13 +462,7 @@ async function handleCheckOut() {
 
         )
 
-        if (watchId) {
-
-            navigator.geolocation.clearWatch(watchId)
-
-            watchId = null
-
-        }
+ await stopTracking()
 
         authStore.activeSession = null
 
@@ -722,7 +512,8 @@ function formatTime(date) {
 
 }
 onUnmounted(() => {
-    stopTracking()
+    // Do not stop native background GPS when the page is unmounted.
+    // The pilot can lock the phone or navigate away while flying.
 })
 </script>
 
@@ -1111,7 +902,7 @@ onUnmounted(() => {
                     </div>
                     
                     <p class="text-muted small mt-3">
-                      Session will expire automatically after 2 hours
+                      Session will expire automatically after 7 hours
                     </p>
                   </div>
                 </div>

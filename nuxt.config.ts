@@ -1,7 +1,10 @@
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  ssr: true,
-debug:true,
+  ssr: !isCapacitorBuild,
+  debug: true,
+
   nitro: {
     prerender: {
       crawlLinks: false
@@ -29,14 +32,17 @@ debug:true,
     },
   },
 
-  runtimeConfig: {
-    public: {
-      apiBase: process.env.API_BASE_URL || 'https://lasf.info/api',
-      mediaBase: process.env.MEDIA_BASE_URL || 'https://lasf.info/api'   
-    //  apiBase: process.env.API_BASE_URL || 'http://127.0.0.1:8000/api',
-    //  mediaBase: process.env.MEDIA_BASE_URL || 'http://127.0.0.1:8000/api'
-    }
-  },
+runtimeConfig: {
+  public: {
+    apiBase: process.env.CAPACITOR_BUILD === 'true'
+      ? 'https://lasf.info/api'
+      : (process.env.API_BASE_URL || 'https://lasf.info/api'),
+
+    mediaBase: process.env.CAPACITOR_BUILD === 'true'
+      ? 'https://lasf.info/api'
+      : (process.env.MEDIA_BASE_URL || 'https://lasf.info/api')
+  }
+},
 
   css: [
     '@/assets/css/animate.css',
