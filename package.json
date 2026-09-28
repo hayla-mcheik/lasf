@@ -2,13 +2,14 @@
   "name": "lasf",
   "type": "module",
   "private": true,
-  "scripts": {
-"build:android": "nuxt generate",
-    "dev": "nuxt dev",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "start": "node .output/server/index.mjs"
-  },
+"scripts": {
+  "build": "nuxt build",
+  "build:android": "nuxt generate",
+  "dev": "nuxt dev",
+  "preview": "nuxt preview",
+  "postinstall": "nuxt prepare",
+  "start": "node .output/server/index.mjs"
+},
   "dependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/cli": "^8.5.2",
