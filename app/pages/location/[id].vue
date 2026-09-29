@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from '#app'
+import { Capacitor } from '@capacitor/core'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCrossCountryStore } from '~/stores/crossCountry'
 import { useBackgroundGps } from '~/composables/useBackgroundGps'
-import { BarcodeScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning'
+
 const {
     startBackgroundGps,
     stopBackgroundGps
@@ -286,10 +287,50 @@ onMounted(async () => {
     await refreshEverything()
 })
 
-
 async function scanQrCode() {
   try {
     console.log('📷 Starting QR scanner...')
+
+    if (!Capacitor.isNativePlatform()) {
+      alert('QR scanning is available in the LASF Android app.')
+      return
+    }
+
+    const {
+      BarcodeScanner,
+      BarcodeFormat
+    } = await import('@capacitor-mlkit/barcode-scanning')
+
+    const { supported } = await BarcodeScanner.isSupported()
+
+    console.log('📷 Barcode scanner supported:', supported)
+
+    if (!supported) {
+      alert('QR scanning is not supported on this device.')
+      return
+    }
+
+    const { available } =
+      await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
+
+    console.log(
+      '📦 Google Barcode Scanner module available:',
+      available
+    )
+
+    if (!available) {
+      console.log('📦 Installing Google Barcode Scanner module...')
+
+      await BarcodeScanner.installGoogleBarcodeScannerModule()
+
+      alert(
+        'Google QR Scanner is being installed. Please wait a moment, then tap "Scan QR Code to Begin" again.'
+      )
+
+      return
+    }
+
+    console.log('📷 Opening QR scanner...')
 
     const result = await BarcodeScanner.scan({
       formats: [BarcodeFormat.QrCode],
@@ -299,66 +340,61 @@ async function scanQrCode() {
     console.log('📷 Scanner result:', result)
 
     if (!result.barcodes || result.barcodes.length === 0) {
-      console.log('⚠️ No QR code detected')
+      console.log('❌ No QR code detected.')
       return
     }
 
-    const qrValue = result.barcodes[0]?.rawValue
+    const barcode = result.barcodes[0]
+
+    const qrValue = barcode.rawValue || barcode.displayValue
+
+    console.log('📷 QR VALUE:', qrValue)
 
     if (!qrValue) {
       alert('Invalid QR code.')
       return
     }
 
-    console.log('📷 QR VALUE:', qrValue)
-
     let token = ''
 
-    // Example:
-    // https://lasf.info/qr/ABC123
     try {
       const url = new URL(qrValue)
 
-      const parts = url.pathname.split('/').filter(Boolean)
-
-      // Expected:
-      // ["qr", "ABC123"]
+      const parts = url.pathname
+        .split('/')
+        .filter(Boolean)
 
       if (parts[0] === 'qr' && parts[1]) {
         token = parts[1]
       }
 
-      // Also support:
-      // https://lasf.info/qr/ABC123?something=value
       if (!token) {
         token = url.searchParams.get('token') || ''
       }
 
-    } catch (error) {
-      // If the QR contains only the token:
-      // ABC123
+    } catch {
       token = qrValue.trim()
     }
+
+    console.log('🎫 QR TOKEN:', token)
 
     if (!token) {
       alert('Invalid LASF QR code.')
       return
     }
 
-    console.log('🎫 Extracted QR token:', token)
-
-    // Now navigate to your existing QR page.
     await navigateTo(`/qr/${token}`)
 
-  } catch (error) {
+} catch (error) {
     console.error('❌ QR SCANNER ERROR:', error)
 
-    const message =
-      error?.message || 'Unable to scan the QR code.'
-
-    alert(message)
+    alert(
+      error?.message ||
+      'Unable to open the QR scanner.'
+    )
   }
 }
+
 /*
 |--------------------------------------------------------------------------
 | Check In
