@@ -47,6 +47,19 @@ const {
 
 )
 
+async function testGpsPermission() {
+    console.log('🧪 GPS TEST BUTTON CLICKED')
+
+    try {
+        console.log('🧪 Calling startBackgroundGps() directly...')
+
+        await startBackgroundGps(authStore.token)
+
+        console.log('🧪 GPS TEST FINISHED')
+    } catch (error) {
+        console.error('🔴 GPS TEST ERROR:', error)
+    }
+}
 /*
 |--------------------------------------------------------------------------
 | Load Cross Country
@@ -745,6 +758,14 @@ onUnmounted(() => {
             </NuxtLink>
 
 <div class="d-flex flex-column gap-3">
+
+<button
+    type="button"
+    @click="testGpsPermission"
+    class="btn btn-primary"
+>
+    TEST GPS PERMISSION
+</button>
 
 <button
     v-if="activeSession?.status === 'active'"
