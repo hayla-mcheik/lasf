@@ -287,6 +287,7 @@ onMounted(async () => {
     await refreshEverything()
 })
 
+
 async function scanQrCode() {
   try {
     console.log('📷 Starting QR scanner...')
@@ -301,9 +302,11 @@ async function scanQrCode() {
       BarcodeFormat
     } = await import('@capacitor-mlkit/barcode-scanning')
 
+    console.log('📷 Scanner plugin loaded')
+
     const { supported } = await BarcodeScanner.isSupported()
 
-    console.log('📷 Barcode scanner supported:', supported)
+    console.log('📷 Scanner supported:', supported)
 
     if (!supported) {
       alert('QR scanning is not supported on this device.')
@@ -313,18 +316,13 @@ async function scanQrCode() {
     const { available } =
       await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
 
-    console.log(
-      '📦 Google Barcode Scanner module available:',
-      available
-    )
+    console.log('📦 Google scanner available:', available)
 
     if (!available) {
-      console.log('📦 Installing Google Barcode Scanner module...')
-
       await BarcodeScanner.installGoogleBarcodeScannerModule()
 
       alert(
-        'Google QR Scanner is being installed. Please wait a moment, then tap "Scan QR Code to Begin" again.'
+        'Google QR Scanner is being installed. Please wait a moment and try again.'
       )
 
       return
@@ -340,13 +338,16 @@ async function scanQrCode() {
     console.log('📷 Scanner result:', result)
 
     if (!result.barcodes || result.barcodes.length === 0) {
-      console.log('❌ No QR code detected.')
+      alert('No QR code detected.')
       return
     }
 
     const barcode = result.barcodes[0]
 
-    const qrValue = barcode.rawValue || barcode.displayValue
+    const qrValue =
+      barcode.rawValue ||
+      barcode.displayValue ||
+      ''
 
     console.log('📷 QR VALUE:', qrValue)
 
@@ -355,38 +356,65 @@ async function scanQrCode() {
       return
     }
 
-    let token = ''
+    /*
+     * Example QR:
+     *
+     * https://lasf.info/location/terbol?token=XXXXX
+     */
 
     try {
       const url = new URL(qrValue)
 
-      const parts = url.pathname
-        .split('/')
-        .filter(Boolean)
+      const token = url.searchParams.get('token')
 
-      if (parts[0] === 'qr' && parts[1]) {
-        token = parts[1]
-      }
+      console.log('🎫 QR TOKEN:', token)
 
       if (!token) {
-        token = url.searchParams.get('token') || ''
+        alert('Invalid LASF QR code. Token not found.')
+        return
       }
 
-    } catch {
-      token = qrValue.trim()
+      /*
+       * Keep the location URL and token.
+       *
+       * Example:
+       * /location/terbol?token=XXXXX
+       */
+
+      const locationPath = url.pathname
+
+      console.log(
+        '📍 LOCATION PATH:',
+        locationPath
+      )
+
+      console.log(
+        '🚀 Navigating to:',
+        `${locationPath}?token=${token}`
+      )
+
+      await navigateTo(
+        `${locationPath}?token=${token}`
+      )
+
+      console.log('✅ Navigation completed')
+
+    } catch (error) {
+
+      console.error(
+        '❌ Invalid QR URL:',
+        error
+      )
+
+      alert('The QR code is not a valid LASF QR code.')
     }
-
-    console.log('🎫 QR TOKEN:', token)
-
-    if (!token) {
-      alert('Invalid LASF QR code.')
-      return
-    }
-
-    await navigateTo(`/qr/${token}`)
 
 } catch (error) {
-    console.error('❌ QR SCANNER ERROR:', error)
+
+    console.error(
+      '❌ QR SCANNER ERROR:',
+      error
+    )
 
     alert(
       error?.message ||
@@ -394,6 +422,7 @@ async function scanQrCode() {
     )
   }
 }
+
 
 /*
 |--------------------------------------------------------------------------
