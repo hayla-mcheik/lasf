@@ -4,6 +4,7 @@ import { useRoute } from '#app'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCrossCountryStore } from '~/stores/crossCountry'
+import { useBackgroundGps } from '~/composables/useBackgroundGps'
 const {
     startBackgroundGps,
     stopBackgroundGps
