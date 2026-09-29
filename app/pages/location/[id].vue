@@ -5,6 +5,7 @@ import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCrossCountryStore } from '~/stores/crossCountry'
 import { useBackgroundGps } from '~/composables/useBackgroundGps'
+import { BarcodeScanner, BarcodeFormat } from '@capacitor-mlkit/barcode-scanning'
 const {
     startBackgroundGps,
     stopBackgroundGps
@@ -284,6 +285,80 @@ onMounted(async () => {
 
     await refreshEverything()
 })
+
+
+async function scanQrCode() {
+  try {
+    console.log('📷 Starting QR scanner...')
+
+    const result = await BarcodeScanner.scan({
+      formats: [BarcodeFormat.QrCode],
+      autoZoom: true
+    })
+
+    console.log('📷 Scanner result:', result)
+
+    if (!result.barcodes || result.barcodes.length === 0) {
+      console.log('⚠️ No QR code detected')
+      return
+    }
+
+    const qrValue = result.barcodes[0]?.rawValue
+
+    if (!qrValue) {
+      alert('Invalid QR code.')
+      return
+    }
+
+    console.log('📷 QR VALUE:', qrValue)
+
+    let token = ''
+
+    // Example:
+    // https://lasf.info/qr/ABC123
+    try {
+      const url = new URL(qrValue)
+
+      const parts = url.pathname.split('/').filter(Boolean)
+
+      // Expected:
+      // ["qr", "ABC123"]
+
+      if (parts[0] === 'qr' && parts[1]) {
+        token = parts[1]
+      }
+
+      // Also support:
+      // https://lasf.info/qr/ABC123?something=value
+      if (!token) {
+        token = url.searchParams.get('token') || ''
+      }
+
+    } catch (error) {
+      // If the QR contains only the token:
+      // ABC123
+      token = qrValue.trim()
+    }
+
+    if (!token) {
+      alert('Invalid LASF QR code.')
+      return
+    }
+
+    console.log('🎫 Extracted QR token:', token)
+
+    // Now navigate to your existing QR page.
+    await navigateTo(`/qr/${token}`)
+
+  } catch (error) {
+    console.error('❌ QR SCANNER ERROR:', error)
+
+    const message =
+      error?.message || 'Unable to scan the QR code.'
+
+    alert(message)
+  }
+}
 /*
 |--------------------------------------------------------------------------
 | Check In
@@ -888,13 +963,14 @@ onUnmounted(() => {
                         Scan a QR code at the location to get started
                       </div>
                       
-                      <button 
-                        disabled 
-                        class="btn btn-secondary btn-lg px-5 rounded-pill"
-                      >
-                        <i class="bi bi-qr-code me-2"></i>
-                        Scan QR Code to Begin
-                      </button>
+<button
+  type="button"
+  @click="scanQrCode"
+  class="btn btn-success btn-lg px-5 rounded-pill"
+>
+  <i class="bi bi-qr-code-scan me-2"></i>
+  Scan QR Code to Begin
+</button>
                     </div>
                     
                     <p class="text-muted small mt-3">

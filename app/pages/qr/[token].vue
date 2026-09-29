@@ -57,7 +57,7 @@
                 <i class="bi bi-airplane-engines-fill display-2 text-primary"></i>
               </div>
               <h3 class="fw-bold">Ready to Launch?</h3>
-              <p class="text-muted mb-4">You are checking in to <strong>{{ location.name }}</strong>. Your session will be active for 2 hours.</p>
+              <p class="text-muted mb-4">You are checking in to <strong>{{ location.name }}</strong>. Your session will be active for 7 hours.</p>
               
               <button 
                 @click="handleCheckIn" 
