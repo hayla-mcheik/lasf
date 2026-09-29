@@ -126,8 +126,7 @@ export const useBackgroundGps = () => {
              */
             pausesLocationUpdatesAutomatically: false,
 
-            activityType:
-              BackgroundGeolocation.ActivityType.Airborne
+           
           },
 
           activity: {
