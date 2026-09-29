@@ -327,13 +327,12 @@ export const useBackgroundGps = () => {
       /**
        * Ask for location permission.
        */
-      const permissionStatus =
-        await BackgroundGeolocation.requestPermission()
+console.log('🟡 STEP 1: About to request GPS permission')
 
-      console.log(
-        '📍 Background GPS permission:',
-        permissionStatus
-      )
+const permissionStatus =
+  await BackgroundGeolocation.requestPermission()
+
+console.log('🟢 STEP 2: GPS permission result:', permissionStatus)
 
       /**
        * Check current native tracking state.

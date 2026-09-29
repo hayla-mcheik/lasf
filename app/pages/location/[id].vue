@@ -278,110 +278,84 @@ onMounted(async () => {
 
 async function handleCheckIn(token) {
 
-      console.log('1. handleCheckIn called');
-    console.log('2. token =', token);
-    console.log('3. isFlyingHere =', isFlyingHere.value);
-    console.log('4. activeSession =', authStore.activeSession);
+    console.log('🟢 GPS TEST 1: handleCheckIn called')
+    console.log('🟢 GPS TEST 2: token =', token)
+    console.log('🟢 GPS TEST 3: isFlyingHere =', isFlyingHere.value)
+    console.log('🟢 GPS TEST 4: activeSession =', authStore.activeSession)
 
     if (!token) {
-        console.log('STOP: No token');
-        return;
+        console.log('🔴 GPS TEST STOP: No QR token')
+        return
     }
 
     if (isFlyingHere.value) {
-        console.log('STOP: Already flying here');
-        return;
+        console.log('🔴 GPS TEST STOP: Already flying here')
+        return
     }
 
-    console.log('5. Sending POST request...');
     checkingIn.value = true
 
     try {
 
+        console.log('🟡 GPS TEST 5: Sending check-in request')
+
         const response = await $fetch(
-
             `${config.public.apiBase}/airspace-sessions`,
-
             {
-
                 method: 'POST',
 
                 headers: {
-
                     Authorization: `Bearer ${authStore.token}`
-
                 },
 
                 body: {
-
                     token
-
                 }
-
             }
-
         )
+
+        console.log('🟢 GPS TEST 6: Check-in API successful')
+        console.log('🟢 GPS TEST 7: session =', response.session)
 
         authStore.activeSession = response.session
 
-        /*
-        |--------------------------------------------------------------------------
-        | Refresh Cross Country
-        |--------------------------------------------------------------------------
-        */
+        console.log('🟢 GPS TEST 8: activeSession saved')
 
         await crossCountryStore.refresh()
 
+        console.log('🟢 GPS TEST 9: refresh completed')
+
         window.history.replaceState(
-
             {},
-
             '',
-
             `/location/${location.value.slug}`
-
         )
+
+        console.log('🟢 GPS TEST 10: About to start GPS')
 
         await startTracking()
 
+        console.log('🟢 GPS TEST 11: startTracking finished')
+
         alert('Successfully checked in.')
-        
 
         await refreshEverything()
 
-    }
+    } catch (error) {
 
-catch (error) {
+        console.error('🔴 GPS TEST ERROR:', error)
 
-    console.error(error)
+        alert(
+            error?.data?.message ||
+            'Check-in failed.'
+        )
 
-    if (
-        error?.status === 422 &&
-        error?.data?.active_session
-    ) {
-
-        authStore.activeSession = error.data.active_session
-
-        await refreshEverything()
-
-        alert('You already have an active flying session.')
-
-        return
-    }
-
-    alert(
-        error?.data?.message ||
-        'Check-in failed.'
-    )
-}
-    finally {
+    } finally {
 
         checkingIn.value = false
 
     }
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
