@@ -283,95 +283,93 @@ export const useBackgroundGps = () => {
   /**
    * Start GPS after successful pilot check-in.
    */
-  const startBackgroundGps = async (token: string) => {
-    if (!process.client) return false
+const startBackgroundGps = async (token: string) => {
 
-    if (!Capacitor.isNativePlatform()) {
-      console.log(
-        '🌐 Browser mode: native GPS disabled.'
-      )
+  console.log('🟢 GPS FUNCTION CALLED')
+  console.log('🟢 Token exists:', !!token)
+  console.log('🟢 Native platform:', Capacitor.isNativePlatform())
 
-      return false
-    }
-
-    if (!token) {
-      console.error(
-        '❌ No authentication token. GPS cannot start.'
-      )
-
-      return false
-    }
-
-    try {
-      /**
-       * Initialize SDK first.
-       */
-      await initializeBackgroundGps()
-
-      /**
-       * Update Sanctum token.
-       *
-       * This is important because Laravel protects
-       * /api/gps/update with auth:sanctum.
-       */
-      await BackgroundGeolocation.setConfig({
-        http: {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-        }
-      })
-
-      /**
-       * Ask for location permission.
-       */
-console.log('🟡 STEP 1: About to request GPS permission')
-
-const permissionStatus =
-  await BackgroundGeolocation.requestPermission()
-
-console.log('🟢 STEP 2: GPS permission result:', permissionStatus)
-
-      /**
-       * Check current native tracking state.
-       */
-      const currentState =
-        await BackgroundGeolocation.getState()
-
-      console.log(
-        '📡 Current GPS state:',
-        currentState.enabled
-      )
-
-      /**
-       * Don't start twice.
-       */
-      if (!currentState.enabled) {
-        await BackgroundGeolocation.start()
-
-        console.log(
-          '🚀 Native background GPS STARTED'
-        )
-      } else {
-        console.log(
-          'ℹ️ Native background GPS is already running'
-        )
-      }
-
-      isTracking.value = true
-
-      return true
-    } catch (error) {
-      console.error(
-        '❌ Failed to start background GPS:',
-        error
-      )
-
-      return false
-    }
+  if (!process.client) {
+    console.log('🔴 GPS STOPPED: not client')
+    return false
   }
+
+  if (!Capacitor.isNativePlatform()) {
+    console.log('🔴 GPS STOPPED: not native')
+    return false
+  }
+
+  if (!token) {
+    console.log('🔴 GPS STOPPED: no token')
+    return false
+  }
+
+  try {
+    console.log('🟡 GPS: initializing BackgroundGeolocation...')
+
+    await initializeBackgroundGps()
+
+    console.log('🟡 GPS: initialization finished')
+
+    await BackgroundGeolocation.setConfig({
+      http: {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }
+    })
+
+    console.log('🟡 GPS: token configured')
+
+    const permissionStatus =
+      await BackgroundGeolocation.requestPermission()
+
+    console.log(
+      '🟢 GPS PERMISSION RESULT:',
+      permissionStatus
+    )
+
+    const currentState =
+      await BackgroundGeolocation.getState()
+
+    console.log(
+      '🟢 GPS CURRENT STATE:',
+      currentState
+    )
+
+    if (!currentState.enabled) {
+
+      console.log('🟡 GPS: calling BackgroundGeolocation.start()')
+
+      await BackgroundGeolocation.start()
+
+      console.log(
+        '🟢 GPS START COMMAND FINISHED'
+      )
+
+    } else {
+
+      console.log(
+        '🟢 GPS WAS ALREADY RUNNING'
+      )
+    }
+
+    isTracking.value = true
+
+    return true
+
+  } catch (error) {
+
+    console.error(
+      '🔴 GPS START ERROR:',
+      error
+    )
+
+    return false
+  }
+}
 
   /**
    * Stop GPS after pause or checkout.
