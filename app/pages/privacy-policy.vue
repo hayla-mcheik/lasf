@@ -2,7 +2,7 @@
   <div>
     <Breadcrumbs />
 
-    <main class="privacy-policy-page">
+    <div class="privacy-policy-page">
       <div class="container">
         <!-- Header -->
         <div class="privacy-header">
@@ -474,7 +474,7 @@
 
         </div>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
