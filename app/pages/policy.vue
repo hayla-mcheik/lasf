@@ -479,18 +479,9 @@
 </template>
 
 <script setup>
-import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
+import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue';
 
-useHead({
-  title: 'Privacy Policy | LASF GO',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Privacy Policy for LASF GO, including information about account data, GPS location, background location tracking, QR code scanning, and data security.'
-    }
-  ]
-})
+
 </script>
 
 <style scoped>
