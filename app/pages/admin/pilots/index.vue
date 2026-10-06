@@ -49,7 +49,13 @@
 
   {{ downloadingBadges ? 'Creating ZIP...' : 'Download All Badges' }}
 </button>
-
+<button
+  class="btn btn-outline-success shadow-sm"
+  @click="exportPilots"
+>
+  <i class="bi bi-file-earmark-excel-fill me-1"></i>
+  Export Pilots
+</button>
       <button class="btn btn-primary shadow-sm" @click="openCreateModal">
         <i class="bi bi-plus-circle me-1"></i> Register Member
       </button>
@@ -180,42 +186,55 @@
 </td>
 
 <td class="text-center">
-              <div class="btn-group">
+<div class="btn-group">
 
-  <button
-    v-if="!pilot.is_approved"
-    class="btn btn-sm btn-success"
-    @click="approvePilot(pilot.id)"
-  >
-    Approve
-  </button>
+    <button
+        v-if="!pilot.is_approved"
+        class="btn btn-sm btn-success"
+        @click="approvePilot(pilot.id)"
+    >
+        Approve
+    </button>
 
-  <button
-    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
-    @click="generateCardView(pilot)"
-  >
-    <i class="bi bi-printer"></i> Badge
-  </button>
+    <button
+        class="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
+        @click="generateCardView(pilot)"
+    >
+        <i class="bi bi-printer"></i> Badge
+    </button>
 
-  <button
-    class="btn btn-sm btn-outline-primary"
-    @click="editPilot(pilot)"
-  >
-    <i class="bi bi-pencil"></i>
-  </button>
+    <!-- Visitor Information Card -->
+    <button
+        v-if="pilot.pilot_profile?.is_international"
+        class="btn btn-sm btn-outline-warning"
+        @click="downloadVisitorCard(pilot)"
+        title="Download Visitor Information Card"
+    >
+        <i class="bi bi-file-earmark-pdf me-1"></i>
+        Visitor Card
+    </button>
 
-  <button
-    class="btn btn-sm btn-outline-danger"
-    @click="confirmDelete(pilot)"
-  >
-    <i class="bi bi-trash"></i>
-  </button>
-<button
-    class="btn btn-sm btn-outline-secondary"
-    @click="viewLicenses(pilot)"
->
-    <i class="bi bi-file-earmark-pdf"></i>
-</button>
+    <button
+        class="btn btn-sm btn-outline-primary"
+        @click="editPilot(pilot)"
+    >
+        <i class="bi bi-pencil"></i>
+    </button>
+
+    <button
+        class="btn btn-sm btn-outline-danger"
+        @click="confirmDelete(pilot)"
+    >
+        <i class="bi bi-trash"></i>
+    </button>
+
+    <button
+        class="btn btn-sm btn-outline-secondary"
+        @click="viewLicenses(pilot)"
+    >
+        <i class="bi bi-file-earmark-pdf"></i>
+    </button>
+
 </div>
                 </td>
               </tr>
@@ -1220,6 +1239,56 @@ const viewLicenses = async (pilot) => {
 
     }
 
+}
+
+const downloadVisitorCard = async (pilot) => {
+    try {
+        const response = await fetch(
+            `${config.public.apiBase}/admin/pilots/${pilot.id}/visitor-card?token=${authStore.token}`,
+            {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/pdf',
+                },
+            }
+        )
+
+        if (!response.ok) {
+            const message = await response.text()
+            console.error('Visitor card error:', message)
+            throw new Error('Unable to download visitor card.')
+        }
+
+        const blob = await response.blob()
+
+        const url = window.URL.createObjectURL(blob)
+
+        const link = document.createElement('a')
+
+        link.href = url
+
+        link.download =
+            `visitor-information-card-${pilot.pilot_profile?.license_number || pilot.id}.pdf`
+
+        document.body.appendChild(link)
+
+        link.click()
+
+        document.body.removeChild(link)
+
+        window.URL.revokeObjectURL(url)
+
+    } catch (error) {
+
+        console.error(
+            'Visitor card download failed:',
+            error
+        )
+
+        alert(
+            'Unable to download the visitor information card.'
+        )
+    }
 }
 
 /**

@@ -165,6 +165,13 @@
               label="Testimonials"
               to="/admin/testimonials"
             />
+            <NavItem
+    :active="$route.path.startsWith('/admin/board')"
+    :collapsed="sidebarCollapsed"
+    icon="bi-person-badge"
+    label="LASF Board"
+    to="/admin/board"
+/>
             <NavItem 
               :active="$route.path.startsWith('/admin/events')"
               :collapsed="sidebarCollapsed"
@@ -289,6 +296,7 @@ const pageTitle = computed(() => {
     '/admin/cross-country': 'Cross Country',
     
     '/admin/news': 'News',
+    '/admin/board': 'LASF Board',
     '/admin/events': 'Events',
     '/admin/pilots': 'Pilots',
     '/admin/sports': 'Sports',

@@ -12,10 +12,34 @@
 
               <!-- Header -->
               <div class="card-header bg-success text-white text-center py-4">
-                <h2 class="mb-0">
-                  <i class="bi bi-person-plus-fill me-2"></i>
-                  Pilot Registration
-                </h2>
+     <h2 class="mb-0">
+
+    <i
+        :class="
+            isInternational
+                ? 'bi bi-airplane-fill'
+                : 'bi bi-person-plus-fill'
+        "
+        class="me-2"
+    ></i>
+
+    {{ isInternational
+        ? 'International Pilot Registration'
+        : 'Pilot Registration'
+    }}
+
+</h2>
+<div
+    v-if="isInternational"
+    class="bg-light text-dark p-3 text-center border-bottom"
+>
+    <strong>International Pilot / Visitor</strong>
+
+    <div class="small text-muted mt-1">
+        This registration is for foreign pilots wishing to fly
+        paragliding in Lebanon.
+    </div>
+</div>
               </div>
 
               <div class="card-body p-4">
@@ -37,7 +61,106 @@
                   {{ error }}
                 </div>
 
-                <form @submit.prevent="registerPilot" novalidate>
+   <!-- Registration Type Selection -->
+<div
+    v-if="!route.query.type"
+    class="container py-5"
+>
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="card border-0 shadow-sm">
+
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h3 class="mb-1">
+                        <i class="bi bi-person-plus-fill me-2"></i>
+                        Pilot Registration
+                    </h3>
+
+                    <p class="mb-0">
+                        Please select your registration type
+                    </p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+
+                    <div class="row g-4">
+
+                        <!-- Normal Pilot -->
+                        <div class="col-md-6">
+
+                            <div class="registration-option h-100">
+
+                                <div class="registration-icon">
+                                    <i class="bi bi-person-badge-fill"></i>
+                                </div>
+
+                                <h4 class="mt-3">
+                                    Normal Pilot
+                                </h4>
+
+                                <p class="text-muted">
+                                    For pilots registered with
+                                    the Lebanese Air Sports Federation.
+                                </p>
+
+                                <NuxtLink
+                                    to="/register?type=normal"
+                                    class="btn btn-success w-100"
+                                >
+                                    Register as Pilot
+                                </NuxtLink>
+
+                            </div>
+
+                        </div>
+
+                        <!-- International Pilot -->
+                        <div class="col-md-6">
+
+                            <div class="registration-option h-100">
+
+                                <div class="registration-icon">
+                                    <i class="bi bi-globe2"></i>
+                                </div>
+
+                                <h4 class="mt-3">
+                                    International Pilot
+                                </h4>
+
+                                <p class="text-muted">
+                                    For foreign pilots wishing to
+                                    fly paragliding in Lebanon.
+                                </p>
+
+                                <NuxtLink
+                                    to="/register?type=international"
+                                    class="btn btn-outline-success w-100"
+                                >
+                                    Register as International Pilot
+                                </NuxtLink>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- Actual Registration Form -->
+<form
+    v-else
+    @submit.prevent="registerPilot"
+    novalidate
+>
 
                   <div class="row">
 
@@ -100,18 +223,17 @@
 </div>
 
                     <!-- DOB - OPTIONAL -->
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">
-                        Date of Birth
-                        <small class="text-muted">(Optional)</small>
-                      </label>
+                <div class="col-md-6 mb-3">
+    <label class="form-label">
+        Date of Birth <span class="text-danger"></span>
+    </label>
 
-                      <input
-                        type="date"
-                        class="form-control"
-                        v-model="form.date_of_birth"
-                      >
-                    </div>
+<input
+    v-model="form.date_of_birth"
+    type="date"
+    class="form-control"
+>
+</div>
 
                     <!-- Blood Type - REQUIRED -->
                     <div class="col-md-6 mb-3">
@@ -214,35 +336,779 @@
                       </div>
                     </div>
 
-                    <!-- Club - REQUIRED -->
-                    <div class="col-md-6 mb-4">
-                      <label class="form-label fw-semibold">
-                        Club <span class="text-danger">*</span>
-                      </label>
+<!-- Club -->
+<div class="col-md-6 mb-4">
 
-                      <select
-                        v-model="selectedClub"
-                        class="form-select"
-                        :class="{ 'is-invalid': formErrors.club }"
-                        @change="updateClub"
-                        required
-                      >
-                        <option value="">Select Club</option>
+    <label class="form-label fw-semibold">
+        Club <span class="text-danger">*</span>
+    </label>
 
-                        <option
-                          v-for="club in clubs"
-                          :key="club.code"
-                          :value="club"
-                        >
-                          {{ club.name }}
-                        </option>
+    <select
+        v-model="selectedClub"
+        class="form-select"
+        :class="{ 'is-invalid': formErrors.club }"
+        @change="updateClub"
+        required
+    >
 
-                      </select>
-                      <div v-if="formErrors.club" class="invalid-feedback">
-                        {{ formErrors.club }}
-                      </div>
-                    </div>
+        <option :value="null">
+            Select Club
+        </option>
 
+        <option
+            v-for="club in clubs"
+            :key="club.code"
+            :value="club"
+        >
+            {{ club.name }}
+        </option>
+
+    </select>
+
+    <div
+        v-if="formErrors.club"
+        class="invalid-feedback"
+    >
+        {{ formErrors.club }}
+    </div>
+
+</div>
+
+<!-- ========================================================= -->
+<!-- INTERNATIONAL PILOT INFORMATION -->
+<!-- ========================================================= -->
+
+<div
+    v-if="isInternational"
+    class="mt-4"
+>
+
+    <div class="border rounded-4 p-4 bg-light">
+
+        <h4 class="fw-bold mb-4 text-success">
+            <i class="bi bi-person-vcard me-2"></i>
+            Visitor Information
+        </h4>
+
+
+        <!-- Personal Information -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3">
+            Personal Information
+        </h5>
+
+        <div class="row">
+
+            <!-- First Name -->
+            <div class="col-md-4 mb-3">
+
+                <label class="form-label">
+                    First Name <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.first_name"
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.first_name }"
+                >
+
+                <div
+                    v-if="formErrors.first_name"
+                    class="invalid-feedback"
+                >
+                    {{ formErrors.first_name }}
+                </div>
+
+            </div>
+
+
+            <!-- Father Name -->
+            <div class="col-md-4 mb-3">
+
+                <label class="form-label">
+                    Father Name <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.father_name"
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.father_name }"
+                >
+
+            </div>
+
+
+            <!-- Last Name -->
+            <div class="col-md-4 mb-3">
+
+                <label class="form-label">
+                    Last Name <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.last_name"
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.last_name }"
+                >
+
+            </div>
+
+
+            <!-- Mother -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Mother's Full Name
+                </label>
+
+                <input
+                    v-model="form.mother_full_name"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <!-- Wife -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Wife's Full Name
+                </label>
+
+                <input
+                    v-model="form.wife_full_name"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <!-- Place of Birth -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Place of Birth
+                </label>
+
+                <input
+                    v-model="form.place_of_birth"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <!-- Nationality -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Nationality <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.nationality"
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.nationality }"
+                >
+
+            </div>
+
+
+            <!-- Sex -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Sex <span class="text-danger">*</span>
+                </label>
+
+                <select
+                    v-model="form.sex"
+                    class="form-select"
+                    :class="{ 'is-invalid': formErrors.sex }"
+                >
+
+                    <option value="">
+                        Select
+                    </option>
+
+                    <option value="Male">
+                        Male
+                    </option>
+
+                    <option value="Female">
+                        Female
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Marital Status -->
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Marital Status <span class="text-danger">*</span>
+                </label>
+
+                <select
+                    v-model="form.marital_status"
+                    class="form-select"
+                >
+
+                    <option value="">
+                        Select
+                    </option>
+
+                    <option value="Single">
+                        Single
+                    </option>
+
+                    <option value="Married">
+                        Married
+                    </option>
+
+                    <option value="Divorced">
+                        Divorced
+                    </option>
+
+                    <option value="Widowed">
+                        Widowed
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Languages -->
+            <div class="col-12 mb-3">
+
+                <label class="form-label">
+                    Languages Fluently Spoken
+                    <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.languages"
+                    type="text"
+                    class="form-control"
+                    placeholder="Arabic, English, French, etc."
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Identity / Passport -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Identification & Passport
+        </h5>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    National ID Number
+                </label>
+
+                <input
+                    v-model="form.national_id_number"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    File Number
+                </label>
+
+                <input
+                    v-model="form.file_number"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Passport Number <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.passport_number"
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': formErrors.passport_number }"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Passport Issuing Authority
+                    <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.passport_issuing_authority"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Passport Issued Date
+                    <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.passport_issued_date"
+                    type="date"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Passport Expiry Date
+                    <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.passport_expiry_date"
+                    type="date"
+                    class="form-control"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Contact -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Contact Information
+        </h5>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Mobile Phone
+                </label>
+
+                <input
+                    v-model="form.mobile_phone"
+                    type="tel"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Alternative Phone
+                </label>
+
+                <input
+                    v-model="form.alternative_phone"
+                    type="tel"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Work Email
+                </label>
+
+                <input
+                    v-model="form.work_email"
+                    type="email"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Personal Email
+                </label>
+
+                <input
+                    v-model="form.personal_email"
+                    type="email"
+                    class="form-control"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Current Address -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Current Address
+        </h5>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Country <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.current_country"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    City <span class="text-danger">*</span>
+                </label>
+
+                <input
+                    v-model="form.current_city"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Street / Area
+                </label>
+
+                <input
+                    v-model="form.current_street_area"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <label class="form-label">
+                    Building
+                </label>
+
+                <input
+                    v-model="form.current_building"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <label class="form-label">
+                    Floor
+                </label>
+
+                <input
+                    v-model="form.current_floor"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Alternative Address -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Alternative Address
+        </h5>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Country
+                </label>
+
+                <input
+                    v-model="form.alternative_country"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    City
+                </label>
+
+                <input
+                    v-model="form.alternative_city"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Street / Area
+                </label>
+
+                <input
+                    v-model="form.alternative_street_area"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <label class="form-label">
+                    Building
+                </label>
+
+                <input
+                    v-model="form.alternative_building"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <label class="form-label">
+                    Floor
+                </label>
+
+                <input
+                    v-model="form.alternative_floor"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Employment -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Employment
+        </h5>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Name of Employer
+                </label>
+
+                <input
+                    v-model="form.employer_name"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+
+                <label class="form-label">
+                    Current Title
+                </label>
+
+                <input
+                    v-model="form.current_title"
+                    type="text"
+                    class="form-control"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- Criminal Record -->
+
+        <h5 class="fw-bold border-bottom pb-2 mb-3 mt-4">
+            Legal Information
+        </h5>
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Have you ever been convicted of a crime?
+            </label>
+
+            <div class="d-flex gap-4">
+
+                <div class="form-check">
+
+                    <input
+                        id="crime-no"
+                        class="form-check-input"
+                        type="radio"
+                        :value="false"
+                        v-model="form.convicted_of_crime"
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="crime-no"
+                    >
+                        No
+                    </label>
+
+                </div>
+
+
+                <div class="form-check">
+
+                    <input
+                        id="crime-yes"
+                        class="form-check-input"
+                        type="radio"
+                        :value="true"
+                        v-model="form.convicted_of_crime"
+                    >
+
+                    <label
+                        class="form-check-label"
+                        for="crime-yes"
+                    >
+                        Yes
+                    </label>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div
+            v-if="form.convicted_of_crime"
+            class="mb-3"
+        >
+
+            <label class="form-label">
+                If yes, specify crime type
+            </label>
+
+            <textarea
+                v-model="form.crime_type"
+                class="form-control"
+                rows="3"
+            ></textarea>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+    <label class="form-label">
+        Date
+    </label>
+
+    <input
+        v-model="form.crime_date"
+        type="date"
+        class="form-control"
+    >
+</div>
+
+<div class="col-md-6 mb-3">
+    <label class="form-label">
+        Visitor Name
+    </label>
+
+    <input
+        v-model="form.visitor_name"
+        type="text"
+        class="form-control"
+        placeholder="Enter visitor name"
+    >
+</div>
+   
+
+        <div class="alert alert-warning mt-3">
+
+            <strong>Important:</strong>
+
+            This registration is for foreign persons wishing
+            to perform paragliding in Lebanon.
+
+            Registration does not itself constitute permission
+            to fly. Additional authorization may be required.
+
+        </div>
+
+    </div>
+
+</div>
                   </div>
 
 
@@ -421,12 +1287,15 @@
                         v-else
                         class="bi bi-person-check-fill me-2"
                       ></i>
-
-                      {{
-                        loading
-                          ? 'Registering Pilot...'
-                          : 'Register Pilot'
-                      }}
+{{
+    loading
+        ? 'Submitting Registration...'
+        : (
+            isInternational
+                ? 'Submit Visitor Registration'
+                : 'Register Pilot'
+        )
+}}
 
                     </button>
 
@@ -452,6 +1321,11 @@
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
 
 const config = useRuntimeConfig()
+const route = useRoute()
+
+const isInternational = computed(() => {
+  return route.query.type === 'international'
+})
 
 const loading = ref(false)
 const loadingSports = ref(true) // Add this
@@ -464,8 +1338,16 @@ const selectedClub = ref(null)
 const imageFile = ref(null)
 const licenseAttachment = ref(null)
 
+const passportDocument = ref(null)
+const nationalIdDocument = ref(null)
+const signatureFile = ref(null)
+
 const imageInput = ref(null)
 const licenseInput = ref(null)
+
+const passportInput = ref(null)
+const nationalIdInput = ref(null)
+const signatureInput = ref(null)
 
 const allowedRatingsOptions = ref([])
 
@@ -481,24 +1363,134 @@ const formErrors = reactive({
   insurance_number: '',
   club: '',
   disciplines: '',
-  ratings: ''
+  ratings: '',
+
+  first_name: '',
+  father_name: '',
+  last_name: '',
+  nationality: '',
+  sex: '',
+  marital_status: '',
+  languages: '',
+  passport_number: '',
+  passport_issuing_authority: '',
+  passport_issued_date: '',
+  passport_expiry_date: '',
+  current_country: '',
+  current_city: ''
 })
 
 const form = reactive({
+
+  /*
+  |--------------------------------------------------------------------------
+  | Common LASF registration
+  |--------------------------------------------------------------------------
+  */
+
   name: '',
   email: '',
   phone: '',
   date_of_birth: '',
+
+  international_date_of_birth: '',
+
   password: '',
   password_confirmation: '',
+
   blood_type: '',
+
   insurance_provider: '',
   insurance_number: '',
+
   club_name: '',
   club_code: '',
+
   disciplines: [],
   ratings: [],
-  license_attachment: null
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | International Pilot Information
+  |--------------------------------------------------------------------------
+  */
+
+  first_name: '',
+  father_name: '',
+  last_name: '',
+
+  mother_full_name: '',
+  wife_full_name: '',
+
+  place_of_birth: '',
+  nationality: '',
+
+  sex: '',
+  marital_status: '',
+
+  languages: '',
+
+  national_id_number: '',
+  file_number: '',
+
+  passport_number: '',
+  passport_issuing_authority: '',
+  passport_issued_date: '',
+  passport_expiry_date: '',
+
+  mobile_phone: '',
+  alternative_phone: '',
+
+  work_email: '',
+  personal_email: '',
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Current Address
+  |--------------------------------------------------------------------------
+  */
+
+  current_country: '',
+  current_city: '',
+  current_street_area: '',
+  current_building: '',
+  current_floor: '',
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Alternative Address
+  |--------------------------------------------------------------------------
+  */
+
+  alternative_country: '',
+  alternative_city: '',
+  alternative_street_area: '',
+  alternative_building: '',
+  alternative_floor: '',
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Employment
+  |--------------------------------------------------------------------------
+  */
+
+  employer_name: '',
+  current_title: '',
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Criminal Record
+  |--------------------------------------------------------------------------
+  */
+
+  convicted_of_crime: false,
+  crime_type: '',
+
 })
 
 const clubs = [
@@ -626,6 +1618,99 @@ const onLicenseChange = (e) => {
   licenseAttachment.value = file
 }
 
+
+const onInternationalFileChange = (
+  event,
+  target,
+  maxSize,
+  allowedTypes,
+  label
+) => {
+
+  const file = event.target.files[0]
+
+  if (!file) return
+
+  if (file.size > maxSize) {
+
+    error.value =
+      `${label} must be less than ${maxSize / 1024 / 1024} MB.`
+
+    event.target.value = ''
+
+    return
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+
+    error.value =
+      `${label} has an invalid file format.`
+
+    event.target.value = ''
+
+    return
+  }
+
+  error.value = ''
+
+  target.value = file
+}
+
+
+const handlePassportDocument = (event) => {
+
+  onInternationalFileChange(
+    event,
+    passportDocument,
+    10 * 1024 * 1024,
+    [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ],
+    'Passport document'
+  )
+
+}
+
+
+const handleNationalIdDocument = (event) => {
+
+  onInternationalFileChange(
+    event,
+    nationalIdDocument,
+    10 * 1024 * 1024,
+    [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ],
+    'National ID document'
+  )
+
+}
+
+
+const handleSignature = (event) => {
+
+  onInternationalFileChange(
+    event,
+    signatureFile,
+    5 * 1024 * 1024,
+    [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/pdf'
+    ],
+    'Signature'
+  )
+
+}
+
+
 const updateClub = () => {
   if (!selectedClub.value) return
   form.club_name = selectedClub.value.name
@@ -735,12 +1820,31 @@ const validateForm = () => {
     isValid = false
   }
   
-  // Validate Club
-  if (!selectedClub.value) {
-    formErrors.club = 'Please select a club'
+// Validate Club
+
+if (isInternational.value) {
+
+  if (!form.club_name.trim()) {
+
+    formErrors.club = 'Club name is required'
+
     isValid = false
+
   }
-  
+
+} else {
+
+  if (!selectedClub.value) {
+
+    formErrors.club = 'Please select a club'
+
+    isValid = false
+
+  }
+
+}
+
+
   // Validate Disciplines
   if (form.disciplines.length === 0) {
     formErrors.disciplines = 'Please select at least one discipline'
@@ -753,6 +1857,91 @@ const validateForm = () => {
     isValid = false
   }
   
+  /*
+|--------------------------------------------------------------------------
+| International Pilot Validation
+|--------------------------------------------------------------------------
+*/
+
+if (isInternational.value) {
+
+  if (!form.first_name.trim()) {
+    formErrors.first_name = 'First name is required'
+    isValid = false
+  }
+
+  if (!form.father_name.trim()) {
+    formErrors.father_name = 'Father name is required'
+    isValid = false
+  }
+
+  if (!form.last_name.trim()) {
+    formErrors.last_name = 'Last name is required'
+    isValid = false
+  }
+
+  if (!form.nationality.trim()) {
+    formErrors.nationality = 'Nationality is required'
+    isValid = false
+  }
+
+  if (!form.sex) {
+    formErrors.sex = 'Sex is required'
+    isValid = false
+  }
+
+  if (!form.marital_status) {
+    formErrors.marital_status = 'Marital status is required'
+    isValid = false
+  }
+
+  if (!form.languages.trim()) {
+    formErrors.languages = 'Languages are required'
+    isValid = false
+  }
+
+  if (!form.passport_number.trim()) {
+    formErrors.passport_number = 'Passport number is required'
+    isValid = false
+  }
+
+  if (!form.passport_issuing_authority.trim()) {
+    formErrors.passport_issuing_authority =
+      'Passport issuing authority is required'
+
+    isValid = false
+  }
+
+  if (!form.passport_issued_date) {
+    formErrors.passport_issued_date =
+      'Passport issued date is required'
+
+    isValid = false
+  }
+
+  if (!form.passport_expiry_date) {
+    formErrors.passport_expiry_date =
+      'Passport expiry date is required'
+
+    isValid = false
+  }
+
+  if (!form.current_country.trim()) {
+    formErrors.current_country =
+      'Current country is required'
+
+    isValid = false
+  }
+
+  if (!form.current_city.trim()) {
+    formErrors.current_city =
+      'Current city is required'
+
+    isValid = false
+  }
+
+}
+
   return isValid
 }
 
@@ -767,53 +1956,455 @@ const formatPhoneNumber = (e) => {
   }
 }
 const registerPilot = async () => {
-  // Clear previous errors
+
   error.value = ''
   successMessage.value = ''
-  
-  // Validate form first
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validate
+  |--------------------------------------------------------------------------
+  */
+
   if (!validateForm()) {
-    // Scroll to first error
-    const firstError = document.querySelector('.is-invalid')
+
+    const firstError =
+      document.querySelector('.is-invalid')
+
     if (firstError) {
-      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+      firstError.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+
       firstError.focus()
     }
+
     return
   }
 
+
   loading.value = true
 
+
   try {
+
     const formData = new FormData()
 
+console.log('IS INTERNATIONAL:', isInternational.value)
+
+console.log(
+    'FORM DATA is_international:',
+    isInternational.value ? '1' : '0'
+)
+    /*
+    |--------------------------------------------------------------------------
+    | Registration Type
+    |--------------------------------------------------------------------------
+    */
+
+    formData.append(
+      'is_international',
+      isInternational.value ? '1' : '0'
+    )
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Common LASF Information
+    |--------------------------------------------------------------------------
+    */
+
     formData.append('name', form.name)
+
     formData.append('email', form.email)
+
     formData.append('phone', form.phone)
-    formData.append('date_of_birth', form.date_of_birth || '')
-    formData.append('password', form.password)
-    formData.append('password_confirmation', form.password_confirmation)
-    formData.append('blood_type', form.blood_type)
-    formData.append('insurance_provider', form.insurance_provider)
-    formData.append('insurance_number', form.insurance_number)
-    formData.append('club_name', form.club_name)
-    formData.append('club_code', form.club_code)
+
+    formData.append(
+      'date_of_birth',
+      form.date_of_birth || ''
+    )
+
+formData.append(
+    'crime_date',
+    form.crime_date || ''
+)
+
+formData.append(
+    'visitor_name',
+    form.visitor_name || ''
+)
+    formData.append(
+      'password',
+      form.password
+    )
+
+    formData.append(
+      'password_confirmation',
+      form.password_confirmation
+    )
+
+    formData.append(
+      'blood_type',
+      form.blood_type
+    )
+
+    formData.append(
+      'insurance_provider',
+      form.insurance_provider || ''
+    )
+
+    formData.append(
+      'insurance_number',
+      form.insurance_number || ''
+    )
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Club
+    |--------------------------------------------------------------------------
+    */
+
+    formData.append(
+      'club_name',
+      form.club_name || ''
+    )
+
+    formData.append(
+      'club_code',
+      form.club_code || ''
+    )
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Disciplines
+    |--------------------------------------------------------------------------
+    */
 
     form.disciplines.forEach(id => {
-      formData.append('disciplines[]', id)
+
+      formData.append(
+        'disciplines[]',
+        id
+      )
+
     })
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ratings
+    |--------------------------------------------------------------------------
+    */
 
     form.ratings.forEach(rate => {
-      formData.append('ratings[]', rate)
+
+      formData.append(
+        'ratings[]',
+        rate
+      )
+
     })
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profile Image
+    |--------------------------------------------------------------------------
+    */
+
     if (imageFile.value) {
-      formData.append('image', imageFile.value)
+
+      formData.append(
+        'image',
+        imageFile.value
+      )
+
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pilot License
+    |--------------------------------------------------------------------------
+    */
+
     if (licenseAttachment.value) {
-      formData.append('license_attachment', licenseAttachment.value)
+
+      formData.append(
+        'license_attachment',
+        licenseAttachment.value
+      )
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INTERNATIONAL PILOT
+    |--------------------------------------------------------------------------
+    */
+
+    if (isInternational.value) {
+
+      /*
+      | Personal Information
+      */
+
+      formData.append(
+        'first_name',
+        form.first_name
+      )
+
+      formData.append(
+        'father_name',
+        form.father_name
+      )
+
+      formData.append(
+        'last_name',
+        form.last_name
+      )
+
+      formData.append(
+        'mother_full_name',
+        form.mother_full_name || ''
+      )
+
+      formData.append(
+        'wife_full_name',
+        form.wife_full_name || ''
+      )
+
+      formData.append(
+        'place_of_birth',
+        form.place_of_birth || ''
+      )
+
+      formData.append(
+        'nationality',
+        form.nationality
+      )
+
+      formData.append(
+        'sex',
+        form.sex
+      )
+
+      formData.append(
+        'marital_status',
+        form.marital_status
+      )
+
+      formData.append(
+        'languages',
+        form.languages
+      )
+
+
+      /*
+      | Identity
+      */
+
+      formData.append(
+        'national_id_number',
+        form.national_id_number || ''
+      )
+
+      formData.append(
+        'file_number',
+        form.file_number || ''
+      )
+
+
+      /*
+      | Passport
+      */
+
+      formData.append(
+        'passport_number',
+        form.passport_number
+      )
+
+      formData.append(
+        'passport_issuing_authority',
+        form.passport_issuing_authority
+      )
+
+      formData.append(
+        'passport_issued_date',
+        form.passport_issued_date
+      )
+
+      formData.append(
+        'passport_expiry_date',
+        form.passport_expiry_date
+      )
+
+
+      /*
+      | Phones
+      */
+
+      formData.append(
+        'mobile_phone',
+        form.mobile_phone || ''
+      )
+
+      formData.append(
+        'alternative_phone',
+        form.alternative_phone || ''
+      )
+
+
+      /*
+      | Emails
+      */
+
+      formData.append(
+        'work_email',
+        form.work_email || ''
+      )
+
+      formData.append(
+        'personal_email',
+        form.personal_email || ''
+      )
+
+
+      /*
+      | Current Address
+      */
+
+      formData.append(
+        'current_country',
+        form.current_country
+      )
+
+      formData.append(
+        'current_city',
+        form.current_city
+      )
+
+      formData.append(
+        'current_street_area',
+        form.current_street_area || ''
+      )
+
+      formData.append(
+        'current_building',
+        form.current_building || ''
+      )
+
+      formData.append(
+        'current_floor',
+        form.current_floor || ''
+      )
+
+
+      /*
+      | Alternative Address
+      */
+
+      formData.append(
+        'alternative_country',
+        form.alternative_country || ''
+      )
+
+      formData.append(
+        'alternative_city',
+        form.alternative_city || ''
+      )
+
+      formData.append(
+        'alternative_street_area',
+        form.alternative_street_area || ''
+      )
+
+      formData.append(
+        'alternative_building',
+        form.alternative_building || ''
+      )
+
+      formData.append(
+        'alternative_floor',
+        form.alternative_floor || ''
+      )
+
+
+      /*
+      | Employment
+      */
+
+      formData.append(
+        'employer_name',
+        form.employer_name || ''
+      )
+
+      formData.append(
+        'current_title',
+        form.current_title || ''
+      )
+
+
+      /*
+      | Criminal Record
+      */
+
+      formData.append(
+        'convicted_of_crime',
+        form.convicted_of_crime ? '1' : '0'
+      )
+
+      formData.append(
+        'crime_type',
+        form.crime_type || ''
+      )
+
+
+      /*
+      | Documents
+      */
+
+      if (passportDocument.value) {
+
+        formData.append(
+          'passport_document',
+          passportDocument.value
+        )
+
+      }
+
+      if (nationalIdDocument.value) {
+
+        formData.append(
+          'national_id_document',
+          nationalIdDocument.value
+        )
+
+      }
+
+      if (signatureFile.value) {
+
+        formData.append(
+          'signature',
+          signatureFile.value
+        )
+
+      }
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send to Laravel
+    |--------------------------------------------------------------------------
+    */
 
     const response = await $fetch(
       `${config.public.apiBase}/register`,
@@ -823,31 +2414,111 @@ const registerPilot = async () => {
       }
     )
 
-    successMessage.value =
-      `Registration successful. Your member number is ${response.license_number}. Redirecting to home page...`
 
-    // Reset form
+    /*
+    |--------------------------------------------------------------------------
+    | Success
+    |--------------------------------------------------------------------------
+    */
+
+    successMessage.value =
+      `Registration successful. Your LASF member number is ${response.license_number}. Redirecting to home page...`
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reset
+    |--------------------------------------------------------------------------
+    */
+
     Object.assign(form, {
+
       name: '',
       email: '',
       phone: '',
       date_of_birth: '',
+
       password: '',
       password_confirmation: '',
+
       blood_type: '',
+
       insurance_provider: '',
       insurance_number: '',
+
       club_name: '',
       club_code: '',
+
       disciplines: [],
       ratings: [],
-      license_attachment: null
+
+      first_name: '',
+      father_name: '',
+      last_name: '',
+
+      mother_full_name: '',
+      wife_full_name: '',
+
+      place_of_birth: '',
+      nationality: '',
+
+      sex: '',
+      marital_status: '',
+      languages: '',
+
+      national_id_number: '',
+      file_number: '',
+
+      passport_number: '',
+      passport_issuing_authority: '',
+      passport_issued_date: '',
+      passport_expiry_date: '',
+
+      mobile_phone: '',
+      alternative_phone: '',
+
+      work_email: '',
+      personal_email: '',
+
+      current_country: '',
+      current_city: '',
+      current_street_area: '',
+      current_building: '',
+      current_floor: '',
+
+      alternative_country: '',
+      alternative_city: '',
+      alternative_street_area: '',
+      alternative_building: '',
+      alternative_floor: '',
+
+      employer_name: '',
+      current_title: '',
+
+  convicted_of_crime: false,
+crime_type: '',
+crime_date: '',
+visitor_name: '',
     })
 
+
     selectedClub.value = null
+
     imageFile.value = null
     licenseAttachment.value = null
+
+    passportDocument.value = null
+    nationalIdDocument.value = null
+    signatureFile.value = null
+
     allowedRatingsOptions.value = []
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clear file inputs
+    |--------------------------------------------------------------------------
+    */
 
     if (imageInput.value) {
       imageInput.value.value = ''
@@ -857,29 +2528,76 @@ const registerPilot = async () => {
       licenseInput.value.value = ''
     }
 
+    if (passportInput.value) {
+      passportInput.value.value = ''
+    }
+
+    if (nationalIdInput.value) {
+      nationalIdInput.value.value = ''
+    }
+
+    if (signatureInput.value) {
+      signatureInput.value.value = ''
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redirect
+    |--------------------------------------------------------------------------
+    */
+
     setTimeout(() => {
+
       navigateTo('/')
-    }, 2000)
+
+    }, 2500)
+
 
   } catch (err) {
+
     console.log(err)
     console.log(err.data)
 
+
     if (err?.data?.errors) {
-      // Display validation errors from server
-      const serverErrors = err.data.errors
+
+      const serverErrors =
+        err.data.errors
+
+
       Object.keys(serverErrors).forEach(key => {
+
         if (formErrors[key] !== undefined) {
-          formErrors[key] = serverErrors[key][0]
+
+          formErrors[key] =
+            serverErrors[key][0]
+
         }
+
       })
-      error.value = Object.values(serverErrors).flat().join('\n')
+
+
+      error.value =
+        Object.values(serverErrors)
+          .flat()
+          .join('\n')
+
     } else {
-      error.value = err?.data?.message || err?.message || 'Registration failed.'
+
+      error.value =
+        err?.data?.message ||
+        err?.message ||
+        'Registration failed.'
+
     }
+
   } finally {
+
     loading.value = false
+
   }
+
 }
 
 onMounted(() => {
