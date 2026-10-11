@@ -66,5 +66,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	
+    <key>NSCameraUsageDescription</key>
+    <string>LASF GO needs camera access to scan location QR codes.</string>
+
 </dict>
 </plist>
