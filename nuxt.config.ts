@@ -65,6 +65,8 @@ runtimeConfig: {
     // 'nuxt-auth-utils', // Move this to the bottom of the list
   ],
 
+  
+
   // Pinia configuration
   pinia: {
     // The property 'autoImports' was removed. 

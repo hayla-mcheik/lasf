@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
 
     key: 'auth',
 
-    storage: persistedState.cookiesWithOptions({
+    storage: piniaPluginPersistedstate.cookies({
 
       sameSite: 'lax',
 
