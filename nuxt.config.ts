@@ -61,7 +61,7 @@ runtimeConfig: {
 
   modules: [
    '@pinia/nuxt',
-'pinia-plugin-persistedstate/nuxt'
+'@pinia-plugin-persistedstate/nuxt'
     // 'nuxt-auth-utils', // Move this to the bottom of the list
   ],
 
