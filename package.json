@@ -5,6 +5,7 @@
   "scripts": {
     "build": "nuxt build",
     "build:android": "nuxt generate",
+    "build:capacitor": "nuxt generate",
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
