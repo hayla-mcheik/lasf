@@ -5,11 +5,13 @@ export default defineNuxtConfig({
   ssr: !isCapacitorBuild,
   debug: true,
 
-  nitro: {
-    prerender: {
-      crawlLinks: false
-    }
-  },
+ nitro: {
+  prerender: {
+    crawlLinks: false,
+    routes: ['/']
+  }
+},
+
 
   devtools: { enabled: true },
 
@@ -61,7 +63,7 @@ runtimeConfig: {
 
   modules: [
    '@pinia/nuxt',
-'pinia-plugin-persistedstate/nuxt'
+    'pinia-plugin-persistedstate/nuxt',
     // 'nuxt-auth-utils', // Move this to the bottom of the list
   ],
 
