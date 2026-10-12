@@ -60,11 +60,10 @@ runtimeConfig: {
     '@/assets/css/style.css',
   ],
 
-  modules: [
-   '@pinia/nuxt',
-    '@pinia-plugin-persistedstate/nuxt',
-    // 'nuxt-auth-utils', // Move this to the bottom of the list
-  ],
+modules: [
+  '@pinia/nuxt',
+  'pinia-plugin-persistedstate/nuxt',
+],
 
   // Pinia configuration
   pinia: {

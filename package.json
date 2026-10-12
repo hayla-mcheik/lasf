@@ -22,7 +22,6 @@
     "@fullcalendar/daygrid": "^6.1.21",
     "@fullcalendar/interaction": "^6.1.21",
     "@fullcalendar/vue3": "^6.1.21",
-    "@pinia-plugin-persistedstate/nuxt": "^1.2.1",
     "@pinia/nuxt": "^0.11.3",
     "@tmcw/togeojson": "^7.1.2",
     "@transistorsoft/capacitor-background-geolocation": "^9.5.0",
