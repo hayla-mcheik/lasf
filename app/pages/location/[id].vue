@@ -288,44 +288,55 @@ onMounted(async () => {
 })
 
 
+
+
 async function scanQrCode() {
   try {
     console.log('📷 Starting QR scanner...')
 
     if (!Capacitor.isNativePlatform()) {
-      alert('QR scanning is available in the LASF Android app.')
+      alert('QR scanning is available in the LASF mobile app.')
       return
     }
 
-    const {
-      BarcodeScanner,
-      BarcodeFormat
-    } = await import('@capacitor-mlkit/barcode-scanning')
+    const { BarcodeScanner, BarcodeFormat } =
+      await import('@capacitor-mlkit/barcode-scanning')
 
     console.log('📷 Scanner plugin loaded')
 
     const { supported } = await BarcodeScanner.isSupported()
-
-    console.log('📷 Scanner supported:', supported)
 
     if (!supported) {
       alert('QR scanning is not supported on this device.')
       return
     }
 
-    const { available } =
-      await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
+    const { camera } = await BarcodeScanner.checkPermissions()
 
-    console.log('📦 Google scanner available:', available)
+    if (camera !== 'granted') {
+      const permission = await BarcodeScanner.requestPermissions()
 
-    if (!available) {
-      await BarcodeScanner.installGoogleBarcodeScannerModule()
+      if (permission.camera !== 'granted') {
+        alert(
+          'Camera permission is required. Please enable camera access in your device settings.'
+        )
+        return
+      }
+    }
 
-      alert(
-        'Google QR Scanner is being installed. Please wait a moment and try again.'
-      )
+    // Check Google scanner module only on Android.
+    if (Capacitor.getPlatform() === 'android') {
+      const { available } =
+        await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
 
-      return
+      if (!available) {
+        await BarcodeScanner.installGoogleBarcodeScannerModule()
+
+        alert(
+          'Google QR Scanner is being installed. Please wait and try again.'
+        )
+        return
+      }
     }
 
     console.log('📷 Opening QR scanner...')
@@ -349,72 +360,46 @@ async function scanQrCode() {
       barcode.displayValue ||
       ''
 
-    console.log('📷 QR VALUE:', qrValue)
-
     if (!qrValue) {
       alert('Invalid QR code.')
       return
     }
 
-    /*
-     * Example QR:
-     *
-     * https://lasf.info/location/terbol?token=XXXXX
-     */
+    console.log('📷 QR VALUE:', qrValue)
+
+    let url
 
     try {
-      const url = new URL(qrValue)
-
-      const token = url.searchParams.get('token')
-
-      console.log('🎫 QR TOKEN:', token)
-
-      if (!token) {
-        alert('Invalid LASF QR code. Token not found.')
-        return
-      }
-
-      /*
-       * Keep the location URL and token.
-       *
-       * Example:
-       * /location/terbol?token=XXXXX
-       */
-
-      const locationPath = url.pathname
-
-      console.log(
-        '📍 LOCATION PATH:',
-        locationPath
-      )
-
-      console.log(
-        '🚀 Navigating to:',
-        `${locationPath}?token=${token}`
-      )
-
-      await navigateTo(
-        `${locationPath}?token=${token}`
-      )
-
-      console.log('✅ Navigation completed')
-
-    } catch (error) {
-
-      console.error(
-        '❌ Invalid QR URL:',
-        error
-      )
-
+      url = new URL(qrValue)
+    } catch {
       alert('The QR code is not a valid LASF QR code.')
+      return
     }
 
-} catch (error) {
+    if (url.hostname !== 'lasf.info') {
+      alert('Invalid LASF QR code.')
+      return
+    }
 
-    console.error(
-      '❌ QR SCANNER ERROR:',
-      error
+    const token = url.searchParams.get('token')
+
+    if (!token) {
+      alert('Invalid LASF QR code. Token not found.')
+      return
+    }
+
+    const locationPath = url.pathname
+
+    console.log('📍 LOCATION PATH:', locationPath)
+
+    await navigateTo(
+      `${locationPath}?token=${encodeURIComponent(token)}`
     )
+
+    console.log('✅ Navigation completed')
+
+  } catch (error) {
+    console.error('❌ QR SCANNER ERROR:', error)
 
     alert(
       error?.message ||
