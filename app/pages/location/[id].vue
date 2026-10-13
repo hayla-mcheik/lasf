@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from '#app'
 import { Capacitor } from '@capacitor/core'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
@@ -24,6 +24,14 @@ const crossCountryStore = useCrossCountryStore()
 const config = useRuntimeConfig()
 const route = useRoute()
  
+const GPS_WARNING =
+    'GPS tracking is NOT active.\n\n' +
+    'Please:\n' +
+    '1. Use the LASF mobile app (not the browser)\n' +
+    '2. Set Location permission to "Allow all the time"\n' +
+    '3. Turn off battery optimization for LASF\n\n' +
+    'Then press "Restart GPS".'
+ 
 /*
 |--------------------------------------------------------------------------
 | Load Location
@@ -36,34 +44,13 @@ const {
     error: locationError,
     refresh: refreshLocation
 } = await useFetch(
- 
     () => `${config.public.apiBase}/flying-locations/${route.params.slug || route.params.id}`,
- 
     {
- 
         key: `location-${route.params.slug || route.params.id}`,
- 
         immediate: true,
- 
         transform: (response) => response.data || response
- 
     }
- 
 )
- 
-async function testGpsPermission() {
-    console.log('🧪 GPS TEST BUTTON CLICKED')
- 
-    try {
-        console.log('🧪 Calling startBackgroundGps() directly...')
- 
-        await startBackgroundGps(authStore.token)
- 
-        console.log('🧪 GPS TEST FINISHED')
-    } catch (error) {
-        console.error('🔴 GPS TEST ERROR:', error)
-    }
-}
  
 /*
 |--------------------------------------------------------------------------
@@ -73,18 +60,15 @@ async function testGpsPermission() {
  
 const checkingIn = ref(false)
  
+// null = unknown, true = running, false = failed to start
+const gpsActive = ref(null)
+ 
 const currentRequest = computed(() => crossCountryStore.currentRequest)
- 
 const crossCountrySession = computed(() => crossCountryStore.activeSession)
- 
 const hasCrossCountry = computed(() => crossCountryStore.hasRequest)
- 
 const isPending = computed(() => crossCountryStore.isPending)
- 
 const isApproved = computed(() => crossCountryStore.isApproved)
- 
 const isClosed = computed(() => crossCountryStore.isClosed)
- 
 const isCancelled = computed(() => crossCountryStore.isCancelled)
  
 /*
@@ -95,27 +79,15 @@ const isCancelled = computed(() => crossCountryStore.isCancelled)
  
 const activeSession = computed(() => authStore.activeSession)
  
-/*
-|--------------------------------------------------------------------------
-| Flying Here
-|--------------------------------------------------------------------------
-*/
- 
 const isFlyingHere = computed(() => {
- 
-    if (!location.value)
-        return false
+    if (!location.value) return false
  
     const sessionLocationId =
- 
         activeSession.value?.flying_location_id ||
- 
         activeSession.value?.location?.id ||
- 
         null
  
     return Number(sessionLocationId) === Number(location.value.id)
- 
 })
  
 /*
@@ -125,37 +97,15 @@ const isFlyingHere = computed(() => {
 */
  
 const canCreateCrossCountry = computed(() => {
- 
-    return (
- 
-        !hasCrossCountry.value ||
- 
-        isClosed.value ||
- 
-        isCancelled.value
- 
-    )
- 
+    return !hasCrossCountry.value || isClosed.value || isCancelled.value
 })
  
 const canStartCrossCountry = computed(() => {
- 
-    return (
- 
-        hasCrossCountry.value &&
- 
-        isApproved.value &&
- 
-        !crossCountrySession.value
- 
-    )
- 
+    return hasCrossCountry.value && isApproved.value && !crossCountrySession.value
 })
  
 const canContinueCrossCountry = computed(() => {
- 
     return !!crossCountrySession.value
- 
 })
  
 const canCheckIn = computed(() => {
@@ -164,19 +114,50 @@ const canCheckIn = computed(() => {
  
 /*
 |--------------------------------------------------------------------------
+| GPS Tracking
+|--------------------------------------------------------------------------
+*/
+ 
+async function startTracking() {
+    if (!authStore.token) {
+        console.error('❌ No authentication token.')
+        gpsActive.value = false
+        return false
+    }
+ 
+    console.log('🚀 Starting native background GPS...')
+ 
+    const ok = await startBackgroundGps(authStore.token)
+ 
+    gpsActive.value = ok
+ 
+    return ok
+}
+ 
+async function stopTracking() {
+    console.log('🛑 Stopping native background GPS...')
+ 
+    await stopBackgroundGps()
+ 
+    gpsActive.value = null
+}
+ 
+async function handleRestartGps() {
+    const ok = await startTracking()
+ 
+    if (!ok) {
+        alert(GPS_WARNING)
+    }
+}
+ 
+/*
+|--------------------------------------------------------------------------
 | Pause / Resume
 |--------------------------------------------------------------------------
 */
  
-async function handlePause()
-{
-    try
-    {
-        console.log('Session:', activeSession.value)
- 
-        alert(JSON.stringify(activeSession.value))
-        alert(`Session ID: ${activeSession.value?.id}`)
- 
+async function handlePause() {
+    try {
         await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/pause`,
             {
@@ -192,11 +173,8 @@ async function handlePause()
         await authStore.loadActiveSession()
  
         alert('Permission paused successfully.')
-    }
-    catch (error)
-    {
-        console.log(error)
-        console.log(error.response)
+    } catch (error) {
+        console.error(error)
  
         alert(
             error?.data?.message ||
@@ -207,13 +185,9 @@ async function handlePause()
     }
 }
  
-async function handleResume()
-{
-    try
-    {
-        alert(`Attempting to resume session ${activeSession.value.id}`)
- 
-        const response = await $fetch(
+async function handleResume() {
+    try {
+        await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/resume`,
             {
                 method: 'PATCH',
@@ -223,34 +197,24 @@ async function handleResume()
             }
         )
  
-        await startTracking()
         await authStore.loadActiveSession()
  
-        alert('Permission resumed successfully.')
-    }
-    catch (error)
-    {
-        let errorMsg = 'Resume failed.\n\n'
+        const ok = await startTracking()
  
-        if (error?.data?.message) {
-            errorMsg += `Message: ${error.data.message}\n`
+        if (!ok) {
+            alert('Permission resumed, but ' + GPS_WARNING)
+        } else {
+            alert('Permission resumed successfully.')
         }
+    } catch (error) {
+        console.error(error)
  
-        if (error?.status) {
-            errorMsg += `Status: ${error.status}\n`
-        }
- 
-        if (error?.response?._data?.message) {
-            errorMsg += `Response: ${error.response._data.message}\n`
-        }
- 
-        try {
-            errorMsg += `\nFull error: ${JSON.stringify(error)}`
-        } catch(e) {
-            errorMsg += `\nError: ${error}`
-        }
- 
-        alert(errorMsg)
+        alert(
+            error?.data?.message ||
+            error?.response?._data?.message ||
+            error?.message ||
+            'Resume failed.'
+        )
     }
 }
  
@@ -261,17 +225,11 @@ async function handleResume()
 */
  
 const refreshEverything = async () => {
- 
     await Promise.allSettled([
- 
         refreshLocation(),
- 
         crossCountryStore.refresh(),
- 
         authStore.loadActiveSession(),
- 
     ])
- 
 }
  
 /*
@@ -297,146 +255,111 @@ onMounted(async () => {
 */
  
 async function scanQrCode() {
-  try {
-    console.log('📷 Starting QR scanner...')
- 
-    if (!Capacitor.isNativePlatform()) {
-      alert('QR scanning is available in the LASF mobile app.')
-      return
-    }
- 
-    const {
-      BarcodeScanner,
-      BarcodeFormat
-    } = await import('@capacitor-mlkit/barcode-scanning')
- 
-    console.log('📷 Scanner plugin loaded')
- 
-    const { supported } = await BarcodeScanner.isSupported()
- 
-    console.log('📷 Scanner supported:', supported)
- 
-    if (!supported) {
-      alert('QR scanning is not supported on this device.')
-      return
-    }
- 
-    // Request camera permission if needed.
-    let permission = await BarcodeScanner.checkPermissions()
- 
-    console.log('📷 Camera permission:', permission.camera)
- 
-    if (permission.camera !== 'granted') {
-      permission = await BarcodeScanner.requestPermissions()
- 
-      console.log('📷 Camera permission after request:', permission.camera)
-    }
- 
-    if (permission.camera !== 'granted') {
-      alert('Camera permission is required to scan QR codes. Please enable it in your iPhone Settings.')
-      return
-    }
- 
-    // Google Barcode Scanner module is required for this scan flow
-    // on Android only. Never call these methods on iOS.
-    if (Capacitor.getPlatform() === 'android') {
-      const { available } =
-        await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
- 
-      console.log('📦 Google scanner available:', available)
- 
-      if (!available) {
-        await BarcodeScanner.installGoogleBarcodeScannerModule()
- 
-        alert('Google QR Scanner installation has started. Please wait until it finishes, then try scanning again.')
-        return
-      }
-    }
- 
-    console.log('📷 Opening QR scanner...')
- 
-    const result = await BarcodeScanner.scan({
-      formats: [BarcodeFormat.QrCode],
-      autoZoom: true
-    })
- 
-    console.log('📷 Scanner result:', result)
- 
-    if (!result.barcodes || result.barcodes.length === 0) {
-      console.log('📷 Scan cancelled or no QR code detected.')
-      return
-    }
- 
-    const barcode = result.barcodes[0]
- 
-    const qrValue = barcode.rawValue || barcode.displayValue || ''
- 
-    console.log('📷 QR VALUE:', qrValue)
- 
-    if (!qrValue) {
-      alert('The QR code contains no readable value.')
-      return
-    }
- 
-    let url
- 
     try {
-      url = new URL(qrValue)
-    } catch {
-      alert('The QR code does not contain a valid URL.')
-      return
+        if (!Capacitor.isNativePlatform()) {
+            alert('QR scanning is available in the LASF mobile app.')
+            return
+        }
+ 
+        const {
+            BarcodeScanner,
+            BarcodeFormat
+        } = await import('@capacitor-mlkit/barcode-scanning')
+ 
+        const { supported } = await BarcodeScanner.isSupported()
+ 
+        if (!supported) {
+            alert('QR scanning is not supported on this device.')
+            return
+        }
+ 
+        let permission = await BarcodeScanner.checkPermissions()
+ 
+        if (permission.camera !== 'granted') {
+            permission = await BarcodeScanner.requestPermissions()
+        }
+ 
+        if (permission.camera !== 'granted') {
+            alert('Camera permission is required to scan QR codes. Please enable it in your phone Settings.')
+            return
+        }
+ 
+        // Google Barcode Scanner module is Android only.
+        if (Capacitor.getPlatform() === 'android') {
+            const { available } =
+                await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
+ 
+            if (!available) {
+                await BarcodeScanner.installGoogleBarcodeScannerModule()
+ 
+                alert('Google QR Scanner installation has started. Please wait until it finishes, then try scanning again.')
+                return
+            }
+        }
+ 
+        const result = await BarcodeScanner.scan({
+            formats: [BarcodeFormat.QrCode],
+            autoZoom: true
+        })
+ 
+        if (!result.barcodes || result.barcodes.length === 0) {
+            return
+        }
+ 
+        const barcode = result.barcodes[0]
+        const qrValue = barcode.rawValue || barcode.displayValue || ''
+ 
+        if (!qrValue) {
+            alert('The QR code contains no readable value.')
+            return
+        }
+ 
+        let url
+ 
+        try {
+            url = new URL(qrValue)
+        } catch {
+            alert('The QR code does not contain a valid URL.')
+            return
+        }
+ 
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+            alert('Invalid QR code URL.')
+            return
+        }
+ 
+        const token = url.searchParams.get('token')
+ 
+        if (!token) {
+            alert('Invalid LASF QR code. Token not found.')
+            return
+        }
+ 
+        if (url.hostname !== 'lasf.info' && url.hostname !== 'www.lasf.info') {
+            alert('This QR code does not belong to LASF.')
+            return
+        }
+ 
+        const locationPath = url.pathname
+ 
+        if (!locationPath.startsWith('/location/')) {
+            alert('The QR code does not contain a valid flying location.')
+            return
+        }
+ 
+        await navigateTo({
+            path: locationPath,
+            query: { token }
+        })
+    } catch (error) {
+        console.error('❌ QR SCANNER ERROR:', error)
+ 
+        alert(
+            error?.message ||
+            error?.code ||
+            'Unable to scan the QR code. Please try again.'
+        )
     }
- 
-    if (
-      url.protocol !== 'https:' &&
-      url.protocol !== 'http:'
-    ) {
-      alert('Invalid QR code URL.')
-      return
-    }
- 
-    const token = url.searchParams.get('token')
- 
-    console.log('🎫 QR token found:', !!token)
- 
-    if (!token) {
-      alert('Invalid LASF QR code. Token not found.')
-      return
-    }
- 
-    const locationPath = url.pathname
- 
-    // Only navigate to a LASF location URL.
-    if (
-      url.hostname !== 'lasf.info' &&
-      url.hostname !== 'www.lasf.info'
-    ) {
-      alert('This QR code does not belong to LASF.')
-      return
-    }
- 
-    if (!locationPath.startsWith('/location/')) {
-      alert('The QR code does not contain a valid flying location.')
-      return
-    }
- 
-    console.log('📍 LOCATION PATH:', locationPath)
- 
-    await navigateTo({
-      path: locationPath,
-      query: { token }
-    })
- 
-    console.log('✅ QR scan and navigation completed')
-  } catch (error) {
-    console.error('❌ QR SCANNER ERROR:', error)
- 
-    alert(
-      error?.message ||
-      error?.code ||
-      'Unable to scan the QR code. Please try again.'
-    )
-  }
 }
  
 /*
@@ -446,53 +369,26 @@ async function scanQrCode() {
 */
  
 async function handleCheckIn(token) {
- 
-    console.log('🟢 GPS TEST 1: handleCheckIn called')
-    console.log('🟢 GPS TEST 2: token =', token)
-    console.log('🟢 GPS TEST 3: isFlyingHere =', isFlyingHere.value)
-    console.log('🟢 GPS TEST 4: activeSession =', authStore.activeSession)
- 
-    if (!token) {
-        console.log('🔴 GPS TEST STOP: No QR token')
-        return
-    }
- 
-    if (isFlyingHere.value) {
-        console.log('🔴 GPS TEST STOP: Already flying here')
-        return
-    }
+    if (!token) return
+    if (isFlyingHere.value) return
  
     checkingIn.value = true
  
     try {
- 
-        console.log('🟡 GPS TEST 5: Sending check-in request')
- 
         const response = await $fetch(
             `${config.public.apiBase}/airspace-sessions`,
             {
                 method: 'POST',
- 
                 headers: {
                     Authorization: `Bearer ${authStore.token}`
                 },
- 
-                body: {
-                    token
-                }
+                body: { token }
             }
         )
  
-        console.log('🟢 GPS TEST 6: Check-in API successful')
-        console.log('🟢 GPS TEST 7: session =', response.session)
- 
         authStore.activeSession = response.session
  
-        console.log('🟢 GPS TEST 8: activeSession saved')
- 
         await crossCountryStore.refresh()
- 
-        console.log('🟢 GPS TEST 9: refresh completed')
  
         window.history.replaceState(
             {},
@@ -500,75 +396,46 @@ async function handleCheckIn(token) {
             `/location/${location.value.slug}`
         )
  
-        console.log('🟢 GPS TEST 10: About to start GPS')
+        // Start GPS and CHECK the result
+        const gpsOk = await startTracking()
  
-        await startTracking()
- 
-        console.log('🟢 GPS TEST 11: startTracking finished')
- 
-        alert('Successfully checked in.')
+        if (gpsOk) {
+            alert('Successfully checked in. GPS tracking is active.')
+        } else {
+            alert('Checked in, but ' + GPS_WARNING)
+        }
  
         await refreshEverything()
- 
     } catch (error) {
- 
-        console.error('🔴 GPS TEST ERROR:', error)
+        console.error('Check-in error:', error)
  
         alert(
             error?.data?.message ||
             'Check-in failed.'
         )
- 
     } finally {
- 
         checkingIn.value = false
- 
     }
-}
- 
-/*
-|--------------------------------------------------------------------------
-| GPS Tracking
-|--------------------------------------------------------------------------
-*/
- 
-async function startTracking() {
-    if (!authStore.token) {
-        console.error('❌ No authentication token.')
-        return
-    }
- 
-    console.log('🚀 Starting native background GPS...')
- 
-    await startBackgroundGps(authStore.token)
-}
- 
-async function stopTracking() {
-    console.log('🛑 Stopping native background GPS...')
- 
-    await stopBackgroundGps()
 }
  
 /*
 |--------------------------------------------------------------------------
 | Auto Start Tracking
 |--------------------------------------------------------------------------
+|
+| Starts GPS when the pilot opens the app while flying here and the
+| session is ACTIVE. It does NOT start while the session is paused.
+|
 */
  
 watch(
-    isFlyingHere,
-    async (flying) => {
- 
-        if (flying) {
- 
+    () => [isFlyingHere.value, activeSession.value?.status],
+    async ([flying, status]) => {
+        if (flying && status === 'active') {
             await startTracking()
- 
         }
- 
     },
-    {
-        immediate: true
-    }
+    { immediate: true }
 )
  
 /*
@@ -578,31 +445,19 @@ watch(
 */
  
 async function handleCheckOut() {
+    if (!activeSession.value) return
  
-    if (!activeSession.value)
-        return
- 
-    if (!confirm('Are you sure you landed?'))
-        return
+    if (!confirm('Are you sure you landed?')) return
  
     try {
- 
         await $fetch(
- 
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/checkout`,
- 
             {
- 
                 method: 'POST',
- 
                 headers: {
- 
                     Authorization: `Bearer ${authStore.token}`
- 
                 }
- 
             }
- 
         )
  
         await stopTracking()
@@ -610,50 +465,30 @@ async function handleCheckOut() {
         authStore.activeSession = null
  
         await crossCountryStore.refresh()
- 
         await refreshEverything()
  
         alert('Successfully checked out.')
- 
-    }
- 
-    catch (error) {
- 
+    } catch (error) {
         console.error(error)
  
         alert(
- 
             error?.data?.message ||
- 
             'Checkout failed.'
- 
         )
- 
     }
- 
 }
  
-/*
-|--------------------------------------------------------------------------
-| Cleanup
-|--------------------------------------------------------------------------
-*/
- 
 function formatTime(date) {
- 
     if (!date) return '-'
  
     return new Date(date).toLocaleString('en-GB', {
         dateStyle: 'medium',
         timeStyle: 'short'
     })
- 
 }
  
-onUnmounted(() => {
-    // Do not stop native background GPS when the page is unmounted.
-    // The pilot can lock the phone or navigate away while flying.
-})
+// NOTE: native background GPS is intentionally NOT stopped on unmount.
+// The pilot can lock the phone or navigate away while flying.
 </script>
  
 <template>
@@ -684,8 +519,9 @@ onUnmounted(() => {
  
     <!-- Main content -->
     <div v-else-if="location" class="location-content">
+ 
       <!-- Header -->
-      <div class="location-header py-5 ">
+      <div class="location-header py-5">
         <div class="container">
           <a
             href="#"
@@ -695,6 +531,7 @@ onUnmounted(() => {
             <i class="bi bi-arrow-left me-2"></i>
             Back to Flying Locations
           </a>
+ 
           <div class="row align-items-center">
             <div class="col-md-8">
               <h1 class="display-5 fw-bold mb-5 text-dark">{{ location.name }}</h1>
@@ -702,8 +539,7 @@ onUnmounted(() => {
                 <span class="badge text-dark">{{ location.type }}</span>
               </div>
             </div>
-            <div class="col-md-4 text-md-end">
-            </div>
+            <div class="col-md-4 text-md-end"></div>
           </div>
         </div>
       </div>
@@ -711,7 +547,6 @@ onUnmounted(() => {
       <!-- Main content -->
       <div class="container py-5">
         <div class="row g-4">
-          <!-- Check-in/Check-out -->
           <div class="col-lg-12">
             <div class="card shadow border-0 rounded-4">
               <div class="card-body p-5">
@@ -742,219 +577,157 @@ onUnmounted(() => {
                 </div>
  
                 <!-- Already Flying Here -->
-                <div
-                    v-else-if="isFlyingHere"
-                    class="text-center py-4"
-                >
+                <div v-else-if="isFlyingHere" class="text-center py-4">
  
-                    <div class="alert alert-success border-0 rounded-3">
+                  <div class="alert alert-success border-0 rounded-3">
  
-                        <div class="d-flex align-items-center justify-content-center mb-3">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                      <i class="bi bi-airplane-fill display-4 me-3"></i>
  
-                            <i class="bi bi-airplane-fill display-4 me-3"></i>
+                      <div class="text-start">
+                        <h3 class="fw-bold mb-1">You're Flying!</h3>
+                        <p class="mb-0">Active at {{ location.name }}</p>
+                      </div>
+                    </div>
  
-                            <div class="text-start">
- 
-                                <h3 class="fw-bold mb-1">
- 
-                                    You're Flying!
- 
-                                </h3>
- 
-                                <p class="mb-0">
- 
-                                    Active at {{ location.name }}
- 
-                                </p>
- 
-                            </div>
- 
+                    <div class="session-info bg-white bg-opacity-25 rounded-3 p-3 mb-4">
+                      <div class="row text-center">
+                        <div class="col">
+                          <div class="fw-bold">Checked In</div>
+                          <div class="text-muted small">
+                            {{ formatTime(activeSession?.checked_in_at) }}
+                          </div>
                         </div>
  
-                        <div class="session-info bg-white bg-opacity-25 rounded-3 p-3 mb-4">
- 
-                            <div class="row text-center">
- 
-                                <div class="col">
- 
-                                    <div class="fw-bold">
- 
-                                        Checked In
- 
-                                    </div>
- 
-                                    <div class="text-muted small">
-                                        {{ activeSession?.checked_in_at }}
-                                    </div>
- 
-                                </div>
- 
-                                <div class="col">
- 
-                                    <div class="fw-bold">
- 
-                                        Expires
- 
-                                    </div>
- 
-                                    <div class="text-muted small">
- 
-                                        {{ (activeSession?.expires_at) }}
- 
-                                    </div>
- 
-                                </div>
- 
-                            </div>
- 
+                        <div class="col">
+                          <div class="fw-bold">Expires</div>
+                          <div class="text-muted small">
+                            {{ formatTime(activeSession?.expires_at) }}
+                          </div>
                         </div>
+                      </div>
+                    </div>
  
-                        <div class="d-flex flex-column gap-3">
+                    <!-- GPS status -->
+                    <div
+                      v-if="activeSession?.status === 'active' && gpsActive === false"
+                      class="alert alert-danger text-start"
+                    >
+                      <strong>GPS is not active.</strong>
+                      Your position is not being sent. Use the LASF mobile app,
+                      allow location "all the time", then press Restart GPS.
+                    </div>
  
-                            <!-- ACTIVE CROSS COUNTRY -->
-                            <NuxtLink
+                    <div
+                      v-else-if="activeSession?.status === 'active' && gpsActive === true"
+                      class="alert alert-light text-start py-2"
+                    >
+                      <i class="bi bi-broadcast me-2"></i> GPS tracking active
+                    </div>
  
-                                v-if="canContinueCrossCountry"
+                    <div class="d-flex flex-column gap-3">
  
-                                :to="`/cross-country/active?id=${currentRequest.id}`"
+                      <!-- ACTIVE CROSS COUNTRY -->
+                      <NuxtLink
+                        v-if="canContinueCrossCountry"
+                        :to="`/cross-country/active?id=${currentRequest.id}`"
+                        class="btn btn-success btn-lg"
+                      >
+                        <i class="bi bi-airplane-engines me-2"></i>
+                        Continue Cross Country
+                      </NuxtLink>
  
-                                class="btn btn-success btn-lg"
+                      <!-- APPROVED -->
+                      <NuxtLink
+                        v-else-if="canStartCrossCountry"
+                        :to="`/cross-country/active?id=${currentRequest.id}`"
+                        class="btn btn-primary btn-lg"
+                      >
+                        <i class="bi bi-play-circle me-2"></i>
+                        Start Cross Country Flight
+                      </NuxtLink>
  
-                            >
+                      <!-- PENDING -->
+                      <button
+                        v-else-if="isPending"
+                        disabled
+                        class="btn btn-warning btn-lg"
+                      >
+                        <i class="bi bi-hourglass-split me-2"></i>
+                        Waiting For Approval
+                      </button>
  
-                                <i class="bi bi-airplane-engines me-2"></i>
+                      <!-- CREATE REQUEST -->
+                      <NuxtLink
+                        v-else-if="canCreateCrossCountry"
+                        to="/cross-country/request"
+                        class="btn btn-primary btn-lg"
+                      >
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Create Cross Country Request
+                      </NuxtLink>
  
-                                Continue Cross Country
+                      <div class="d-flex flex-column gap-3">
  
-                            </NuxtLink>
+                        <button
+                          v-if="activeSession?.status === 'active'"
+                          type="button"
+                          @click="handleRestartGps"
+                          class="btn btn-outline-primary"
+                        >
+                          <i class="bi bi-arrow-repeat me-2"></i>
+                          Restart GPS
+                        </button>
  
-                            <!-- APPROVED -->
-                            <NuxtLink
+                        <button
+                          v-if="activeSession?.status === 'active'"
+                          @click="handlePause"
+                          class="btn btn-warning btn-lg"
+                        >
+                          Pause Permission
+                        </button>
  
-                                v-else-if="canStartCrossCountry"
+                        <button
+                          v-if="activeSession?.status === 'paused'"
+                          @click="handleResume"
+                          class="btn btn-success btn-lg"
+                        >
+                          Resume Permission
+                        </button>
  
-                                :to="`/cross-country/active?id=${currentRequest.id}`"
+                        <button
+                          @click="handleCheckOut"
+                          class="btn btn-danger btn-lg"
+                        >
+                          Close Permission
+                        </button>
  
-                                class="btn btn-primary btn-lg"
- 
-                            >
- 
-                                <i class="bi bi-play-circle me-2"></i>
- 
-                                Start Cross Country Flight
- 
-                            </NuxtLink>
- 
-                            <!-- PENDING -->
-                            <button
- 
-                                v-else-if="isPending"
- 
-                                disabled
- 
-                                class="btn btn-warning btn-lg"
- 
-                            >
- 
-                                <i class="bi bi-hourglass-split me-2"></i>
- 
-                                Waiting For Approval
- 
-                            </button>
- 
-                            <!-- CREATE REQUEST -->
-                            <NuxtLink
- 
-                                v-else-if="canCreateCrossCountry"
- 
-                                to="/cross-country/request"
- 
-                                class="btn btn-primary btn-lg"
- 
-                            >
- 
-                                <i class="bi bi-plus-circle me-2"></i>
- 
-                                Create Cross Country Request
- 
-                            </NuxtLink>
- 
-                            <div class="d-flex flex-column gap-3">
- 
-                                <button
-                                    type="button"
-                                    @click="testGpsPermission"
-                                    class="btn btn-primary"
-                                >
-                                    TEST GPS PERMISSION
-                                </button>
- 
-                                <button
-                                    v-if="activeSession?.status === 'active'"
-                                    @click="handlePause"
-                                    class="btn btn-warning btn-lg"
-                                >
-                                    Pause Permission
-                                </button>
- 
-                                <button
-                                    v-if="activeSession?.status === 'paused'"
-                                    @click="handleResume"
-                                    class="btn btn-success btn-lg"
-                                >
-                                    Resume Permission
-                                </button>
- 
-                                <button
-                                    @click="handleCheckOut"
-                                    class="btn btn-danger btn-lg"
-                                >
-                                    Close Permission
-                                </button>
- 
-                            </div>
- 
-                        </div>
- 
-                        <div class="mt-4">
- 
-                            <div
-                                v-if="isPending"
-                                class="alert alert-warning"
-                            >
- 
-                                Your Cross Country request is waiting for approval.
- 
-                            </div>
- 
-                            <div
-                                v-else-if="isApproved"
-                                class="alert alert-success"
-                            >
- 
-                                Your request has been approved.
- 
-                            </div>
- 
-                            <div
-                                v-else-if="canContinueCrossCountry"
-                                class="alert alert-primary"
-                            >
- 
-                                Your Cross Country flight is currently active.
- 
-                            </div>
- 
-                        </div>
+                      </div>
  
                     </div>
+ 
+                    <div class="mt-4">
+                      <div v-if="isPending" class="alert alert-warning">
+                        Your Cross Country request is waiting for approval.
+                      </div>
+ 
+                      <div v-else-if="isApproved" class="alert alert-success">
+                        Your request has been approved.
+                      </div>
+ 
+                      <div v-else-if="canContinueCrossCountry" class="alert alert-primary">
+                        Your Cross Country flight is currently active.
+                      </div>
+                    </div>
+ 
+                  </div>
  
                 </div>
  
                 <!-- Flying elsewhere -->
                 <div
-                    v-else-if="authStore.activeSession?.id"
-                    class="text-center py-4"
+                  v-else-if="authStore.activeSession?.id"
+                  class="text-center py-4"
                 >
                   <div class="alert alert-warning border-0 rounded-3">
                     <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
@@ -991,14 +764,13 @@ onUnmounted(() => {
                       <button
                         v-if="canCheckIn"
                         @click="handleCheckIn(route.query.token)"
+                        class="btn btn-success btn-lg px-5 rounded-pill"
                       >
+                        <i class="bi bi-play-circle me-2"></i>
                         Start Flight Session
                       </button>
  
-                      <div
-                        v-else
-                        class="alert alert-danger"
-                      >
+                      <div v-else class="alert alert-danger">
                         This flying location is closed today.
                       </div>
                     </div>
@@ -1025,10 +797,10 @@ onUnmounted(() => {
                     </p>
                   </div>
                 </div>
+ 
               </div>
             </div>
           </div>
- 
         </div>
       </div>
     </div>
@@ -1059,20 +831,6 @@ onUnmounted(() => {
   justify-content: center;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 50%;
-}
- 
-.spin {
-  animation: spin 1s linear infinite;
-}
- 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
- 
-.active-pilots-list {
-  max-height: 400px;
-  overflow-y: auto;
 }
  
 .session-info {
