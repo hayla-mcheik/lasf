@@ -796,305 +796,49 @@ async function loadPilots()
 |
 */
 
-function updateMarkers(sessions)
-{
+function updateMarkers(sessions) {
+  if (!map || !L) return
+  const activeSessionIds = new Set()
 
-  if (!map || !L) {
-    return
-  }
+  sessions.forEach(session => {
+    const gps = session.gps
+    const hasGps = !!gps
 
+    // fall back to the flying location's coordinates
+    const latitude  = Number(hasGps ? gps.latitude  : session.location?.latitude)
+    const longitude = Number(hasGps ? gps.longitude : session.location?.longitude)
 
-  const activeSessionIds =
-    new Set()
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
 
+    const sessionId = String(session.id)
+    activeSessionIds.add(sessionId)
 
-  sessions.forEach(
-    session => {
+    // stale = no update in the last 2 minutes
+    const stale = hasGps &&
+      (Date.now() - new Date(gps.created_at).getTime()) > 120000
+    const state = !hasGps ? 'nogps' : (stale ? 'stale' : (session.outside_zone ? 'danger' : 'ok'))
 
-      const gps =
-        session.gps
+    const existing = markerMap.get(sessionId)
+    const popup = createPopupContent(session, gps || { latitude, longitude, created_at: null })
 
-
-      /*
-      |--------------------------------------------------------------------------
-      | No GPS yet
-      |--------------------------------------------------------------------------
-      */
-
-      if (!gps) {
-        return
+    if (existing) {
+      existing.marker.setLatLng([latitude, longitude])
+      if (existing.state !== state) {
+        existing.marker.setIcon(createAirplaneIcon(state))
+        existing.state = state
       }
-
-
-      const latitude =
-        Number(
-          gps.latitude
-        )
-
-
-      const longitude =
-        Number(
-          gps.longitude
-        )
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Validate coordinates
-      |--------------------------------------------------------------------------
-      */
-
-      if (
-        !Number.isFinite(
-          latitude
-        ) ||
-        !Number.isFinite(
-          longitude
-        )
-      ) {
-
-        console.warn(
-          'Invalid GPS:',
-          gps
-        )
-
-        return
-
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Session ID
-      |--------------------------------------------------------------------------
-      */
-
-      const sessionId =
-        String(
-          session.id
-        )
-
-
-      activeSessionIds.add(
-        sessionId
-      )
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Existing marker
-      |--------------------------------------------------------------------------
-      */
-
-      const existing =
-        markerMap.get(
-          sessionId
-        )
-
-
-      if (existing) {
-
-        /*
-        |--------------------------------------------------------------------------
-        | MOVE EXISTING MARKER
-        |--------------------------------------------------------------------------
-        */
-
-        existing.marker.setLatLng([
-          latitude,
-          longitude
-        ])
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update icon if outside zone status changed
-        |--------------------------------------------------------------------------
-        */
-
-        const outsideZone =
-          Boolean(
-            session.outside_zone
-          )
-
-
-        if (
-          existing.outsideZone !==
-          outsideZone
-        ) {
-
-          existing.marker.setIcon(
-            createAirplaneIcon(
-              outsideZone
-            )
-          )
-
-          existing.outsideZone =
-            outsideZone
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update popup
-        |--------------------------------------------------------------------------
-        */
-
-        existing.marker.setPopupContent(
-          createPopupContent(
-            session,
-            gps
-          )
-        )
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update click event coordinates
-        |--------------------------------------------------------------------------
-        */
-
-        existing.marker.off(
-          'click'
-        )
-
-
-        existing.marker.on(
-          'click',
-          () => {
-
-            map.flyTo(
-
-              [
-                latitude,
-                longitude
-              ],
-
-              16,
-
-              {
-                animate: true,
-                duration: 1
-              }
-
-            )
-
-          }
-        )
-
-
-        return
-
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | CREATE NEW MARKER
-      |--------------------------------------------------------------------------
-      */
-
-      const marker =
-        L.marker(
-
-          [
-            latitude,
-            longitude
-          ],
-
-          {
-            icon:
-              createAirplaneIcon(
-                Boolean(
-                  session.outside_zone
-                )
-              )
-          }
-
-        ).addTo(map)
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Popup
-      |--------------------------------------------------------------------------
-      */
-
-      marker.bindPopup(
-
-        createPopupContent(
-          session,
-          gps
-        )
-
-      )
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Click → zoom
-      |--------------------------------------------------------------------------
-      */
-
-      marker.on(
-        'click',
-        () => {
-
-          map.flyTo(
-
-            [
-              latitude,
-              longitude
-            ],
-
-            16,
-
-            {
-              animate: true,
-              duration: 1
-            }
-
-          )
-
-        }
-      )
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Save marker
-      |--------------------------------------------------------------------------
-      */
-
-      markerMap.set(
-        sessionId,
-        {
-
-          marker,
-
-          outsideZone:
-            Boolean(
-              session.outside_zone
-            )
-
-        }
-      )
-
+      existing.marker.setPopupContent(popup)
+      return
     }
-  )
 
+    const marker = L.marker([latitude, longitude], { icon: createAirplaneIcon(state) })
+      .addTo(map)
+      .bindPopup(popup)
 
-  /*
-  |--------------------------------------------------------------------------
-  | Remove pilots who are no longer active
-  |--------------------------------------------------------------------------
-  */
+    markerMap.set(sessionId, { marker, state })
+  })
 
-  removeMissingMarkers(
-    activeSessionIds
-  )
-
+  removeMissingMarkers(activeSessionIds)
 }
 
 
@@ -1196,49 +940,22 @@ function clearMarkers()
 |--------------------------------------------------------------------------
 */
 
-function createAirplaneIcon(
-  outsideZone = false
-)
-{
+function createAirplaneIcon(state = 'ok') {
+  const cls = {
+    ok: 'airplane-marker',
+    danger: 'airplane-marker-danger',
+    stale: 'airplane-marker-stale',
+    nogps: 'airplane-marker-stale'
+  }[state]
 
   return L.divIcon({
-
-    html: `
-
-      <div class="${
-        outsideZone
-          ? 'airplane-marker-danger'
-          : 'airplane-marker'
-      }">
-
-        <i class="bi bi-airplane-fill"></i>
-
-      </div>
-
-    `,
-
-    className:
-      'custom-airplane-icon',
-
-    iconSize: [
-      44,
-      44
-    ],
-
-    iconAnchor: [
-      24,
-      24
-    ],
-
-    popupAnchor: [
-      0,
-      -24
-    ]
-
+    html: `<div class="${cls}"><i class="bi bi-airplane-fill"></i></div>`,
+    className: 'custom-airplane-icon',
+    iconSize: [44, 44],
+    iconAnchor: [24, 24],
+    popupAnchor: [0, -24]
   })
-
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1844,5 +1561,11 @@ RESPONSIVE
     rgba(0, 0, 0, .25);
 
 }
-
+:deep(.airplane-marker-stale) {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #6c757d; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  border: 3px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,.25);
+  opacity: .8;
+}
 </style>
