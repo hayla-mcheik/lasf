@@ -66,9 +66,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+<key>NSMotionUsageDescription</key>
+<string>LASF uses motion activity to improve background GPS tracking while pilots are flying.</string>
+
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>LASF needs location access when in use to track your position while you are flying.</string>
-	
+
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>LASF needs background location access to track your position while you are flying.</string>
 </dict>
