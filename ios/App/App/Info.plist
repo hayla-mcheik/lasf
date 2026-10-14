@@ -22,14 +22,40 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- PERMISSION TEXTS (each key appears only ONCE) -->
 	<key>NSCameraUsageDescription</key>
 	<string>LASF needs access to the camera to scan QR codes.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>LASF needs background location access to track your position while you are flying.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>LASF needs location access when in use to track your position while you are flying.</string>
+	<string>LASF needs location access to track your position while you are flying.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>LASF needs background location access to keep tracking your position while you are flying, even when your phone is locked.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>LASF uses motion activity to improve background GPS tracking while pilots are flying.</string>
+
+	<!-- BACKGROUND MODES (only ONCE) -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+
+	<!-- Required by the Transistorsoft plugin for background tasks -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.transistorsoft.fetch</string>
+		<string>com.transistorsoft.customtask</string>
+	</array>
+
+	<!--
+	  RELEASE / TESTFLIGHT / APP STORE builds need your Transistorsoft
+	  license. Debug builds work without it. Uncomment and fill in:
+
+	<key>TSLocationManagerLicense</key>
+	<string>YOUR_LICENSE_KEY</string>
+	-->
+
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -49,12 +75,6 @@
 			</array>
 		</dict>
 	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>processing</string>
-		<string>location</string>
-	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -78,19 +98,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-<key>NSMotionUsageDescription</key>
-<string>LASF uses motion activity to improve background GPS tracking while pilots are flying.</string>
-
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>LASF needs location access when in use to track your position while you are flying.</string>
-
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>LASF needs background location access to track your position while you are flying.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>processing</string>
-		<string>location</string>
-	</array>
 </dict>
 </plist>

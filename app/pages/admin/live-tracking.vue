@@ -22,14 +22,22 @@
             </div>
  
             <div v-if="lastUpdated" class="small text-muted mt-2">
-              Last update: {{ lastUpdated }}
+              Last refresh: {{ lastUpdated }}
             </div>
           </div>
         </div>
  
+        <div
+          v-if="connectionError"
+          class="alert alert-warning py-2 mt-3 mb-0"
+        >
+          ⚠️ Connection problem - retrying every 5 seconds.
+          The data shown may be old.
+        </div>
+ 
         <hr>
  
-        <div class="row">
+        <div class="row align-items-end g-3">
           <div class="col-lg-4">
             <label class="fw-bold mb-2">Flying Location</label>
  
@@ -48,6 +56,29 @@
                 {{ location.name }}
               </option>
             </select>
+          </div>
+ 
+          <div class="col-lg-8 d-flex flex-wrap align-items-center gap-3">
+            <div class="form-check form-switch mb-0">
+              <input
+                id="followSwitch"
+                v-model="followEnabled"
+                class="form-check-input"
+                type="checkbox"
+              >
+              <label class="form-check-label" for="followSwitch">
+                Auto-follow pilot
+              </label>
+            </div>
+ 
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              @click="fitAll"
+            >
+              <i class="bi bi-arrows-fullscreen me-1"></i>
+              Fit all pilots
+            </button>
           </div>
         </div>
  
@@ -74,6 +105,9 @@
       <div class="card-header bg-white fw-bold">
         <i class="bi bi-people-fill me-2"></i>
         Active Pilots
+        <span class="text-muted fw-normal small ms-2">
+          (click a pilot to zoom to the pin)
+        </span>
       </div>
  
       <div class="card-body">
@@ -90,6 +124,7 @@
           v-for="pilot in pilots"
           :key="pilot.id"
           class="pilot-card"
+          @click="focusPilot(pilot)"
         >
  
           <div class="pilot-card-left">
@@ -166,6 +201,12 @@ const authStore = useAuthStore()
 /* A pilot is "stale" if no GPS update for this long */
 const STALE_AFTER_MS = 2 * 60 * 1000
  
+/* Abort a request that hangs longer than this */
+const REQUEST_TIMEOUT_MS = 8000
+ 
+/* How many past positions to draw as a trail per pilot */
+const MAX_TRAIL_POINTS = 100
+ 
 let L = null
 let map = null
  
@@ -173,13 +214,21 @@ const locations = ref([])
 const pilots = ref([])
 const selectedLocation = ref('')
 const lastUpdated = ref(null)
+const connectionError = ref(false)
  
-/* Markers are kept by Airspace Session ID */
+/* Map follows the pilot when exactly one pilot has GPS */
+const followEnabled = ref(true)
+ 
+/*
+| Markers are kept by Airspace Session ID:
+| { marker, state, trail (polyline), points: [[lat, lng], ...] }
+*/
 const markerMap = new Map()
  
 let refreshTimer = null
 let isLoading = false
 let kmlLayers = []
+let didInitialFit = false
  
  
 /*
@@ -215,6 +264,11 @@ onMounted(async () => {
       attribution: 'Tiles &copy; Esri'
     }
   ).addTo(map)
+ 
+  // If the admin drags the map by hand, stop auto-following.
+  map.on('dragstart', () => {
+    followEnabled.value = false
+  })
  
   await loadLocations()
   drawPolygons()
@@ -264,7 +318,8 @@ async function loadLocations() {
     const response = await $fetch(
       `${config.public.apiBase}/admin/flying-locations`,
       {
-        headers: { Authorization: `Bearer ${authStore.token}` }
+        headers: { Authorization: `Bearer ${authStore.token}` },
+        timeout: REQUEST_TIMEOUT_MS
       }
     )
  
@@ -334,9 +389,14 @@ async function loadPilots() {
       ? `${config.public.apiBase}/admin/gps/live/${selectedLocation.value}`
       : `${config.public.apiBase}/admin/gps/live`
  
+    // timeout: a hung request can no longer block all future refreshes
     const response = await $fetch(url, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
+      headers: { Authorization: `Bearer ${authStore.token}` },
+      timeout: REQUEST_TIMEOUT_MS,
+      retry: 0
     })
+ 
+    connectionError.value = false
  
     if (!Array.isArray(response)) {
       pilots.value = []
@@ -349,6 +409,7 @@ async function loadPilots() {
  
     updateMarkers(response)
   } catch (e) {
+    connectionError.value = true
     console.error('Failed to load live pilots:', e)
   } finally {
     isLoading = false
@@ -417,35 +478,61 @@ function updateMarkers(sessions) {
       state
     )
  
-    const existing = markerMap.get(sessionId)
+    let entry = markerMap.get(sessionId)
  
-    if (existing) {
-      existing.marker.setLatLng([latitude, longitude])
+    if (entry) {
+      entry.marker.setLatLng([latitude, longitude])
  
-      if (existing.state !== state) {
-        existing.marker.setIcon(createAirplaneIcon(state))
-        existing.state = state
+      if (entry.state !== state) {
+        entry.marker.setIcon(createAirplaneIcon(state))
+        entry.state = state
       }
  
-      existing.marker.setPopupContent(popup)
-      return
+      entry.marker.setPopupContent(popup)
+    } else {
+      const marker = L.marker([latitude, longitude], {
+        icon: createAirplaneIcon(state)
+      })
+        .addTo(map)
+        .bindPopup(popup)
+ 
+      marker.on('click', () => {
+        const pos = marker.getLatLng()
+        followEnabled.value = false
+        map.flyTo([pos.lat, pos.lng], 16, { animate: true, duration: 1 })
+      })
+ 
+      const trail = L.polyline([], {
+        color: '#0d6efd',
+        weight: 3,
+        opacity: 0.6,
+        dashArray: '6 6'
+      }).addTo(map)
+ 
+      entry = { marker, state, trail, points: [] }
+ 
+      markerMap.set(sessionId, entry)
     }
  
-    const marker = L.marker([latitude, longitude], {
-      icon: createAirplaneIcon(state)
-    })
-      .addTo(map)
-      .bindPopup(popup)
+    /* Trail: only real GPS points, and only if the position changed */
+    if (hasGps) {
+      const last = entry.points[entry.points.length - 1]
  
-    marker.on('click', () => {
-      const pos = marker.getLatLng()
-      map.flyTo([pos.lat, pos.lng], 16, { animate: true, duration: 1 })
-    })
+      if (!last || last[0] !== latitude || last[1] !== longitude) {
+        entry.points.push([latitude, longitude])
  
-    markerMap.set(sessionId, { marker, state })
+        if (entry.points.length > MAX_TRAIL_POINTS) {
+          entry.points.shift()
+        }
+ 
+        entry.trail.setLatLngs(entry.points)
+      }
+    }
   })
  
   removeMissingMarkers(activeSessionIds)
+ 
+  handleCamera()
 }
  
 function removeMissingMarkers(activeSessionIds) {
@@ -454,6 +541,7 @@ function removeMissingMarkers(activeSessionIds) {
   markerMap.forEach((data, sessionId) => {
     if (!activeSessionIds.has(sessionId)) {
       if (map.hasLayer(data.marker)) map.removeLayer(data.marker)
+      if (map.hasLayer(data.trail)) map.removeLayer(data.trail)
       markerMap.delete(sessionId)
     }
   })
@@ -464,9 +552,75 @@ function clearMarkers() {
  
   markerMap.forEach(data => {
     if (map.hasLayer(data.marker)) map.removeLayer(data.marker)
+    if (map.hasLayer(data.trail)) map.removeLayer(data.trail)
   })
  
   markerMap.clear()
+}
+ 
+ 
+/*
+|--------------------------------------------------------------------------
+| CAMERA
+|--------------------------------------------------------------------------
+*/
+function handleCamera() {
+  if (!map || markerMap.size === 0) return
+ 
+  // First time pilots appear -> show all of them.
+  if (!didInitialFit) {
+    didInitialFit = true
+    fitAll()
+    return
+  }
+ 
+  // Follow mode: keep a single pilot in view without changing zoom.
+  if (followEnabled.value && markerMap.size === 1) {
+    const [entry] = markerMap.values()
+    map.panTo(entry.marker.getLatLng(), { animate: true, duration: 0.8 })
+  }
+}
+ 
+function fitAll() {
+  if (!map || !L || markerMap.size === 0) return
+ 
+  const latLngs = []
+ 
+  markerMap.forEach(data => {
+    latLngs.push(data.marker.getLatLng())
+  })
+ 
+  if (latLngs.length === 1) {
+    map.setView(latLngs[0], 15)
+    return
+  }
+ 
+  map.fitBounds(L.latLngBounds(latLngs), {
+    padding: [60, 60],
+    maxZoom: 15
+  })
+}
+ 
+function focusPilot(session) {
+  if (!map) return
+ 
+  const entry = markerMap.get(String(session.id))
+ 
+  if (!entry) return
+ 
+  followEnabled.value = false
+ 
+  const pos = entry.marker.getLatLng()
+ 
+  map.flyTo([pos.lat, pos.lng], 16, { animate: true, duration: 1 })
+ 
+  entry.marker.openPopup()
+ 
+  // Scroll the map into view on small screens
+  document.getElementById('map')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  })
 }
  
  
@@ -632,6 +786,7 @@ function formatGpsTime(value) {
   border: 1px solid #eee;
   margin-bottom: 12px;
   transition: .3s;
+  cursor: pointer;
 }
  
 .pilot-card:hover {

@@ -5,6 +5,14 @@ import { Capacitor } from '@capacitor/core'
 const isTracking = ref(false)
 const isReady = ref(false)
  
+/**
+ * 'always'       -> works with the phone locked (what we need)
+ * 'when_in_use'  -> stops when the phone locks / app is backgrounded
+ * 'denied'       -> no location at all
+ * 'unknown'      -> not checked yet / web
+ */
+const locationPermission = ref<'always' | 'when_in_use' | 'denied' | 'unknown'>('unknown')
+ 
 let initialized = false
 let initializing: Promise<void> | null = null
  
@@ -54,31 +62,51 @@ export const useBackgroundGps = () => {
           console.log('📡 GPS provider changed:', event)
         })
  
-        // Log when the plugin switches between moving / stationary.
         BackgroundGeolocation.onMotionChange((event) => {
           console.log('🏃 Motion change. isMoving =', event.isMoving)
+        })
+ 
+        /**
+         * HEARTBEAT
+         * Fires every `heartbeatInterval` seconds even when the pilot
+         * is standing still. We take one fresh position and persist it,
+         * so the dashboard never shows a still-flying pilot as "old".
+         */
+        BackgroundGeolocation.onHeartbeat(async () => {
+          try {
+            await BackgroundGeolocation.getCurrentPosition({
+              samples: 1,
+              persist: true,
+              timeout: 30,
+              maximumAge: 0
+            })
+          } catch (e) {
+            console.error('❌ Heartbeat position failed:', e)
+          }
         })
  
         await BackgroundGeolocation.ready({
           geolocation: {
             desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
  
-            // distanceFilter = 0 -> time based updates
-            distanceFilter: 0,
+            // Record a point every 10 m of movement (iOS + Android).
+            // distanceFilter 0 would write about one row per second.
+            distanceFilter: 10,
  
+            // Android only (ignored on iOS)
             locationUpdateInterval: 5000,
             fastestLocationUpdateInterval: 5000,
  
             locationAuthorizationRequest: 'Always',
  
-            // iOS only; harmless on Android
+            // iOS: never let the system pause location updates
             pausesLocationUpdatesAutomatically: false
           },
  
-          // NOTE: disableStopDetection belongs ONLY here, not in geolocation.
+          // disableStopDetection belongs ONLY here, not in geolocation.
           activity: {
             disableStopDetection: true,
-
+         
           },
  
           http: {
@@ -110,6 +138,12 @@ export const useBackgroundGps = () => {
           app: {
             stopOnTerminate: false,
             startOnBoot: false,
+ 
+            // iOS: keep the app running while the phone is locked
+            preventSuspend: true,
+ 
+            // Seconds. Wakes the app periodically (see onHeartbeat above)
+            heartbeatInterval: 60,
  
             notification: {
               title: 'LASF GPS Tracking',
@@ -149,8 +183,38 @@ export const useBackgroundGps = () => {
   }
  
   /**
+   * Read the real authorization level from the OS.
+   * Status numbers: 2 = denied, 3 = Always, 4 = When In Use.
+   */
+  const refreshPermissionLevel = async () => {
+    try {
+      const provider = await BackgroundGeolocation.getProviderState()
+ 
+      if (provider.status === 3) {
+        locationPermission.value = 'always'
+      } else if (provider.status === 4) {
+        locationPermission.value = 'when_in_use'
+      } else if (provider.status === 2 || provider.status === 1) {
+        locationPermission.value = 'denied'
+      } else {
+        locationPermission.value = 'unknown'
+      }
+ 
+      console.log('🔐 Location permission:', locationPermission.value, provider)
+    } catch (e) {
+      console.error('❌ Could not read provider state:', e)
+      locationPermission.value = 'unknown'
+    }
+ 
+    return locationPermission.value
+  }
+ 
+  /**
    * Start GPS after a successful pilot check-in (or resume).
    * Returns true only if tracking is really running.
+   *
+   * After it returns, check `locationPermission.value`:
+   * if it is 'when_in_use', tracking works only while the app is open.
    */
   const startBackgroundGps = async (token: string): Promise<boolean> => {
     if (!process.client) return false
@@ -182,6 +246,13 @@ export const useBackgroundGps = () => {
       const permissionStatus = await BackgroundGeolocation.requestPermission()
       console.log('🟢 GPS PERMISSION RESULT:', permissionStatus)
  
+      const level = await refreshPermissionLevel()
+ 
+      if (level === 'denied') {
+        isTracking.value = false
+        return false
+      }
+ 
       const currentState = await BackgroundGeolocation.getState()
  
       if (!currentState.enabled) {
@@ -191,15 +262,8 @@ export const useBackgroundGps = () => {
         console.log('🟢 GPS was already running')
       }
  
-      /**
-       * IMPORTANT FIX:
-       * The plugin starts in "stationary" mode and sends only ONE point
-       * until the motion sensors detect movement. changePace(true) forces
-       * the "moving" state so it records every 5 seconds even if the
-       * phone is still.
-       */
+      // Force "moving" so it records even if the phone is still.
       await BackgroundGeolocation.changePace(true)
-      console.log('🟢 GPS changePace(true) done')
  
       const finalState = await BackgroundGeolocation.getState()
       isTracking.value = !!finalState.enabled
@@ -262,12 +326,14 @@ export const useBackgroundGps = () => {
   return {
     isTracking,
     isReady,
+    locationPermission,
  
     initializeBackgroundGps,
     startBackgroundGps,
     stopBackgroundGps,
     getTrackingState,
-    getPendingLocations
+    getPendingLocations,
+    refreshPermissionLevel
   }
 }
  
