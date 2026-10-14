@@ -33,23 +33,48 @@ export const useBackgroundGps = () => {
  
     initializing = (async () => {
       try {
-        BackgroundGeolocation.onLocation(
-          (location) => {
-            console.log('📍 Native GPS location:', {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              accuracy: location.coords.accuracy,
-              timestamp: location.timestamp
-            })
-          },
-          (error) => {
-            console.error('❌ Native GPS error:', error)
-          }
-        )
- 
+BackgroundGeolocation.onLocation(
+  async (location) => {
+
+    console.log('📍 LOCATION RECEIVED')
+
+    console.log({
+      lat: location.coords.latitude,
+      lng: location.coords.longitude,
+      accuracy: location.coords.accuracy,
+      speed: location.coords.speed,
+      heading: location.coords.heading,
+      timestamp: location.timestamp
+    })
+
+    try {
+      const provider =
+        await BackgroundGeolocation.getProviderState()
+
+      const state =
+        await BackgroundGeolocation.getState()
+
+      console.log('📡 PROVIDER:', provider)
+
+      console.log('📡 STATE:', {
+        enabled: state.enabled,
+        isMoving: state.isMoving
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  },
+
+  (error) => {
+    console.error('❌ Native GPS error:', error)
+  }
+)
         BackgroundGeolocation.onHttp((event) => {
           if (event.success) {
-            console.log('✅ GPS uploaded successfully:', event.status)
+   console.log('✅ GPS uploaded successfully:', {
+  status: event.status,
+  success: event.success
+})
           } else {
             console.error('❌ GPS upload failed:', {
               status: event.status,
@@ -108,28 +133,27 @@ export const useBackgroundGps = () => {
         })
  
         await BackgroundGeolocation.ready({
-          geolocation: {
-            desiredAccuracy: BackgroundGeolocation.DesiredAccuracy.High,
- 
-            // Record a point every 10 m of movement (iOS + Android).
-            // distanceFilter 0 would write about one row per second.
-            distanceFilter: 10,
- 
-            // Android only (ignored on iOS)
-            locationUpdateInterval: 5000,
-            fastestLocationUpdateInterval: 5000,
- 
-            locationAuthorizationRequest: 'Always',
- 
-            // iOS: never let the system pause location updates
-            pausesLocationUpdatesAutomatically: false
-          },
+   geolocation: {
+  desiredAccuracy:
+  BackgroundGeolocation.DesiredAccuracy.High,
+
+  distanceFilter: 0,
+
+  locationUpdateInterval: 5000,
+
+  fastestLocationUpdateInterval: 5000,
+
+  locationAuthorizationRequest: 'Always',
+
+  pausesLocationUpdatesAutomatically: false,
+
+  useSignificantChangesOnly: false
+},
  
           // disableStopDetection belongs ONLY here, not in geolocation.
-          activity: {
-            disableStopDetection: true,
-     
-          },
+activity: {
+  disableStopDetection: true,
+},
  
           http: {
             url: `${config.public.apiBase}/gps/update`,
@@ -208,28 +232,45 @@ export const useBackgroundGps = () => {
    * Read the real authorization level from the OS.
    * Status numbers: 2 = denied, 3 = Always, 4 = When In Use.
    */
-  const refreshPermissionLevel = async () => {
-    try {
-      const provider = await BackgroundGeolocation.getProviderState()
- 
-      if (provider.status === 3) {
+const refreshPermissionLevel = async () => {
+  try {
+    const provider = await BackgroundGeolocation.getProviderState()
+
+    console.log(
+      '🔐 PROVIDER STATE',
+      JSON.stringify(provider, null, 2)
+    )
+
+    switch (provider.status) {
+      case 3:
         locationPermission.value = 'always'
-      } else if (provider.status === 4) {
+        break
+
+      case 4:
         locationPermission.value = 'when_in_use'
-      } else if (provider.status === 2 || provider.status === 1) {
+        break
+
+      case 1:
+      case 2:
         locationPermission.value = 'denied'
-      } else {
+        break
+
+      default:
         locationPermission.value = 'unknown'
-      }
- 
-      console.log('🔐 Location permission:', locationPermission.value, provider)
-    } catch (e) {
-      console.error('❌ Could not read provider state:', e)
-      locationPermission.value = 'unknown'
     }
- 
-    return locationPermission.value
+
+    console.log(
+      '🔐 Location permission:',
+      locationPermission.value
+    )
+
+  } catch (e) {
+    console.error('❌ Could not read provider state:', e)
+    locationPermission.value = 'unknown'
   }
+
+  return locationPermission.value
+}
  
   /**
    * Start GPS after a successful pilot check-in (or resume).
@@ -277,16 +318,17 @@ export const useBackgroundGps = () => {
  
       const currentState = await BackgroundGeolocation.getState()
  
-      if (!currentState.enabled) {
-        await BackgroundGeolocation.start()
-        console.log('🟢 GPS start() finished')
-      } else {
-        console.log('🟢 GPS was already running')
-      }
- 
-      // Force "moving" so it records even if the phone is still.
-      await BackgroundGeolocation.changePace(true)
- 
+if (!currentState.enabled) {
+  await BackgroundGeolocation.start()
+
+  console.log('🟢 GPS start() finished')
+} else {
+  console.log('🟢 GPS was already running')
+}
+
+await BackgroundGeolocation.changePace(true)
+
+console.log('🏃 Forced moving mode')
       const finalState = await BackgroundGeolocation.getState()
       isTracking.value = !!finalState.enabled
  

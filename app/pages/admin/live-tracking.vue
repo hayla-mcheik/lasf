@@ -480,8 +480,14 @@ function updateMarkers(sessions) {
  
     let entry = markerMap.get(sessionId)
  
-    if (entry) {
-      entry.marker.setLatLng([latitude, longitude])
+if (entry) {
+  const newLatLng = L.latLng(latitude, longitude)
+
+  entry.marker.setLatLng(newLatLng)
+
+  if (entry.marker.update) {
+    entry.marker.update()
+  }
  
       if (entry.state !== state) {
         entry.marker.setIcon(createAirplaneIcon(state))
@@ -516,17 +522,26 @@ function updateMarkers(sessions) {
  
     /* Trail: only real GPS points, and only if the position changed */
     if (hasGps) {
-      const last = entry.points[entry.points.length - 1]
- 
-      if (!last || last[0] !== latitude || last[1] !== longitude) {
-        entry.points.push([latitude, longitude])
- 
-        if (entry.points.length > MAX_TRAIL_POINTS) {
-          entry.points.shift()
-        }
- 
-        entry.trail.setLatLngs(entry.points)
-      }
+    const last = entry.points[entry.points.length - 1]
+
+let moved = true
+
+if (last) {
+  const latDiff = Math.abs(last[0] - latitude)
+  const lngDiff = Math.abs(last[1] - longitude)
+
+  moved = latDiff > 0.00001 || lngDiff > 0.00001
+}
+
+if (moved) {
+  entry.points.push([latitude, longitude])
+
+  if (entry.points.length > MAX_TRAIL_POINTS) {
+    entry.points.shift()
+  }
+
+  entry.trail.setLatLngs(entry.points)
+}
     }
   })
  
