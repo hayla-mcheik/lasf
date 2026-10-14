@@ -28,8 +28,8 @@
 	<string>LASF needs access to the camera to scan QR codes.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>LASF needs location access to track your position while you are flying.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>LASF needs background location access to keep tracking your position while you are flying, even when your phone is locked.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>LASF uses background GPS tracking during active flying sessions to improve pilot safety and allow authorised administrators to monitor flights in real time.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>LASF uses motion activity to improve background GPS tracking while pilots are flying.</string>
 
@@ -48,13 +48,12 @@
 		<string>com.transistorsoft.customtask</string>
 	</array>
 
-	<!--
-	  RELEASE / TESTFLIGHT / APP STORE builds need your Transistorsoft
-	  license. Debug builds work without it. Uncomment and fill in:
+	
+    <!-- Transistorsoft Background Geolocation trial license -->
 
 	<key>TSLocationManagerLicense</key>
-	<string>YOUR_LICENSE_KEY</string>
-	-->
+	<string>eyJhbGciOiJFZERTQSIsImtpZCI6ImVkMjU1MTktbWFpbi12MSJ9.eyJvcyI6ImlvcyIsImFwcF9pZCI6ImluZm8ubGFzZi5hcHAiLCJvcmRlcl9udW1iZXIiOiIiLCJyZW5ld2FsX3VybCI6IiIsImN1c3RvbWVyX2lkIjoiIiwicHJvZHVjdCI6ImNhcGFjaXRvci1iYWNrZ3JvdW5kLWdlb2xvY2F0aW9uIiwia2V5X3ZlcnNpb24iOjEsImFsbG93ZWRfc3VmZml4ZXMiOlsiLmRldiIsIi5kZXZlbG9wbWVudCIsIi5zdGFnaW5nIiwiLnN0YWdlIiwiLnFhIiwiLnVhdCIsIi50ZXN0IiwiLmRlYnVnIl0sIm1heF9idWlsZF9zdGFtcCI6MjAyNjExMTMsImdyYWNlX2J1aWxkcyI6MCwiZW50aXRsZW1lbnRzIjpbImNvcmUiLCJwb2x5Z29uLWdlb2ZlbmNpbmciXSwiaWF0IjoxNzkxOTg0NjIxLCJleHAiOjE3OTQ1NzY2MjEsInRyaWFsIjp0cnVlLCJ0cmlhbF9kYXlzIjozMH0.Oz23rhuk0PVWx8actxbwRrUrmLjt4AxOuVFDERsgSSmvprmZtZumXnAyaHIiSDlqTdL7TiKwtK8GyOpp5qXnDw</string>
+	
 
 	<key>UIApplicationSceneManifest</key>
 	<dict>

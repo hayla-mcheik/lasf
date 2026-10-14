@@ -26,6 +26,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+   <meta-data
+            android:name="com.transistorsoft.locationmanager.license"
+            android:value="eyJhbGciOiJFZERTQSIsImtpZCI6ImVkMjU1MTktbWFpbi12MSJ9.eyJvcyI6ImFuZHJvaWQiLCJhcHBfaWQiOiJpbmZvLmxhc2YuYXBwIiwib3JkZXJfbnVtYmVyIjoiIiwicmVuZXdhbF91cmwiOiIiLCJjdXN0b21lcl9pZCI6IiIsInByb2R1Y3QiOiJjYXBhY2l0b3ItYmFja2dyb3VuZC1nZW9sb2NhdGlvbiIsImtleV92ZXJzaW9uIjoxLCJhbGxvd2VkX3N1ZmZpeGVzIjpbIi5kZXYiLCIuZGV2ZWxvcG1lbnQiLCIuc3RhZ2luZyIsIi5zdGFnZSIsIi5xYSIsIi51YXQiLCIudGVzdCIsIi5kZWJ1ZyJdLCJtYXhfYnVpbGRfc3RhbXAiOjIwMjYxMTEzLCJncmFjZV9idWlsZHMiOjAsImVudGl0bGVtZW50cyI6WyJjb3JlIiwicG9seWdvbi1nZW9mZW5jaW5nIl0sImlhdCI6MTc5MTk4NDYyMSwiZXhwIjoxNzk0NTc2NjIxLCJ0cmlhbCI6dHJ1ZSwidHJpYWxfZGF5cyI6MzB9.vS9OC1IOWW7eJlJr93LM4nL3ulXuOpGmp9LXGlTNe5rYG3_cmvOJwlzV8KirNiYVqRu3W4i6MkOVQ6r8aM_1CQ" />
+
+
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode_ui" />
