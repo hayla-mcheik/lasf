@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from '#app'
 import { Capacitor } from '@capacitor/core'
 import Breadcrumbs from '~/components/Frontend/Breadcrumbs.vue'
@@ -9,9 +9,9 @@ import { useBackgroundGps } from '~/composables/useBackgroundGps'
  
 const {
     startBackgroundGps,
-    stopBackgroundGps
+    stopBackgroundGps,
+    locationPermission
 } = useBackgroundGps()
- 
 /*
 |--------------------------------------------------------------------------
 | Stores
@@ -73,6 +73,44 @@ const isCancelled = computed(() => crossCountryStore.isCancelled)
  
 /*
 |--------------------------------------------------------------------------
+| Server dates
+|--------------------------------------------------------------------------
+|
+| Laravel sends checked_in_at / expires_at as "2026-10-14 06:59:50"
+| (UTC, no timezone). new Date() would read that as the PHONE's local
+| time and be off by hours, so we mark it as UTC first.
+|
+*/
+ 
+function parseServerDate(value) {
+    if (!value) return null
+ 
+    if (value instanceof Date) return value
+ 
+    let text = String(value)
+ 
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) {
+        text = text.replace(' ', 'T') + 'Z'
+    }
+ 
+    const date = new Date(text)
+ 
+    return isNaN(date.getTime()) ? null : date
+}
+ 
+function formatTime(value) {
+    const date = parseServerDate(value)
+ 
+    if (!date) return '-'
+ 
+    return date.toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    })
+}
+ 
+/*
+|--------------------------------------------------------------------------
 | Airspace Session
 |--------------------------------------------------------------------------
 */
@@ -89,6 +127,108 @@ const isFlyingHere = computed(() => {
  
     return Number(sessionLocationId) === Number(location.value.id)
 })
+ 
+/*
+|--------------------------------------------------------------------------
+| Session expiry (7 hours)
+|--------------------------------------------------------------------------
+*/
+ 
+// Updated every few seconds so the countdown and expiry check stay live.
+const now = ref(Date.now())
+ 
+const expiresAtMs = computed(() => {
+    const date = parseServerDate(activeSession.value?.expires_at)
+ 
+    return date ? date.getTime() : null
+})
+ 
+const remainingLabel = computed(() => {
+    if (!expiresAtMs.value) return '-'
+ 
+    const diff = expiresAtMs.value - now.value
+ 
+    if (diff <= 0) return 'Expired'
+ 
+    const hours = Math.floor(diff / 3600000)
+    const minutes = Math.floor((diff % 3600000) / 60000)
+ 
+    return `${hours}h ${minutes}m`
+})
+ 
+let expiryTimer = null
+let handlingExpiry = false
+ 
+/**
+ * The phone thinks the session has expired. Ask the SERVER first
+ * (it is the source of truth), then stop GPS and clear the screen.
+ */
+async function handleSessionExpired() {
+    if (handlingExpiry) return
+ 
+    handlingExpiry = true
+ 
+    try {
+        let fresh = null
+ 
+        try {
+            fresh = await $fetch(
+                `${config.public.apiBase}/airspace-sessions/active-pilot`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${authStore.token}`
+                    }
+                }
+            )
+        } catch (e) {
+            // No internet: try again on the next tick.
+            console.warn('Expiry check: could not reach server', e)
+            return
+        }
+ 
+        // Server still says the session is alive (phone clock is ahead?)
+        if (fresh && fresh.id) {
+            authStore.activeSession = fresh
+            return
+        }
+ 
+        // Session is really over -> stop GPS and clear everything.
+        await stopTracking()
+ 
+        authStore.activeSession = null
+ 
+        await Promise.allSettled([
+            crossCountryStore.refresh(),
+            refreshLocation()
+        ])
+ 
+        alert(
+            'Your 7-hour flying session has expired and you were checked out automatically.\n\n' +
+            'Scan the QR code again to start a new session.'
+        )
+    } finally {
+        handlingExpiry = false
+    }
+}
+ 
+function checkExpiry() {
+    now.value = Date.now()
+ 
+    if (!activeSession.value) return
+    if (!expiresAtMs.value) return
+ 
+    if (now.value >= expiresAtMs.value) {
+        handleSessionExpired()
+    }
+}
+ 
+// Timers are paused while the app is in the background, so also check
+// the moment the pilot comes back to the app.
+function onVisibilityChange() {
+    if (document.visibilityState === 'visible') {
+        checkExpiry()
+    }
+}
  
 /*
 |--------------------------------------------------------------------------
@@ -234,7 +374,7 @@ const refreshEverything = async () => {
  
 /*
 |--------------------------------------------------------------------------
-| Mounted
+| Mounted / Unmounted
 |--------------------------------------------------------------------------
 */
  
@@ -246,6 +386,25 @@ onMounted(async () => {
     }
  
     await refreshEverything()
+ 
+    // Expiry watcher
+    checkExpiry()
+ 
+    expiryTimer = setInterval(checkExpiry, 15000)
+ 
+    document.addEventListener('visibilitychange', onVisibilityChange)
+})
+ 
+onUnmounted(() => {
+    if (expiryTimer) {
+        clearInterval(expiryTimer)
+        expiryTimer = null
+    }
+ 
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+ 
+    // NOTE: native background GPS is intentionally NOT stopped here.
+    // The pilot can lock the phone or navigate away while flying.
 })
  
 /*
@@ -424,14 +583,16 @@ async function handleCheckIn(token) {
 |--------------------------------------------------------------------------
 |
 | Starts GPS when the pilot opens the app while flying here and the
-| session is ACTIVE. It does NOT start while the session is paused.
+| session is ACTIVE and NOT expired. Never starts while paused/expired.
 |
 */
  
 watch(
-    () => [isFlyingHere.value, activeSession.value?.status],
-    async ([flying, status]) => {
-        if (flying && status === 'active') {
+    () => [isFlyingHere.value, activeSession.value?.status, expiresAtMs.value],
+    async ([flying, status, expiresMs]) => {
+        const expired = expiresMs && Date.now() >= expiresMs
+ 
+        if (flying && status === 'active' && !expired) {
             await startTracking()
         }
     },
@@ -477,18 +638,6 @@ async function handleCheckOut() {
         )
     }
 }
- 
-function formatTime(date) {
-    if (!date) return '-'
- 
-    return new Date(date).toLocaleString('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-    })
-}
- 
-// NOTE: native background GPS is intentionally NOT stopped on unmount.
-// The pilot can lock the phone or navigate away while flying.
 </script>
  
 <template>
@@ -605,6 +754,13 @@ function formatTime(date) {
                             {{ formatTime(activeSession?.expires_at) }}
                           </div>
                         </div>
+ 
+                        <div class="col">
+                          <div class="fw-bold">Time left</div>
+                          <div class="text-muted small">
+                            {{ remainingLabel }}
+                          </div>
+                        </div>
                       </div>
                     </div>
  
@@ -623,6 +779,15 @@ function formatTime(date) {
                       class="alert alert-light text-start py-2"
                     >
                       <i class="bi bi-broadcast me-2"></i> GPS tracking active
+                 
+                 <div
+  v-if="activeSession?.status === 'active' && locationPermission === 'when_in_use'"
+  class="alert alert-warning text-start"
+>
+  <strong>Location is set to "While Using".</strong>
+  Tracking stops when your phone locks. Open Settings → LASF → Location
+  and choose <strong>Always</strong>.
+</div>
                     </div>
  
                     <div class="d-flex flex-column gap-3">

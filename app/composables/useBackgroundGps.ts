@@ -55,6 +55,28 @@ export const useBackgroundGps = () => {
               status: event.status,
               response: event.responseText
             })
+ 
+            /**
+             * The server says there is no active flight session
+             * (expired after 7 hours, closed, or paused elsewhere).
+             * Stop the native GPS by itself so it does not keep
+             * running and draining the battery, and drop the
+             * queued points that can never be accepted.
+             */
+            const body = String(event.responseText || '')
+ 
+            if (
+              event.status === 422 &&
+              body.includes('No active flight session')
+            ) {
+              console.warn('🛑 No active session on server: stopping GPS')
+ 
+              BackgroundGeolocation.stop()
+                .then(() => BackgroundGeolocation.destroyLocations())
+                .catch((e) => console.error('Stop after expiry failed:', e))
+ 
+              isTracking.value = false
+            }
           }
         })
  
@@ -106,7 +128,7 @@ export const useBackgroundGps = () => {
           // disableStopDetection belongs ONLY here, not in geolocation.
           activity: {
             disableStopDetection: true,
-         
+     
           },
  
           http: {
