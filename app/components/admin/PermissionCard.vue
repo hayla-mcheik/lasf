@@ -90,57 +90,22 @@
                 <!-- ARMY ACCOUNT -->
                 <!-- ====================================== -->
 
+          
+                <!-- ARMY ACCOUNT -->
                 <template v-else-if="isArmy">
+                    <option value="green">
+                        🟢 Open
+                    </option>
 
-                    <!-- CURRENT STATUS = PENDING -->
-                    <template v-if="currentStatus === 'yellow'">
+                    <option value="yellow">
+                        🟡 Pending
+                    </option>
 
-                        <!-- Current status -->
-                        <option
-                            value="yellow"
-                            disabled
-                        >
-                            🟡 Pending
-                        </option>
-
-                        <!-- Army decisions -->
-                        <option value="green">
-                            🟢 Open
-                        </option>
-
-                        <option value="red">
-                            🔴 Closed
-                        </option>
-
-                    </template>
-
-
-                    <!-- CURRENT STATUS = OPEN -->
-                    <template v-else-if="currentStatus === 'green'">
-
-                        <option
-                            value="green"
-                            disabled
-                        >
-                            🟢 Open
-                        </option>
-
-                    </template>
-
-
-                    <!-- CURRENT STATUS = CLOSED -->
-                    <template v-else>
-
-                        <option
-                            value="red"
-                            disabled
-                        >
-                            🔴 Closed
-                        </option>
-
-                    </template>
-
+                    <option value="red">
+                        🔴 Closed
+                    </option>
                 </template>
+
 
 
                 <!-- ====================================== -->
