@@ -14,24 +14,30 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  app: {
-    baseURL: '/',
-    // buildAssetsDir: '/lasf/_nuxt/',
-    head: {
-      title: 'lasf',
-      htmlAttrs: { lang: 'en' },
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+app: {
+  baseURL: '/',
+  head: {
+    title: 'lasf',
+    htmlAttrs: { lang: 'en' },
 
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-{ rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap' },
-      ],
-  script: [
-  
-      ]
-    },
-  },
+    meta: [
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover'
+      }
+    ],
+
+    link: [
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap'
+      }
+    ]
+  }
+},
 
 runtimeConfig: {
   public: {
