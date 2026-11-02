@@ -315,13 +315,6 @@ async function handlePause() {
         alert('Permission paused successfully.')
     } catch (error) {
         console.error(error)
- 
-        alert(
-            error?.data?.message ||
-            error?.response?._data?.message ||
-            error?.message ||
-            'Pause failed.'
-        )
     }
 }
  
@@ -348,13 +341,6 @@ async function handleResume() {
         }
     } catch (error) {
         console.error(error)
- 
-        alert(
-            error?.data?.message ||
-            error?.response?._data?.message ||
-            error?.message ||
-            'Resume failed.'
-        )
     }
 }
  
@@ -513,11 +499,6 @@ async function scanQrCode() {
     } catch (error) {
         console.error('❌ QR SCANNER ERROR:', error)
  
-        alert(
-            error?.message ||
-            error?.code ||
-            'Unable to scan the QR code. Please try again.'
-        )
     }
 }
  
@@ -567,11 +548,6 @@ async function handleCheckIn(token) {
         await refreshEverything()
     } catch (error) {
         console.error('Check-in error:', error)
- 
-        alert(
-            error?.data?.message ||
-            'Check-in failed.'
-        )
     } finally {
         checkingIn.value = false
     }
@@ -631,11 +607,6 @@ async function handleCheckOut() {
         alert('Successfully checked out.')
     } catch (error) {
         console.error(error)
- 
-        alert(
-            error?.data?.message ||
-            'Checkout failed.'
-        )
     }
 }
 </script>
@@ -792,46 +763,10 @@ async function handleCheckOut() {
  
                     <div class="d-flex flex-column gap-3">
  
-                      <!-- ACTIVE CROSS COUNTRY -->
-                      <NuxtLink
-                        v-if="canContinueCrossCountry"
-                        :to="`/cross-country/active?id=${currentRequest.id}`"
-                        class="btn btn-success btn-lg"
-                      >
-                        <i class="bi bi-airplane-engines me-2"></i>
-                        Continue Cross Country
-                      </NuxtLink>
- 
-                      <!-- APPROVED -->
-                      <NuxtLink
-                        v-else-if="canStartCrossCountry"
-                        :to="`/cross-country/active?id=${currentRequest.id}`"
-                        class="btn btn-primary btn-lg"
-                      >
-                        <i class="bi bi-play-circle me-2"></i>
-                        Start Cross Country Flight
-                      </NuxtLink>
- 
-                      <!-- PENDING -->
-                      <button
-                        v-else-if="isPending"
-                        disabled
-                        class="btn btn-warning btn-lg"
-                      >
-                        <i class="bi bi-hourglass-split me-2"></i>
-                        Waiting For Approval
-                      </button>
- 
-                      <!-- CREATE REQUEST -->
-                      <NuxtLink
-                        v-else-if="canCreateCrossCountry"
-                        to="/cross-country/request"
-                        class="btn btn-primary btn-lg"
-                      >
-                        <i class="bi bi-plus-circle me-2"></i>
-                        Create Cross Country Request
-                      </NuxtLink>
- 
+            
+    
+          
+     
                       <div class="d-flex flex-column gap-3">
  
                         <button
@@ -869,20 +804,6 @@ async function handleCheckOut() {
  
                       </div>
  
-                    </div>
- 
-                    <div class="mt-4">
-                      <div v-if="isPending" class="alert alert-warning">
-                        Your Cross Country request is waiting for approval.
-                      </div>
- 
-                      <div v-else-if="isApproved" class="alert alert-success">
-                        Your request has been approved.
-                      </div>
- 
-                      <div v-else-if="canContinueCrossCountry" class="alert alert-primary">
-                        Your Cross Country flight is currently active.
-                      </div>
                     </div>
  
                   </div>

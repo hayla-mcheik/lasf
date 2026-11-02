@@ -375,6 +375,25 @@ onBeforeUnmount(() => {
     justify-content: space-between;
     align-items: center;
 }
+.header-area {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.header-area .container-fluid {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-nav {
+  min-width: 0;
+}
+
+.mobile-menu-content {
+  box-sizing: border-box;
+}
 
 /* Desktop Navigation */
 .main-nav {

@@ -735,6 +735,7 @@ const blobToDataUrl = (blob) => {
   })
 }
 
+
 const loadImageAsDataUrl = async (img, pilot = null) => {
     if (!img) {
         return false
@@ -744,17 +745,15 @@ const loadImageAsDataUrl = async (img, pilot = null) => {
         return true
     }
 
-    try {
-        let imageUrl = img.src
+    // Declare outside try so catch can access it.
+    let imageUrl = img.src
 
+    try {
         /*
-         * Pilot photo:
-         * Load it through Laravel API so we can authenticate
-         * and convert it to Base64 safely for html2canvas.
+         * Load pilot photo through Laravel API.
          */
         if (img.classList.contains('pilot-card-img') && pilot?.id) {
-            imageUrl =
-                `${config.public.apiBase}/admin/pilots/${pilot.id}/avatar`
+            imageUrl = `${config.public.apiBase}/admin/pilots/${pilot.id}/avatar`
         }
 
         console.log('Loading badge image:', imageUrl)
@@ -769,9 +768,7 @@ const loadImageAsDataUrl = async (img, pilot = null) => {
         })
 
         if (!response.ok) {
-            throw new Error(
-                `Image request failed: HTTP ${response.status}`
-            )
+            throw new Error(`Image request failed: HTTP ${response.status}`)
         }
 
         const blob = await response.blob()
@@ -795,7 +792,6 @@ const loadImageAsDataUrl = async (img, pilot = null) => {
         })
 
         console.log('Badge image converted successfully.')
-
         return true
 
     } catch (error) {
