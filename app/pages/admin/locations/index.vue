@@ -46,7 +46,7 @@
 
                 <!-- Add Location -->
                 <button
-                    v-if="authStore.isAdmin"
+                    v-if="canManageLocations"
                     class="btn btn-primary"
                     @click="openCreateModal"
                 >
@@ -491,7 +491,7 @@
                                     <div class="btn-group">
 
                                         <button
-                                            v-if="authStore.isAdmin"
+                                            v-if="canManageLocations"
                                             class="btn btn-sm btn-light border"
                                             @click="editLocation(location)"
                                         >
@@ -882,6 +882,11 @@ const {
 */
 
 const authStore = useAuthStore()
+
+// Admin and Army have the same access to Flying Locations management.
+const canManageLocations = computed(() => {
+    return authStore.isAdmin || authStore.isArmy
+})
 
 const config = useRuntimeConfig()
 

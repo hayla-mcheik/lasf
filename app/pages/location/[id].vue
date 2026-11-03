@@ -609,6 +609,25 @@ async function handleCheckOut() {
         console.error(error)
     }
 }
+
+onMounted(() => {
+  setTimeout(() => {
+    const viewportWidth = document.documentElement.clientWidth
+
+    document.querySelectorAll('*').forEach((el) => {
+      const rect = el.getBoundingClientRect()
+
+      if (rect.right > viewportWidth + 1 || rect.left < -1) {
+        console.log('OVERFLOW ELEMENT:', el, {
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          viewportWidth
+        })
+      }
+    })
+  }, 1000)
+})
 </script>
  
 <template>
