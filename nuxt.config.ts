@@ -23,7 +23,7 @@ app: {
     meta: [
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1, viewport-fit=cover'
+content: 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
       }
     ],
 
@@ -64,6 +64,7 @@ runtimeConfig: {
     '@/assets/css/magnific-popup.css',
     '@/assets/css/odometer.css',
     '@/assets/css/style.css',
+    '@/assets/css/mobile-fixes.css',
   ],
 
 modules: [
