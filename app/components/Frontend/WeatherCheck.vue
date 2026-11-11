@@ -142,14 +142,6 @@ const cloudBaseFt = computed(() => {
 })
 
 
-const safetyStatusLabel = computed(() => {
-
-  if (!weatherReport.value) {
-    return 'Loading weather bulletin...'
-  }
-
-  return 'WEATHER BULLETIN'
-})
 
 
 const safetyDescription = computed(() => {
