@@ -193,9 +193,14 @@ const stripHtml = (html) => {
 }
 
 // Navigation & URL Helpers
+
 const windyUrl = computed(() => {
-  return `https://embed.windy.com/embed2.html?lat=${props.lat}&lon=${props.lon}&zoom=11&level=surface&overlay=${activeLayer.value}&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=true&metricWind=kt&metricTemp=%C2%B0C`
+  const lat = props.lat
+  const lon = props.lon
+
+  return `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&zoom=11&level=surface&overlay=${activeLayer.value}&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=true&detailLat=${lat}&detailLon=${lon}&metricWind=kt&metricTemp=%C2%B0C`
 })
+
 
 const getWindDirection = (deg) => {
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
