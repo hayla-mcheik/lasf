@@ -583,9 +583,9 @@ watch(
  
 async function handleCheckOut() {
     if (!activeSession.value) return
- 
+
     if (!confirm('Are you sure you landed?')) return
- 
+
     try {
         await $fetch(
             `${config.public.apiBase}/airspace-sessions/${activeSession.value.id}/checkout`,
@@ -596,14 +596,17 @@ async function handleCheckOut() {
                 }
             }
         )
- 
-        await stopTracking()
- 
+
+        // Clear the local active session
+        activeSession.value = null
         authStore.activeSession = null
- 
+
+        // Stop GPS after successful checkout
+        await stopTracking()
+
         await crossCountryStore.refresh()
         await refreshEverything()
- 
+
         alert('Successfully checked out.')
     } catch (error) {
         console.error(error)

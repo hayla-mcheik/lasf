@@ -343,23 +343,23 @@ console.log('🏃 Forced moving mode')
   /**
    * Stop GPS after pause or checkout.
    */
-  const stopBackgroundGps = async () => {
+const stopBackgroundGps = async () => {
     if (!process.client) return
     if (!Capacitor.isNativePlatform()) return
- 
+
     try {
-      const state = await BackgroundGeolocation.getState()
- 
-      if (state.enabled) {
         await BackgroundGeolocation.stop()
-      }
- 
-      isTracking.value = false
-      console.log('🛑 Native background GPS STOPPED')
+
+        // Clear locations waiting to be uploaded after checkout.
+        await BackgroundGeolocation.destroyLocations()
+
+        isTracking.value = false
+
+        console.log('🛑 GPS stopped after checkout')
     } catch (error) {
-      console.error('❌ Failed to stop background GPS:', error)
+        console.error('❌ Failed to stop background GPS:', error)
     }
-  }
+}
  
   const getTrackingState = async () => {
     if (!process.client) return false
