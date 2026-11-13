@@ -46,8 +46,8 @@ runtimeConfig: {
       : (process.env.API_BASE_URL || 'https://lasf.info/api'),
 
     mediaBase: process.env.CAPACITOR_BUILD === 'true'
-      ? 'https://lasf.info/api'
-      : (process.env.MEDIA_BASE_URL || 'https://lasf.info/api')
+      ? 'https://lasf.info'
+      : (process.env.MEDIA_BASE_URL || 'https://lasf.info')
   }
 },
 
