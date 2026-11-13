@@ -32,14 +32,7 @@
               >
             </div>
             
-            <div class="feature-image translate-y d-none d-sm-block">
-              <img 
-                :src="aboutData?.image ? `${config.public.mediaBase}${aboutData.image}` : '/assets/images/gallery/gallery-img2.png'" 
-                class="img-fluid rounded shadow" 
-                style="opacity: 0.7;"
-                alt="About LASF Decorative"
-              >
-            </div>
+      
           </div>
         </div>
       </div>

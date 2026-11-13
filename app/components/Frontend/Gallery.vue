@@ -84,13 +84,12 @@ const isYouTube = (url) => url && (url.includes('youtube.com') || url.includes('
 
 const getFullUrl = (path) => {
   if (!path) return ''
-  
+
   // If it's already a full URL, return it
-  if (path.startsWith('http')) return path 
-  
-  // Your server requires /api/ before /storage/
-  // config.public.apiBase is likely https://lasf.info/api
-  return `${config.public.apiBase}${path}`
+  if (path.startsWith('http')) return path
+
+  // Use mediaBase for images
+  return `${config.public.mediaBase}${path}`
 }
 
 const getVideoThumbnail = (url) => {
