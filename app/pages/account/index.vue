@@ -264,15 +264,35 @@
 
         <!-- Edit Button -->
 
-        <div class="mt-4 hide-on-print">
 
-          <NuxtLink to="/account/edit" class="btn btn-outline-success px-4">
+<div class="mt-4 hide-on-print d-flex flex-column align-items-center gap-3">
 
-            <i class="bi bi-pencil me-2"></i> Edit Membership
+    <NuxtLink
+        to="/account/edit"
+        class="btn btn-outline-success px-4"
+    >
+        <i class="bi bi-pencil me-2"></i>
+        Edit Membership
+    </NuxtLink>
 
-          </NuxtLink>
+    <div class="text-center mt-3">
+        <button
+            type="button"
+            class="btn btn-link text-danger text-decoration-none"
+            @click="showDeleteModal = true"
+            :disabled="isDeleting"
+        >
+            <i class="bi bi-trash me-2"></i>
+            Delete Account
+        </button>
 
-        </div>
+        <p class="text-muted small mb-0">
+            Permanently delete your LASF account and personal information.
+        </p>
+    </div>
+
+</div>
+
 
       </div>
 
@@ -294,6 +314,63 @@
 
   </div>
 
+<!-- Delete Account Confirmation -->
+<div
+    v-if="showDeleteModal"
+    class="delete-modal-overlay"
+    @click.self="showDeleteModal = false"
+>
+    <div class="delete-modal">
+
+        <div class="text-danger mb-3">
+            <i class="bi bi-exclamation-triangle display-4"></i>
+        </div>
+
+        <h4>Delete Your Account?</h4>
+
+        <p class="text-muted">
+            This action is permanent. Your account and personal information
+            will be deleted and you will no longer be able to access your
+            LASF account.
+        </p>
+
+        <div
+            v-if="deleteError"
+            class="alert alert-danger"
+            role="alert"
+        >
+            {{ deleteError }}
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-4">
+
+            <button
+                class="btn btn-outline-secondary"
+                type="button"
+                @click="showDeleteModal = false"
+                :disabled="isDeleting"
+            >
+                Cancel
+            </button>
+
+            <button
+                class="btn btn-danger"
+                type="button"
+                @click="confirmDeleteAccount"
+                :disabled="isDeleting"
+            >
+                <span
+                    v-if="isDeleting"
+                    class="spinner-border spinner-border-sm me-2"
+                ></span>
+
+                {{ isDeleting ? 'Deleting...' : 'Delete Permanently' }}
+            </button>
+
+        </div>
+
+    </div>
+</div>
 </template>
 
 
@@ -559,6 +636,25 @@ const generateQRCode = async () => {
 }
 
 
+
+const showDeleteModal = ref(false)
+const isDeleting = ref(false)
+const deleteError = ref('')
+
+const confirmDeleteAccount = async () => {
+    if (isDeleting.value) return
+
+    isDeleting.value = true
+    deleteError.value = ''
+
+    const result = await authStore.deleteAccount()
+
+    if (!result.success) {
+        deleteError.value = result.message
+        isDeleting.value = false
+        return
+    }
+}
 
 watch(membership, (newVal) => {
 
@@ -1284,6 +1380,36 @@ const handleLogout = () => {
 
   }
 
+}
+
+.delete-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 99999;
+}
+
+.delete-modal {
+    background: #fff;
+    width: 100%;
+    max-width: 430px;
+    padding: 30px 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.delete-modal h4 {
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.delete-modal p {
+    line-height: 1.6;
 }
 
 </style>

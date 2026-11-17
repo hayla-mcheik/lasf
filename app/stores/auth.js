@@ -551,6 +551,53 @@ async refreshFlightState() {
 
 },
 
+
+
+async deleteAccount() {
+    if (!this.token) {
+        return {
+            success: false,
+            message: 'You are not authenticated.'
+        }
+    }
+
+    try {
+        const config = useRuntimeConfig()
+
+        await $fetch(`${config.public.apiBase}/account`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${this.token}`
+            }
+        })
+
+        // Clear authentication after successful deletion.
+        this.user = null
+        this.token = null
+        this.activeSession = null
+
+        if (import.meta.client) {
+            localStorage.removeItem('pending_location_slug')
+        }
+
+        await navigateTo('/login')
+
+        return { success: true }
+
+    } catch (error) {
+        console.error('Account deletion failed:', error)
+
+        return {
+            success: false,
+            message:
+                error?.data?.message ||
+                error?.response?._data?.message ||
+                'Unable to delete your account. Please try again.'
+        }
+    }
+},
+
+
     /*
     |--------------------------------------------------------------------------
     | LOGOUT
